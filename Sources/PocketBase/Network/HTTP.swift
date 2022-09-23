@@ -12,6 +12,8 @@ import Foundation
 /// An HTTP client that allows for generic requests.
 actor HTTP {
     
+    static let shared = HTTP()
+    
     /// Execute an HTTP request and decode the response as a list of objects.
     /// - Parameters:
     ///   - convertible: The request built with Alamofire's `URLRequestConvertible` protocol.

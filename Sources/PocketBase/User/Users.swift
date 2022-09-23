@@ -12,7 +12,7 @@ import Alamofire
 public actor Users {
     
     /// Used to make HTTP requests.
-    private let http = HTTP()
+    private let http = HTTP.shared
     
     /// Used for retry policies and authorization headers.
     private var interceptor: Interceptor?

@@ -12,7 +12,7 @@ import Foundation
 public actor Records {
     
     /// Used to make HTTP requests.
-    let http = HTTP()
+    let http = HTTP.shared
     
     /// Used for retry policies and authorization headers.
     let interceptor: Interceptor?
@@ -150,7 +150,7 @@ public actor Records {
         /// - Parameter collection: The name or ID of a collection.
         /// - Returns:A url representing a collection on PocketBase.
         private func collectionUrl(_ collection: String) -> URL {
-            let baseUrl = URL(string: "http://127.0.0.1:8090")!
+            let baseUrl = URL(string: "http://10.0.0.77:8090")!
             if #available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *) {
                 return baseUrl
                     .appending(path: "api")

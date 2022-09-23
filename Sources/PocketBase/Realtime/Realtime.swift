@@ -56,7 +56,7 @@ public enum Realtime {
         
         /// The base URL for the Realtime API
         var base: URL {
-            URL(string: "http://127.0.0.1:8090")!
+            URL(string: "http://10.0.0.77:8090")!
                 .appendingPathComponent("api")
                 .appendingPathComponent("realtime")
         }
