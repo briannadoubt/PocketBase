@@ -15,11 +15,11 @@ public actor Users {
     private let http = HTTP()
     
     /// Used for retry policies and authorization headers.
-    private var interceptor: Interceptor
+    private var interceptor: Interceptor?
     
     /// An object used to interact with the PocketBase **Users API**.
     /// - Parameter interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
-    init(interceptor: Interceptor) {
+    init(interceptor: Interceptor? = nil) {
         self.interceptor = interceptor
     }
     
@@ -200,6 +200,8 @@ public actor Users {
         try await http.request(Request.unlinkProvider(id: id, provider: provider), interceptor: interceptor)
     }
     
+    // MARK: Network Request Composition
+    
     private enum Request: URLRequestConvertible {
         ///Request a public list with the allowed user authentication methods.
         case authMethods
@@ -316,7 +318,7 @@ public actor Users {
         
         /// The base URL for the Users API
         var base: URL {
-            URL(string: "https://127.0.0.1:8090")!
+            URL(string: "http://127.0.0.1:8090")!
                 .appendingPathComponent("api")
                 .appendingPathComponent("users")
         }
@@ -393,8 +395,6 @@ public actor Users {
             headers.add(.defaultAcceptLanguage)
             return headers
         }
-        
-        // MARK: - `URLRequestConvertible` Conformance
         
         /// Convert the current case to a `URLRequest`.
         func asURLRequest() throws -> URLRequest {
