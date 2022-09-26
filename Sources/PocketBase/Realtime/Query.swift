@@ -13,30 +13,37 @@ import SwiftUI
 #if canImport(SwiftUI)
 @available(iOS 14.0, macOS 12.0, watchOS 7.0, tvOS 14.0, *)
 @propertyWrapper
-public struct Query<T: Codable>: DynamicProperty {
+public struct Query<U: Codable>: DynamicProperty {
     
-    @StateObject var queryObservable: QueryObservable<T>
+    @EnvironmentObject var client: PocketBase
+    @StateObject var queryObservable: QueryObservable<U>
     
     public struct Configuration {
         public var path: String
         public var error: Error?
+        public var interceptor: Interceptor = UserBearerTokenPolicy().interceptor
     }
     
-    public var wrappedValue: T {
+    public var wrappedValue: [U] {
         queryObservable.records
     }
     
-    public var projectedValue: Coordinator<T> {
+    public var projectedValue: Coordinator<U> {
         Coordinator(query: self)
     }
     
-    public func refresh<U: Codable>() async where T == [U] {
-        await queryObservable.getRecords()
+    public func load() async {
+        do {
+            queryObservable.records = try await queryObservable.getRecords().items
+        } catch {
+            print("PocketBase: Error loading records:", error)
+            queryObservable.configuration.error = error
+        }
     }
     
-    public init<U: Codable>(_ path: String) where T == [U] {
+    public init(_ path: String, baseUrl: URL?) {
         let configuration = Configuration(path: path)
-        _queryObservable = StateObject(wrappedValue: QueryObservable<T>(configuration: configuration))
+        _queryObservable = StateObject(wrappedValue: QueryObservable<U>(baseUrl: baseUrl!, configuration: configuration))
     }
     
     public struct Coordinator<T: Codable> {
@@ -46,8 +53,12 @@ public struct Query<T: Codable>: DynamicProperty {
             self.query = query
         }
         
-        @Sendable public func refresh<U: Codable>() async where T == [U] {
-            await query.refresh()
+        @Sendable public func load(lastEventId: String?) async throws {
+            try await query.queryObservable.load(lastEventId: lastEventId)
+        }
+        
+        @Sendable public func refresh() async {
+            await query.load()
         }
     }
 }

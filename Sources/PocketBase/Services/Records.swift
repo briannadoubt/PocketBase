@@ -6,21 +6,36 @@
 //
 
 import Alamofire
+import AlamofireEventSource
 import Foundation
 
-/// An object used to interact with the PocketBase **Records API**.
-public actor Records {
-    
+public protocol Service: Actor {
+    var baseUrl: URL { get }
+    var interceptor: Interceptor? { get }
+    init(baseUrl: URL)
+}
+
+public extension Service {
     /// Used to make HTTP requests.
-    let http = HTTP.shared
+    var http: HTTP { HTTP() }
     
-    /// Used for retry policies and authorization headers.
-    let interceptor: Interceptor?
+    var interceptor: Interceptor? {
+        UserBearerTokenPolicy().interceptor
+    }
+}
+
+/// An object used to interact with the PocketBase **Records API**.
+public actor Records: Service {
+    
+    /// The baseURL for all requests to PocketBase.
+    public let baseUrl: URL
     
     /// An object used to interact with the PocketBase **Records API**.
-    /// - Parameter interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
-    public init(interceptor: Interceptor? = nil) {
-        self.interceptor = interceptor
+    /// - Parameters:
+    ///  - baseUrl: The baseURL for all requests to PocketBase.
+    ///  - interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
+    public init(baseUrl: URL) {
+        self.baseUrl = baseUrl
     }
     
     /// Returns a paginated collection Records list.
@@ -34,8 +49,27 @@ public actor Records {
     ///   - filter: Filter expression to filter/search the returned records list.
     ///   - expand: Auto expand nested record relations.
     /// - Returns: A list of decoded data.
-    public func list<T: Decodable>(_ collection: String, page: Int = 1, perPage: Int = 30, sort: String? = nil, filter: String? = nil, expand: String? = nil) async throws -> ListResult<T> {
-        try await http.request(Request.list(collection: collection, page: page, perPage: perPage, sort: sort, filter: filter, expand: expand), interceptor: interceptor)
+    public func list<T: Decodable>(
+        _ collection: String,
+        page: Int = 1,
+        perPage: Int = 30,
+        sort: String? = nil,
+        filter: String? = nil,
+        expand: String? = nil
+    ) async throws -> ListResult<T> {
+        print("PocketBase: Requesting list of", "\"\(T.self)\"", "at", baseUrl.absoluteString + ":", "collection:", String(describing: collection) + ",", "page:", "\(page),", "perPage:", "\(perPage),", "sort:", "\(sort ?? "(No Sort)"),", "filter:", "\(filter ?? "(No Filter)"),", "expand:", "\(expand ?? "(No Expand)"),")
+        return try await http.request(
+            Request.list(
+                baseUrl: baseUrl,
+                collection: collection,
+                page: page,
+                perPage: perPage,
+                sort: sort,
+                filter: filter,
+                expand: expand
+            ),
+            interceptor: interceptor
+        )
     }
     
     /// Returns a single collection Record by its ID.
@@ -47,7 +81,7 @@ public actor Records {
     ///   - expand: Auto expand nested record relations.
     /// - Returns: A decoded object representing the requested record.
     public func view<T: Decodable>(_ recordId: String, collection: String, expand: String) async throws -> T {
-        try await http.request(Request.view(recordId: recordId, collection: collection, expand: expand), interceptor: interceptor)
+        try await http.request(Request.view(baseUrl: baseUrl, recordId: recordId, collection: collection, expand: expand), interceptor: interceptor)
     }
     
     /// Creates a new collection Record.
@@ -61,10 +95,8 @@ public actor Records {
     ///   - expand: Auto expand relations when returning the created record.
     /// - Returns: A remotely represented object that was successfully saved to PocketBase.
     public func create<T: Codable>(_ record: T, collection: String, expand: String) async throws -> T {
-        try await http.request(
-            Request.create(record: record, collection: collection, expand: expand),
-            interceptor: interceptor
-        )
+        try await http.request(Request.create(baseUrl: baseUrl, record: record, collection: collection, expand: expand),
+            interceptor: interceptor)
     }
     
     /// Updates an existing collection Record.
@@ -77,7 +109,7 @@ public actor Records {
     /// - Returns: The updated object.
     public func update<T: Codable>(_ record: T, collection: String, recordId: String, expand: String) async throws -> T {
         try await http.request(
-            Request.update(record: record, collection: collection, recordId: recordId, expand: expand),
+            Request.update(baseUrl: baseUrl, record: record, collection: collection, recordId: recordId, expand: expand),
             interceptor: interceptor
         )
     }
@@ -89,7 +121,7 @@ public actor Records {
     ///  - recordId: ID of the record to update.
     ///  - collection: ID of the record to update.
     public func delete(recordId: String, collection: String) async throws {
-        try await http.request(Request.delete(recordId: recordId, collection: collection), interceptor: interceptor)
+        try await http.request(Request.delete(baseUrl: baseUrl, recordId: recordId, collection: collection), interceptor: interceptor)
     }
     
     
@@ -100,22 +132,24 @@ public actor Records {
         ///
         /// Depending on the collection's listRule value, the access to this action may or may not have been restricted.
         /// - Parameters:
+        ///  - baseUrl: The baseUrl upon which the request URL will be built.
         ///  - collection: The collection name or id.
         ///  - page: The page of records.
         ///  - perPage: The number of pages returned per page.
         ///  - sort: Specify the ORDER BY fields.
         ///  - filter: Filter expression to filter/search the returned records list.
         ///  - expand: Auto expand nested record relations.
-        case list(collection: String, page: Int, perPage: Int, sort: String?, filter: String?, expand: String?)
+        case list(baseUrl: URL, collection: String, page: Int, perPage: Int, sort: String?, filter: String?, expand: String?)
         
         /// Returns a single collection Record by its ID.
         ///
         /// Depending on the collection's viewRule value, the access to this action may or may not have been restricted.
         /// - Parameters:
-        ///   - recordId: ID of the record to view.
-        ///   - collection: ID or name of the record's collection.
-        ///   - expand: Auto expand nested record relations.
-        case view(recordId: String, collection: String, expand: String)
+        ///  - baseUrl: The baseUrl upon which the request URL will be built.
+        ///  - recordId: ID of the record to view.
+        ///  - collection: ID or name of the record's collection.
+        ///  - expand: Auto expand nested record relations.
+        case view(baseUrl: URL, recordId: String, collection: String, expand: String)
         
         /// Creates a new collection Record.
         ///
@@ -123,20 +157,22 @@ public actor Records {
         ///
         /// The object will be encoded into a dictionary and uploaded to PocketBase. Then, PocketBase will return an object that contains various types of metadata (such as the `collectionId`, `collectionName`, etc) that is serialized into the new object.
         /// - Parameters:
-        ///   - record: The `Codable` object that will be processed.
-        ///   - collection: ID or name of the record's collection.
-        ///   - expand: Auto expand relations when returning the created record.
-        case create(record: Encodable, collection: String, expand: String)
+        ///  - baseUrl: The baseUrl upon which the request URL will be built.
+        ///  - record: The `Codable` object that will be processed.
+        ///  - collection: ID or name of the record's collection.
+        ///  - expand: Auto expand relations when returning the created record.
+        case create(baseUrl: URL, record: Encodable, collection: String, expand: String)
         
         /// Updates an existing collection Record.
         ///
         /// Depending on the collection's updateRule value, the access to this action may or may not have been restricted.
         /// - Parameters:
-        ///   - record: The `Codable` object that will be updated.
-        ///   - collection: ID or name of the record's collection.
-        ///   - recordId: ID of the record to update.\
-        ///   - expand: Auto expand relations when returning the created record.
-        case update(record: Encodable, collection: String, recordId: String, expand: String)
+        ///  - baseUrl: The baseUrl upon which the request URL will be built.
+        ///  - record: The `Codable` object that will be updated.
+        ///  - collection: ID or name of the record's collection.
+        ///  - recordId: ID of the record to update.\
+        ///  - expand: Auto expand relations when returning the created record.
+        case update(baseUrl: URL, record: Encodable, collection: String, recordId: String, expand: String)
         
         /// Deletes a single collection Record by its ID.
         ///
@@ -144,13 +180,14 @@ public actor Records {
         /// - Parameters:
         ///  - recordId: ID of the record to update.
         ///  - collection: ID of the record to update.
-        case delete(recordId: String, collection: String)
+        case delete(baseUrl: URL, recordId: String, collection: String)
         
         /// The url representing a collection on PocketBase.
-        /// - Parameter collection: The name or ID of a collection.
+        /// - Parameters:
+        ///  - baseUrl: The baseUrl upon which the request URL will be built.
+        ///  - collection: The name or ID of a collection.
         /// - Returns:A url representing a collection on PocketBase.
-        private func collectionUrl(_ collection: String) -> URL {
-            let baseUrl = URL(string: "http://10.0.0.77:8090")!
+        private func collectionUrl(baseUrl: URL, collection: String) -> URL {
             if #available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *) {
                 return baseUrl
                     .appending(path: "api")
@@ -168,11 +205,12 @@ public actor Records {
         
         /// The url representing a record on PocketBase.
         /// - Parameters:
-        ///   - recordId: The ID of the record to be deleted.
+        ///   - baseUrl: The baseUrl upon which the request URL will be built.
         ///   - collection: The name or ID of a collection.
+        ///   - recordId: The ID of the record to be deleted.
         /// - Returns: A url representing a record on PocketBase.
-        private func recordUrl(recordId: String, collection: String) -> URL {
-            let collectionUrl = collectionUrl(collection)
+        private func recordUrl(baseUrl: URL, collection: String, recordId: String) -> URL {
+            let collectionUrl = collectionUrl(baseUrl: baseUrl, collection: collection)
             if #available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *) {
                 return collectionUrl.appending(path: recordId)
             } else {
@@ -183,7 +221,7 @@ public actor Records {
         /// The generated URL for a given request.
         var url: URL {
             switch self {
-            case .list(let collection, let page, let perPage, let sort, let filter, let expand):
+            case .list(let baseUrl, let collection, let page, let perPage, let sort, let filter, let expand):
                 var components = URLComponents()
                 var queryItems: [URLQueryItem] = []
                 queryItems.append(contentsOf: [
@@ -200,27 +238,30 @@ public actor Records {
                     queryItems.append(URLQueryItem(name: "expand", value: expand))
                 }
                 components.queryItems = queryItems
-                return components.url(relativeTo: collectionUrl(collection))!
+                guard let url = components.url(relativeTo: collectionUrl(baseUrl: baseUrl, collection: collection)) else {
+                    fatalError()
+                }
+                return url
                 
-            case .view(let recordId, let collection, let expand):
+            case .view(let baseUrl, let recordId, let collection, let expand):
                 var components = URLComponents()
                 components.queryItems = [URLQueryItem(name: "expand", value: expand)]
-                let url = recordUrl(recordId: recordId, collection: collection)
+                let url = recordUrl(baseUrl: baseUrl, collection: collection, recordId: recordId)
                 return components.url(relativeTo: url)!
                 
-            case .create(_, let collection, let expand):
+            case .create(let baseUrl, _, let collection, let expand):
                 var components = URLComponents()
                 components.queryItems = [URLQueryItem(name: "expand", value: expand)]
-                return components.url(relativeTo: collectionUrl(collection))!
+                return components.url(relativeTo: collectionUrl(baseUrl: baseUrl, collection: collection))!
                 
-            case .update(_, let collection, let recordId, let expand):
+            case .update(let baseUrl, _, let collection, let recordId, let expand):
                 var components = URLComponents()
                 components.queryItems = [URLQueryItem(name: "expand", value: expand)]
-                let url = recordUrl(recordId: recordId, collection: collection)
+                let url = recordUrl(baseUrl: baseUrl, collection: collection, recordId: recordId)
                 return components.url(relativeTo: url)!
                 
-            case .delete(let recordId, let collection):
-                return recordUrl(recordId: recordId, collection: collection)
+            case .delete(let baseUrl, let recordId, let collection):
+                return recordUrl(baseUrl: baseUrl, collection: collection, recordId: recordId)
             }
         }
         
@@ -244,6 +285,7 @@ public actor Records {
             headers.add(.defaultAcceptEncoding)
             headers.add(.defaultUserAgent)
             headers.add(.defaultAcceptLanguage)
+            headers.add(.contentType("application/json"))
             return headers
         }
         
@@ -253,7 +295,7 @@ public actor Records {
             switch self {
             case .list, .view, .delete:
                 break
-            case .create(let record, _, _), .update(let record, _, _, _):
+            case .create(_, let record, _, _), .update(_, let record, _, _, _):
                 let body = try JSONEncoder().encode(record)
                 urlRequest.httpBody = body
             }

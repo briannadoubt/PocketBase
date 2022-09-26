@@ -17,7 +17,7 @@ public extension UserBearerTokenAdapter {
     func adapt(_ urlRequest: URLRequest, for session: Session, completion: @escaping (Result<URLRequest, Error>) -> Void) {
         var urlRequest = urlRequest
         guard let token = token else {
-            completion(.failure(URLError(.clientCertificateRequired)))
+            completion(.success(urlRequest))
             return
         }
         urlRequest.headers.add( .authorization(bearerToken: "User " + token))

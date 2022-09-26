@@ -8,23 +8,14 @@
 import Foundation
 
 public struct User<Profile: Codable>: BaseModel {
-    public var id: UUID?
-    public var created: Date
-    public var updated: Date
+    public var id: String?
+    public var created: String?
+    public var updated: String?
     public var email: String
     public var verified: Bool
-    public var lastResetSentAt: Date
-    public var lastVerificationSentAt: Date
+    public var lastResetSentAt: String?
+    public var lastVerificationSentAt: String?
     public var profile: Profile?
-}
-
-public struct UserProfile: Model {
-    public var id: UUID?
-    public var collectionId: String
-    public var collectionName: String
-    public var expand: String
-    public var created: Date
-    public var updated: Date
 }
 
 // MARK: User Sort Keys

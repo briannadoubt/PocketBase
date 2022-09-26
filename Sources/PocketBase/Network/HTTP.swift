@@ -6,25 +6,24 @@
 //
 
 import Alamofire
+import AlamofireEventSource
 import Combine
 import Foundation
 
 /// An HTTP client that allows for generic requests.
-actor HTTP {
-    
-    static let shared = HTTP()
+public actor HTTP {
     
     /// Execute an HTTP request and decode the response as a list of objects.
     /// - Parameters:
     ///   - convertible: The request built with Alamofire's `URLRequestConvertible` protocol.
     ///   - interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
     /// - Returns: A decoded list of objects.
-    func requestList<T: Decodable>(_ convertible: URLRequestConvertible, interceptor: RequestInterceptor? = nil) async throws -> [T] {
-        try await AF
-            .request(convertible, interceptor: interceptor)
-            .serializingDecodable([T].self)
-            .value
-    }
+//    func requestList<T: Decodable>(_ convertible: URLRequestConvertible, interceptor: RequestInterceptor? = nil) async throws -> [T] {
+//        try await AF
+//            .request(convertible, interceptor: interceptor)
+//            .serializingDecodable([T].self)
+//            .value
+//    }
     
     /// Execute an HTTP request and decode the response as an object.
     /// - Parameters:
@@ -43,16 +42,38 @@ actor HTTP {
     ///   - convertible: The request built with Alamofire's `URLRequestConvertible` protocol.
     ///   - interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
     func request(_ convertible: URLRequestConvertible, interceptor: RequestInterceptor? = nil) async throws {
-        print(convertible)
-        print(try convertible.asURLRequest())
         switch await AF
             .request(convertible, interceptor: interceptor)
             .serializingData()
             .result {
         case .success(let response):
-            print("Response:", String(describing: try? JSONSerialization.jsonObject(with: response)))
+            print("PocketBase: Recieved Response:", String(describing: try? JSONSerialization.jsonObject(with: response)))
         case .failure(let error):
             throw error
         }
+    }
+    
+    nonisolated func requestEventStream(
+        baseUrl: URL,
+        lastEventId: String?,
+        interceptor: RequestInterceptor? = nil,
+        recievedMessage: @escaping (_ message: EventSourceMessage) async -> (),
+        recievedCompletion: ((_ completion: DataStreamRequest.Completion) async -> ())? = nil
+    ) {
+        print("PocketBase:", "Requesting Event Stream:", "baseUrl:", baseUrl, "lastEventId:", lastEventId ?? "", "interceptor:", String(describing: interceptor.self))
+        AF
+            .eventSourceRequest(Realtime.Request.connect(baseUrl: baseUrl).url, lastEventID: lastEventId)
+            .responseEventSource { eventSource in
+                switch eventSource.event {
+                case .message(let message):
+                    Task {
+                        await recievedMessage(message)
+                    }
+                case .complete(let completion):
+                    Task {
+                        await recievedCompletion?(completion)
+                    }
+                }
+            }
     }
 }

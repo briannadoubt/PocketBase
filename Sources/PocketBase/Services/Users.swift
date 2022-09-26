@@ -12,14 +12,20 @@ import Alamofire
 public actor Users {
     
     /// Used to make HTTP requests.
-    private let http = HTTP.shared
+    private let http = HTTP()
+    
+    /// The baseURL for all requests to PocketBase.
+    private let baseUrl: URL
     
     /// Used for retry policies and authorization headers.
     private var interceptor: Interceptor?
     
     /// An object used to interact with the PocketBase **Users API**.
-    /// - Parameter interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
-    init(interceptor: Interceptor? = nil) {
+    /// - Parameters:
+    ///  - baseUrl: The baseURL for all requests to PocketBase.
+    ///  - interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
+    init(baseUrl: URL, interceptor: Interceptor? = nil) {
+        self.baseUrl = baseUrl
         self.interceptor = interceptor
     }
     
