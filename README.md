@@ -48,12 +48,20 @@ struct TestApp: App {
         }
     }
 }
+```
+1. Import `PocketBase` to your project.
+2. Create an instance of PocketBase with the `@Client` property wrapper. This internally creates a singleton that lives throughout the lifecycle of your app.
+3. Add the `client` to the environment so that child views can access the singleton.
+4. Optionally specify the URL where your PocketBase instance is served. If this is omitted the URL will default to `http://0.0.0.0:8090/`.
 
+```swift
 struct Test: Codable, Identifiable { // <~ 5
     var id: String?
     var foo: String
 }
-
+```
+5. Create the model object. Must conform to both `Codable` and `Identifiable`.
+```swift
 struct ContentView: View {
     
     @Query("test") var tests: [Test] // <~ 6
@@ -70,11 +78,5 @@ struct ContentView: View {
     }
 }
 ```
-
-1. Import `PocketBase` to your project.
-2. Create an instance of PocketBase with the `@Client` property wrapper. This internally creates a singleton that lives throughout the lifecycle of your app.
-3. Add the `client` to the environment so that child views can access the singleton.
-4. Optionally specify the URL where your PocketBase instance is served. If this is omitted the URL will default to `http://0.0.0.0:8090/`.
-5. Create the model object. Must conform to both `Codable` and `Identifiable`.
 6. Create a `@Query` instance. This is the object that does the most magic. It will download the records for the given collection and then subscribe to realtime updatest to keep the server and the client in sync.
 7. Display the data in your view.
