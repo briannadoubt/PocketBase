@@ -34,7 +34,10 @@ The PocketBase Swift library defaults to sending requests to the default PocketB
 ```swift
 import PocketBase // <~ 1.
 import SwiftUI
+```
+1. Import `PocketBase` to your project.
 
+```swift
 @main
 struct TestApp: App {
     
@@ -49,7 +52,6 @@ struct TestApp: App {
     }
 }
 ```
-1. Import `PocketBase` to your project.
 2. Create an instance of PocketBase with the `@Client` property wrapper. This internally creates a singleton that lives throughout the lifecycle of your app.
 3. Add the `client` to the environment so that child views can access the singleton.
 4. Optionally specify the URL where your PocketBase instance is served. If this is omitted the URL will default to `http://0.0.0.0:8090/`.
