@@ -132,14 +132,14 @@ public class QueryObservable<U: Codable & Identifiable>: ObservableObject where 
     
     /// Remove a record from the stored records via the main thread
     @MainActor func remove(_ message: Message<Event<U>>) {
-        guard let index = self.messages.firstIndex(where: { $0.id == message.id }) else {
+        guard let index = self.messages.firstIndex(where: { $0.data?.id == message.data?.id }) else {
             return
         }
         self.messages.remove(at: index)
     }
     
     @MainActor func update(_ message: Message<Event<U>>) {
-        guard let index = self.messages.firstIndex(where: { $0.id == message.id }) else {
+        guard let index = self.messages.firstIndex(where: { $0.data?.id == message.data?.id }) else {
             return
         }
         self.messages[index] = message
