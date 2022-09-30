@@ -10,25 +10,26 @@ import AlamofireEventSource
 import Combine
 import Foundation
 
-public class Realtime {
+/// An object used to interact with the PocketBase **Realtime API**.
+public actor Realtime: Service {
     
-    /// Used to make HTTP requests.
-    private let http = HTTP()
+    /// Whether or not the client is currently recieveing Server Side Events from `/api/realtime`
+    @Published public var isConnected = false
     
     /// The baseURL for all requests to PocketBase.
-    private let baseUrl: URL
+    public let baseUrl: URL
     
     /// Used for retry policies and authorization headers.
-    private var interceptor: Interceptor?
+    public var interceptor: Interceptor
     
     /// The clientId of this query's SSE connection.
-    private var clientId: String?
+    public var clientId: String?
     
-    /// An object used to interact with the PocketBase **Users API**.
+    /// An object used to interact with the PocketBase **Realtime API**.
     /// - Parameters:
     ///  - baseUrl: The baseURL for all requests to PocketBase.
     ///  - interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
-    public init(baseUrl: URL, interceptor: Interceptor? = nil) {
+    public init(baseUrl: URL, interceptor: Interceptor) {
         self.baseUrl = baseUrl
         self.interceptor = interceptor
     }
@@ -48,122 +49,94 @@ public class Realtime {
         )
     }
     
-    /// Handle recieving a message from a PocketBase Realtime subscription.
-    /// - Parameter message: The `EventSourceMessage` that was returned for a given event.
-    nonisolated private func decode<U: Decodable>(_ message: EventSourceMessage) throws -> Realtime.EventMessage<U> {
-        guard
-            let jsonString = message.data,
-            let jsonData = jsonString.data(using: .utf8)
-        else {
-            throw NSError(domain: "PocketBase: Failed to decode JSON string to data.", code: 500)
-        }
-        let decodedMessage = try JSONDecoder().decode(Realtime.EventMessage<U>.self, from: jsonData)
-        return decodedMessage
-    }
-    
-    nonisolated private func subscribe(
-        to path: String,
-        lastEventId: String?,
-        recievedMessage: @escaping (_ message: EventSourceMessage) -> (),
-        recievedCompletion: ((_ completion: DataStreamRequest.Completion) -> ())? = nil
-    ) {
-        http.requestEventStream(
-            baseUrl: baseUrl,
-            lastEventId: lastEventId,
-            interceptor: interceptor,
-            recievedMessage: recievedMessage,
-            recievedCompletion: recievedCompletion
-        )
-    }
-    
-    nonisolated private func recievedMessage<U: Decodable>(
+    private func handleMessage<U: Decodable>(
         path: String,
-        message: EventSourceMessage,
-        recievedMessage: @escaping (_ newMessage: Realtime.EventMessage<U>) async -> ()
-    ) {
+        message: Message<Event<U>>,
+        newMessage: @escaping (_ newMessage: Message<Event<U>>) async -> ()
+    ) async {
         print("PocketBase: Recieved Realtime message:", String(describing: message))
         switch message.event {
         case "PB_CONNECT":
-            Task {
-                do {
-                    self.clientId = try await self.handleConnect(message, path: path)
-                } catch {
-                    print("PocketBase: Recieved error while connecting to realtime services:", error)
-                }
+            do {
+                self.clientId = try await self.handlePBConnect(message, path: path)
+                isConnected = true
+            } catch {
+                print("PocketBase: Recieved error while connecting to realtime services:", error)
             }
         case path:
             Task {
-                do {
-                    let eventMessage: Realtime.EventMessage<U> = try self.decode(message)
-                    await recievedMessage(eventMessage)
-                } catch {
-                    print("PocketBase: Recieved error while parsing realtime message:", error)
-                }
+                await newMessage(message)
             }
         default:
             break
         }
     }
     
-    nonisolated func connect<U: Decodable>(
+    func connect<U: Decodable>(
         to path: String,
         lastEventId: String?,
-        recievedMessage: @escaping ((_ newMessage: Realtime.EventMessage<U>) async -> ()),
+        recievedMessage: @escaping ((_ newMessage: Message<Event<U>>) async -> ()),
         recievedError: ((_ error: Error) -> ())? = nil
     ) {
-        self.subscribe(to: path, lastEventId: lastEventId) { message in
-            self.recievedMessage(path: path, message: message, recievedMessage: recievedMessage)
-        } recievedCompletion: { completion in
-            print(
-                "SSE Stream ended with status code: \(String(describing: completion.response?.statusCode)).", "\n",
-                "Error:", String(describing: completion.error)
-            )
-            if let error = completion.error {
-                recievedError?(error)
+        http.requestEventStream(
+            baseUrl: baseUrl,
+            lastEventId: lastEventId,
+            interceptor: interceptor,
+            recievedMessage: { message in
+                await self.handleMessage(path: path, message: message, newMessage: recievedMessage)
+            },
+            recievedCompletion: { completion in
+                print(
+                    "SSE Stream ended with status code: \(String(describing: completion.response?.statusCode)).", "\n",
+                    "Error:", String(describing: completion.error)
+                )
+                if let error = completion.error {
+                    recievedError?(error)
+                }
+                self.isConnected = false
             }
-        }
+        )
     }
     
     /// Handle recieving a `PB_CONNECT` event.
     /// - Parameter message: The `EventSourceMessage` that was returned for the `PB_CONNECT` event.
     /// - Returns The `clientId` for the SSE connection to PocketBase. Store this key for future requests.
-    private func handleConnect(_ message: EventSourceMessage, path: String) async throws -> String {
+    private func handlePBConnect<U: Decodable>(_ message: Message<Event<U>>, path: String) async throws -> String {
+        print("Recieved PB_CONNECT message with event:", String(describing: message.event), "id:", String(describing: message.id), "and data:", String(describing: message.data))
         guard
-            let jsonString = message.data,
-            let jsonData = jsonString.data(using: .utf8)
+            let clientId = message.id
         else {
-            throw NSError(domain: "PocketBase: Realtime: Failed to decode PB_CONNECT message.", code: 500)
-        }
-        let connect = try JSONDecoder().decode(Realtime.Connect.self, from: jsonData)
-        print("Recieved PB_CONNECT message with event:", String(describing: message.event), "id:", String(describing: message.id), "and data:", String(describing: try JSONSerialization.jsonObject(with: jsonData)))
-        guard let clientId = connect.clientId else {
-            self.clientId = nil
             throw NSError(domain: "No clientId found.", code: 500)
         }
-        try await sendSubscription(from: clientId, to: [path])
+        try await self.sendSubscription(from: clientId, to: [path])
         return clientId
     }
+}
+
+public typealias Message<U: Decodable> = DecodableEventSourceMessage<U>
+
+public struct Event<U: Decodable & Identifiable>: Decodable where U.ID == String? {
+    public var id: U.ID?
+    public var action: Action?
+    public var record: U?
+}
+
+public enum Action: String, Decodable {
+    case create
+    case update
+    case delete
 }
 
 public extension Realtime {
     
     struct SubscriptionRequest: Encodable {
-        var clientId: String
-        var subscriptions: [String]
+        public var clientId: String
+        public var subscriptions: [String]
     }
     
-    struct Connect: Decodable {
-        var clientId: String?
-    }
-
-    struct EventMessage<U: Decodable>: Decodable {
-        public var action: EventAction
-        public var record: U
-        public var retry: Bool?
-    }
-    
-    enum EventAction: String, Decodable {
-        case create
+    struct Connect: Decodable, Identifiable {
+        public var id: String?
+        public var clientId: String
     }
     
     enum Request: URLRequestConvertible {

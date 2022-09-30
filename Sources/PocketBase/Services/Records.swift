@@ -9,38 +9,27 @@ import Alamofire
 import AlamofireEventSource
 import Foundation
 
-public protocol Service: Actor {
-    var baseUrl: URL { get }
-    var interceptor: Interceptor? { get }
-    init(baseUrl: URL)
-}
-
-public extension Service {
-    /// Used to make HTTP requests.
-    var http: HTTP { HTTP() }
-    
-    var interceptor: Interceptor? {
-        UserBearerTokenPolicy().interceptor
-    }
-}
-
 /// An object used to interact with the PocketBase **Records API**.
 public actor Records: Service {
     
     /// The baseURL for all requests to PocketBase.
     public let baseUrl: URL
     
+    /// The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
+    public let interceptor: Interceptor
+    
     /// An object used to interact with the PocketBase **Records API**.
     /// - Parameters:
     ///  - baseUrl: The baseURL for all requests to PocketBase.
     ///  - interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
-    public init(baseUrl: URL) {
+    public init(baseUrl: URL, interceptor: Interceptor) {
         self.baseUrl = baseUrl
+        self.interceptor = interceptor
     }
     
     /// Returns a paginated collection Records list.
     ///
-    /// Depending on the collection's listRule value, the access to this action may or may not have been restricted.
+    /// Depending on the collection's `listRule` value, the access to this action may or may not have been restricted.
     /// - Parameters:
     ///   - collection: The collection name or id.
     ///   - page: The page of records.

@@ -53,17 +53,17 @@ public actor HTTP {
         }
     }
     
-    nonisolated func requestEventStream(
+    nonisolated func requestEventStream<T: Decodable>(
         baseUrl: URL,
         lastEventId: String?,
         interceptor: RequestInterceptor? = nil,
-        recievedMessage: @escaping (_ message: EventSourceMessage) async -> (),
-        recievedCompletion: ((_ completion: DataStreamRequest.Completion) async -> ())? = nil
+        recievedMessage: @escaping (_ message: Message<T>) async -> (),
+        recievedCompletion: @escaping (_ completion: DataStreamRequest.Completion) async -> ()
     ) {
         print("PocketBase:", "Requesting Event Stream:", "baseUrl:", baseUrl, "lastEventId:", lastEventId ?? "", "interceptor:", String(describing: interceptor.self))
         AF
             .eventSourceRequest(Realtime.Request.connect(baseUrl: baseUrl).url, lastEventID: lastEventId)
-            .responseEventSource { eventSource in
+            .responseDecodableEventSource(using: DecodableEventSourceSerializer<T>()) { eventSource in
                 switch eventSource.event {
                 case .message(let message):
                     Task {
@@ -71,7 +71,7 @@ public actor HTTP {
                     }
                 case .complete(let completion):
                     Task {
-                        await recievedCompletion?(completion)
+                        await recievedCompletion(completion)
                     }
                 }
             }

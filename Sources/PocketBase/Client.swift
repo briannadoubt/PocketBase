@@ -15,8 +15,11 @@ public struct Client: DynamicProperty {
     public var wrappedValue: PocketBase {
         pocketBase
     }
-    public init(_ baseUrl: URL?) {
-        _pocketBase = StateObject(wrappedValue: PocketBase(baseUrl!))
+    public init(_ baseUrl: URL? = nil) {
+        if baseUrl == nil {
+            UserDefaults.standard.removeObject(forKey: PocketBase.baseUrlUserDefaultsKey)
+        }
+        _pocketBase = StateObject(wrappedValue: PocketBase(PocketBase.baseUrl))
     }
 }
 #endif

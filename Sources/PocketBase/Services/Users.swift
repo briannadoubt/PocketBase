@@ -9,22 +9,19 @@ import Foundation
 import Alamofire
 
 /// An object used to interact with the PocketBase **Users API**.
-public actor Users {
-    
-    /// Used to make HTTP requests.
-    private let http = HTTP()
+public actor Users: Service {
     
     /// The baseURL for all requests to PocketBase.
-    private let baseUrl: URL
+    public let baseUrl: URL
     
     /// Used for retry policies and authorization headers.
-    private var interceptor: Interceptor?
+    public var interceptor: Interceptor
     
     /// An object used to interact with the PocketBase **Users API**.
     /// - Parameters:
     ///  - baseUrl: The baseURL for all requests to PocketBase.
     ///  - interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
-    init(baseUrl: URL, interceptor: Interceptor? = nil) {
+    public init(baseUrl: URL, interceptor: Interceptor) {
         self.baseUrl = baseUrl
         self.interceptor = interceptor
     }
@@ -151,7 +148,7 @@ public actor Users {
     ///   - password: The potential user's password.
     ///   - passwordConfirm: The potential user's password, confirmed.
     /// - Returns: A new user instance, if successful.
-    public func create<UserProfile: Model>(id: UUID?, email: String, password: String, passwordConfirm: String) async throws -> User<UserProfile> {
+    public func create<UserProfile: Model>(id: String?, email: String, password: String, passwordConfirm: String) async throws -> User<UserProfile> {
         try await http.request(Request.create(id: id, email: email, password: password, passwordConfirm: passwordConfirm))
     }
     
@@ -281,7 +278,7 @@ public actor Users {
         ///   - email: The potential user's email.
         ///   - password: The potential user's password.
         ///   - passwordConfirm: The potential user's password, confirmed.
-        case create(id: UUID?, email: String, password: String, passwordConfirm: String)
+        case create(id: String?, email: String, password: String, passwordConfirm: String)
         
         /// Update a single user model's email by its ID.
         ///
