@@ -155,7 +155,7 @@ struct LogoutButton: View {
 }
 ```
 
-Now, users can download records in other collections. So let's define another one. Just like the `AuthCollection`, this object should match the field schema shape of your authentication collection defined in your PocketBase admin console:
+Now, users can download records in other collections. So let's define another one. Just like the `AuthCollection`, this object should match the field schema shape of your base collection defined in your PocketBase admin console:
 
 ```swift
 @Model
