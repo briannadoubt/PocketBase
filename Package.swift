@@ -1,31 +1,87 @@
-// swift-tools-version: 5.7
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version: 6.0
 
 import PackageDescription
+import CompilerPluginSupport
 
 let package = Package(
     name: "PocketBase",
-    platforms: [.iOS(.v13), .macOS(.v13), .tvOS(.v13), .watchOS(.v6)],
+    platforms: [
+        .macOS(.v15),
+        .iOS(.v18),
+        .tvOS(.v18),
+        .watchOS(.v11),
+        .macCatalyst(.v18),
+        .visionOS(.v2),
+    ],
     products: [
-        // Products define the executables and libraries a package produces, and make them visible to other packages.
         .library(
             name: "PocketBase",
-            targets: ["PocketBase"]),
+            targets: ["PocketBase"]
+        ),
+        .library(
+            name: "PocketBaseUI",
+            targets: ["PocketBaseUI"]
+        ),
+        .library(
+            name: "DataBase",
+            targets: ["DataBase"]
+        ),
     ],
     dependencies: [
-        // Dependencies declare other packages that this package depends on.
-        .package(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", from: "4.0.0"),
-        .package(url: "https://github.com/Alamofire/Alamofire.git", .upToNextMajor(from: "5.6.1")),
-        .package(url: "https://github.com/briannadoubt/AlamofireEventSource.git", branch: "master")
+        .package(
+            url: "https://github.com/apple/swift-http-types.git",
+            .upToNextMajor(from: "1.0.0")
+        ),
+        .package(
+            url: "https://github.com/kishikawakatsumi/KeychainAccess.git",
+            .upToNextMajor(from: "4.0.0")
+        ),
+        .package(
+            url: "https://github.com/apple/swift-syntax",
+            "509.0.0"..<"601.0.0-prerelease"
+        ),
+        .package(
+            url: "https://github.com/apple/swift-async-algorithms.git",
+            .upToNextMajor(from: "1.0.0")
+        ),
+        .package(
+            url: "https://github.com/apple/swift-collections.git",
+            .upToNextMajor(from: "1.1.2")
+        ),
     ],
     targets: [
-        // Targets are the basic building blocks of a package. A target can define a module or a test suite.
-        // Targets can depend on other targets in this package, and on products in packages this package depends on.
+        .target(
+            name: "DataBase",
+            dependencies: ["PocketBase"]
+        ),
         .target(
             name: "PocketBase",
-            dependencies: ["Alamofire", "KeychainAccess", "AlamofireEventSource"]),
+            dependencies: [
+                "PocketBaseMacros",
+                .product(name: "KeychainAccess", package: "KeychainAccess"),
+                .product(name: "HTTPTypes", package: "swift-http-types"),
+                .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
+                .product(name: "Collections", package: "swift-collections")
+            ]
+        ),
+        .macro(
+            name: "PocketBaseMacros",
+            dependencies: [
+                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
+                .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
+            ]
+        ),
+        .target(
+            name: "PocketBaseUI",
+            dependencies: ["PocketBase"]
+        ),
         .testTarget(
             name: "PocketBaseTests",
-            dependencies: ["PocketBase"]),
+            dependencies: ["PocketBase"]
+        ),
+        .testTarget(
+            name: "PocketBaseIntegrationTests",
+            dependencies: ["PocketBase"]
+        ),
     ]
 )

@@ -2,98 +2,55 @@
 //  PocketBase.swift
 //  PocketBase
 //
-//  Created by Bri on 9/15/22.
+//  Created by Brianna Zamora on 8/2/24.
 //
 
-import Alamofire
-import Foundation
-#if canImport(SwiftUI)
-import SwiftUI
-#endif
+@_exported import Foundation
+import SwiftData
 
-/// A client for PocketBase.
-public class PocketBase: ObservableObject {
+/// Interface with PocketBase
+public actor PocketBase: Sendable {
+    public let url: URL
     
-    /// Optional language code (default to `en-US`) that will be sent with the requests to the server as `Accept-Language` header.
-    public var language: String?
+    public let authStore = AuthStore()
+    public let realtime: Realtime
     
-    static var shared = PocketBase(baseUrl)
+    let session: NetworkSession
     
-    public static let userDefaults = UserDefaults.standard
-    
-    private static let defaultBaseUrl = URL(string: "http://0.0.0.0:8090/")!
-    static let baseUrlUserDefaultsKey = "io.pocketbase.baseUrl"
-    
-    /// The base PocketBase backend url address (eg. 'http://0.0.0.0.8090').
-    public static var baseUrl: URL {
-        get {
-            userDefaults.url(forKey: baseUrlUserDefaultsKey) ?? defaultBaseUrl
-        }
-        set {
-            userDefaults.set(newValue, forKey: baseUrlUserDefaultsKey)
-        }
+    public init(url: URL, session: NetworkSession = URLSession.shared) {
+        self.url = url
+        self.realtime = Realtime(baseUrl: url)
+        self.session = session
+        Self.set(url: url)
     }
     
-    /// An instance of the service that handles the **Admin APIs**.
-//    public let admins: Admins TODO: Implement Admins
+    public init(
+        fromStoredURL url: URL = {
+            guard let url = UserDefaults.pocketbase?.url(forKey: PocketBase.urlKey) else {
+                preconditionFailure("Please configure a PocketBase URL in UserDefaults with the key \"io.pocketbase.url\". This can be accomplished using `PocketBase.set(url:)`, creating your own instance with `PocketBase(url:)`, or by setting the PocketBase instance within the app’s SwiftUI environment with `.pocketbase(url:)`. By default, localhost is used if no URL is configured.")
+            }
+            return url
+        }()
+    ) {
+        self.init(url: url)
+    }
     
-    /// An instance of the service that handles the **User APIs**.
-    public var users: Users?
-    
-    /// An instance of the service that handles the **Collection APIs**.
-//    public let collections: Collections TODO: Implement Collections
-    
-    /// An instance of the service that handles the **Record APIs**.
-    public var records: Records
-    
-    public var realtime: Realtime
-    
-    /// An instance of the service that handles uploading and dowloading files.
-//    public let files: Files
-    
-    /// An instance of the service that handles the **Log APIs**.
-//    public let logs: Logs TODO: Implement Logs
-    
-    /// An instance of the service that handles the **Settings APIs**.
-//    public let settings: Settings TODO: Implement Settings
-    
-    /// Create a new PocketBase client instance.
-    public init(_ baseUrl: URL, interceptor: Interceptor = UserBearerTokenPolicy().interceptor) {
-        Self.baseUrl = baseUrl
-        if #available(iOS 16, macOS 13, watchOS 9, tvOS 16, *) {
-            language = Locale.current.language.languageCode?.identifier
-        } else {
-            language = Locale.current.languageCode
-        }
-        self.users = Users(baseUrl: baseUrl, interceptor: interceptor)
-        self.records = Records(baseUrl: baseUrl, interceptor: interceptor)
-        self.realtime = Realtime(baseUrl: baseUrl, interceptor: interceptor)
+    public func collection<T: Record>(_ type: T.Type) -> RecordCollection<T> {
+        RecordCollection(T.collection, self)
     }
 }
 
-public protocol BaseModel: Codable {
-    var id: String? { get set }
-    var created: String? { get set }
-    var updated: String? { get set }
-}
-
-extension BaseModel {
-    public var isNew: Bool { id == nil }
-    public func export() -> Any {
-        return self
+extension PocketBase {
+    public static let localhost = PocketBase(url: URL.localhost)
+    
+    public static func set(url: URL) {
+        UserDefaults.pocketbase?.set(url, forKey: Self.urlKey)
     }
+    
+    public static let urlKey: String = "io.pocketbase.url"
+    public static let lastEventKey: String = "io.pocketbase.lastEvent"
 }
 
-public protocol Model: BaseModel {
-    var collectionId: String? { get set }
-    var collectionName: String? { get set }
-    var expand: String? { get set }
-}
-
-public struct ListResult<T: Codable>: Decodable {
-    public let page: Int
-    public let perPage: Int
-    public let totalItems: Int
-    public let totalPages: Int?
-    public let items: [T]
+extension URL {
+    public static let localhost = URL(string: "http://localhost:8090")!
 }
