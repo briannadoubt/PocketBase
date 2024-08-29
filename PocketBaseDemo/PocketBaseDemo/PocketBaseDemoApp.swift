@@ -21,6 +21,6 @@ struct PocketBaseDemoApp: App {
                     )
                 }
         }
-//        .pocketbase(.localhost)
+        .pocketbase(.localhost)
     }
 }
