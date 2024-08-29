@@ -18,7 +18,7 @@ final class User: @unchecked Sendable {
 
 @Model
 @BaseCollection("rawrs")
-final class Rawr: Sendable {
+final class Rawr: @unchecked Sendable {
     var field: String = ""
     @Relationship var user: User?
     init() {}

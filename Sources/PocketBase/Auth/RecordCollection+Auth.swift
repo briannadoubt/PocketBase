@@ -32,7 +32,7 @@ extension RecordCollection where T: AuthRecord {
 
     public enum AuthMethod {
         case identity(
-            _ username: String,
+            _ identity: String,
             password: String,
             expand: [String] = [],
             fields: [String] = []

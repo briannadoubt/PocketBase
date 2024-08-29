@@ -9,7 +9,7 @@
 import SwiftData
 
 /// Interface with PocketBase
-public actor PocketBase: Sendable {
+public struct PocketBase: Sendable {
     public let url: URL
     
     public let authStore = AuthStore()
