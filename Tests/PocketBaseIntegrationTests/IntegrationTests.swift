@@ -9,20 +9,18 @@ import PocketBase
 import Testing
 import SwiftData
 
-@Model
 @AuthCollection("users")
-final class User {
+struct User {
     init(username: String) {
         self.username = username
     }
 }
 
-@Model
 @BaseCollection("posts")
-final class Post {
+struct Post {
     var title: String
     
-    @Relationship var owner: User?
+    @Relation var owner: User?
     
     init(title: String) {
         self.title = title

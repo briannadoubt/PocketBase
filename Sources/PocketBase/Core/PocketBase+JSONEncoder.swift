@@ -8,7 +8,7 @@
 import Foundation
 
 extension PocketBase {
-    final public class JSONEncoder: Foundation.JSONEncoder, @unchecked Sendable {
+    final public class JSONEncoder: Foundation.JSONEncoder {
         public override func encode<T: Encodable>(_ value: T) throws -> Data {
             let encoder = Encoder()
             try value.encode(to: encoder)
@@ -27,6 +27,7 @@ extension PocketBase {
             "updated",
             "emailVisibility",
             "verified",
+            "expand",
         ]
         
         var encodedData: Data {

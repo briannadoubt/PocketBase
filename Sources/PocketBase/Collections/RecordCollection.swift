@@ -25,8 +25,21 @@ public struct RecordCollection<T: Record>: Identifiable, NetworkInterfacing, Sen
     
     let collection: String
     
-    public let encoder: JSONEncoder = PocketBase.JSONEncoder()
-    public let decoder: JSONDecoder = PocketBase.JSONDecoder()
+    public let encoder: JSONEncoder = {
+        let encoder = PocketBase.JSONEncoder()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+        encoder.dateEncodingStrategy = .formatted(formatter)
+        return encoder
+    }()
+
+    public let decoder: JSONDecoder = {
+        let encoder = PocketBase.JSONDecoder()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+        encoder.dateDecodingStrategy = .formatted(formatter)
+        return encoder
+    }()
     
     public init(
         _ collection: String,

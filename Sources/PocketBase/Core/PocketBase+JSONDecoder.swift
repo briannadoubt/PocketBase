@@ -8,8 +8,8 @@
 import Foundation
 
 extension PocketBase {
-    class JSONDecoder: Foundation.JSONDecoder, @unchecked Sendable {
-        override func decode<T>(_ type: T.Type, from data: Data) throws -> T where T : Decodable {
+    public class JSONDecoder: Foundation.JSONDecoder, @unchecked Sendable {
+        public override func decode<T>(_ type: T.Type, from data: Data) throws -> T where T : Decodable {
             let topLevelDecoder = try super.decode(TopLevelDecoder.self, from: data)
             let pocketBaseDecoder = Decoder(decoder: topLevelDecoder.decoder)
             return try T(from: pocketBaseDecoder)

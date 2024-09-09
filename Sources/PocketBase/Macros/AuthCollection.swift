@@ -21,6 +21,8 @@
         named(username),
         named(email),
         named(CodingKeys),
+        named(relations),
+        named(init),
         named(init(from:)),
         named(encode(to:))
 )

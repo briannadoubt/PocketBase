@@ -113,6 +113,32 @@ public extension RecordCollection where T: BaseRecord {
             self.totalPages = totalPages
             self.items = items
         }
+        
+        enum CodingKeys: String, CodingKey {
+            case page
+            case perPage
+            case totalItems
+            case totalPages
+            case items
+        }
+        
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            self.page = try container.decode(Int.self, forKey: .page)
+            self.perPage = try container.decode(Int.self, forKey: .perPage)
+            self.totalItems = try container.decode(Int.self, forKey: .totalItems)
+            self.totalPages = Int(ceil(Double(totalItems) / Double(perPage)))
+            self.items = try container.decode([T].self, forKey: .items)
+        }
+        
+        public func encode(to encoder: any Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(self.page, forKey: .page)
+            try container.encode(self.perPage, forKey: .perPage)
+            try container.encode(self.totalItems, forKey: .totalItems)
+            try container.encode(self.totalPages, forKey: .totalPages)
+            try container.encode(self.items, forKey: .items)
+        }
     }
 }
 

@@ -15,7 +15,7 @@ public struct Filter: ExpressionMacro {
         in context: some MacroExpansionContext
     ) throws -> ExprSyntax {
         guard
-            let operationClosure = node.arguments.first?
+            let operationClosure = node.argumentList.first?
                 .expression
                 .as(ClosureExprSyntax.self)
         else {

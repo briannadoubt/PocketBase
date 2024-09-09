@@ -40,7 +40,7 @@ struct ContentView: View {
                 Button("New", systemImage: "plus") {
                     Task {
                         do {
-                            try await pocketbase.collection(Rawr.self).create(Rawr(field: ""))
+                            try await pocketbase.collection(Rawr.self).create(Rawr(field: "", owner: ""))
                         } catch {
                             Self.logger.error("Failed to create record with error \(error)")
                         }

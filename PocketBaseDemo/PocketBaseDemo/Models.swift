@@ -8,10 +8,22 @@
 import PocketBase
 
 @AuthCollection("users")
-struct User {}
+struct User {
+    init(username: String, email: String?) {
+        self.username = username
+        self.email = email
+    }
+}
+
+@BaseCollection("posts")
+struct Post {
+    var title: String
+    var body: String
+    @Relation var author: User?
+}
 
 @BaseCollection("rawrs")
 struct Rawr {
     var field: String
-    @Relation var owner: User
+    @Relation var owner: User?
 }

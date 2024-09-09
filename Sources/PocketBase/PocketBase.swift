@@ -6,7 +6,6 @@
 //
 
 @_exported import Foundation
-import SwiftData
 
 /// Interface with PocketBase
 public struct PocketBase: Sendable {
