@@ -14,7 +14,6 @@ extension RecordCollection where T: BaseRecord {
         try await post(
             path: "/api/realtime",
             headers: headers,
-            encoder: JSONEncoder(),
             body: SubscriptionRequest(
                 clientId: clientId,
                 subscriptions: [path]

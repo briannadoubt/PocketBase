@@ -24,8 +24,9 @@
         named(relations),
         named(init),
         named(init(from:)),
-        named(encode(to:)),
-        named(Expand)
+        named(encode(to:configuration:)),
+        named(Expand),
+        named(EncodingConfiguration)
 )
 @attached(
     extension,

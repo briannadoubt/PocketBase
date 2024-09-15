@@ -8,6 +8,7 @@
 import PocketBase
 import Testing
 import SwiftData
+import Foundation
 
 @AuthCollection("users")
 struct User {
@@ -18,14 +19,14 @@ struct User {
 struct Post {
     var title: String
     @Relation var owner: User?
-//    @Relation var tags: [Tag]?
+    @Relation var tags: [Tag]?
 }
 
-//@BaseCollection("tags")
-//struct Tag {
-//    var name: String
-//    @BackRelation var posts: [Post] = []
-//}
+@BaseCollection("tags")
+struct Tag {
+    var name: String
+    @BackRelation var posts: [Post] = []
+}
 
 extension Testing.Tag {
     @Tag static var integration: Self

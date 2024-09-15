@@ -46,7 +46,7 @@ extension RecordCollectionMacro {
         }
         members.append(DeclSyntax(memberwiseInit(variables)))
         members.append(DeclSyntax(try initFromDecoder(node, variables)))
-        members.append(DeclSyntax(try encodeToEncoder(node, variables)))
+        members.append(DeclSyntax(try encodeToEncoderWithConfiguration(node, variables)))
         members.append(DeclSyntax(try relations(variables)))
         members.append(DeclSyntax(try codingKeysEnum(node, variables)))
         if hasRelations(variables) {
@@ -284,32 +284,35 @@ extension RecordCollectionMacro {
             "updated"
         ]
         for variable in variables {
-            if keysToSkipEncoding.contains(variable.name.text) == false {
-                switch variable.relation {
-                case .none:
-                    members.append("try container.encode(\(variable.name), forKey: .\(variable.name))")
-                case .single:
-                    members.append("try container.encode(_\(variable.name)Id, forKey: .\(variable.name))")
-                case .multiple:
-                    members.append("try container.encode(_\(variable.name)Ids, forKey: .\(variable.name))")
-                case .backwards:
-                    continue
-                }
+            if keysToSkipEncoding.contains(variable.name.text) {
+                continue
+            }
+            switch variable.relation {
+            case .none:
+                members.append("try container.encode(\(variable.name), forKey: .\(variable.name))")
+            case .single:
+                members.append("try container.encode(_\(variable.name)Id, forKey: .\(variable.name))")
+            case .multiple:
+                members.append("try container.encode(_\(variable.name)Ids, forKey: .\(variable.name))")
+            case .backwards:
+                continue
             }
         }
         return members
     }
     
-    static func encodeToEncoder(_ node: AttributeSyntax, _ variables: [Variable]) throws -> FunctionDeclSyntax {
-        try FunctionDeclSyntax("func encode(to encoder: Encoder) throws") {
+    static func encodeToEncoderWithConfiguration(_ node: AttributeSyntax, _ variables: [Variable]) throws -> FunctionDeclSyntax {
+        try FunctionDeclSyntax("func encode(to encoder: Encoder, configuration: RecordCollectionEncodingConfiguration) throws") {
             "var container = encoder.container(keyedBy: CodingKeys.self)"
         
             "// BaseRecord fields"
-            "try container.encode(id, forKey: .id)"
-            "try container.encode(collectionName, forKey: .collectionName)"
-            "try container.encode(collectionId, forKey: .collectionId)"
-            "try container.encode(created, forKey: .created)"
-            "try container.encode(updated, forKey: .updated)"
+            try IfExprSyntax("if configuration == .cache") {
+                "try container.encode(id, forKey: .id)"
+                "try container.encode(collectionName, forKey: .collectionName)"
+                "try container.encode(collectionId, forKey: .collectionId)"
+                "try container.encode(created, forKey: .created)"
+                "try container.encode(updated, forKey: .updated)"
+            }
         
             "// Declared fields"
             encodeToEncoderMembers(variables)
@@ -324,11 +327,12 @@ extension RecordCollectionMacro {
             "var collectionName: String = \"\"",
             "var created: Date = Date.distantPast",
             "var updated: Date = Date.distantPast",
+            "typealias EncodingConfiguration = RecordCollectionEncodingConfiguration"
         ]
     }
     
     static func expandStruct(_ variables: [Variable]) throws -> StructDeclSyntax {
-        try StructDeclSyntax("struct Expand: Codable") {
+        try StructDeclSyntax("struct Expand: Decodable, EncodableWithConfiguration") {
             for variable in variables where variable.relation != .none {
                 switch variable.relation {
                 case .none: 
@@ -342,6 +346,29 @@ extension RecordCollectionMacro {
                 }
             }
             try expandStructCodingKeys(variables)
+            try expandEncodeToEncoderWithConfiguration(variables)
+        }
+    }
+    
+    static func expandEncodeToEncoderWithConfiguration(_ variables: [Variable]) throws -> FunctionDeclSyntax {
+        try FunctionDeclSyntax(
+            "func encode(to encoder: Encoder, configuration: RecordCollectionEncodingConfiguration) throws"
+        ) {
+            "var container = encoder.container(keyedBy: CodingKeys.self)"
+            for variable in variables where variable.relation != .none {
+                switch variable.relation {
+                case .none:
+                    ""
+                case .single:
+                    "try container.encode(\(variable.name), forKey: .\(variable.name), configuration: configuration)"
+                case .multiple:
+                    "try container.encode(\(variable.name), forKey: .\(variable.name), configuration: configuration)"
+                case .backwards:
+                    try IfExprSyntax.init("if configuration == .cache") {
+                        "try container.encode(\(variable.name), forKey: .\(variable.name), configuration: configuration)"
+                    }
+                }
+            }
         }
     }
     

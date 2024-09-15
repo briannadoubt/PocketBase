@@ -20,7 +20,10 @@
         named(init),
         named(encode),
         named(relations),
-        named(Expand)
+        named(Expand),
+        named(init(from:)),
+        named(encode(to:configuration:)),
+        named(EncodingConfiguration)
 )
 @attached(
     extension,

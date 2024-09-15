@@ -24,7 +24,7 @@ public struct AuthStore: Sendable {
         Keychain()["token"] = token
     }
     
-    public func record<T: AuthRecord>() throws -> T? {
+    public func record<T: AuthRecord>() throws -> T? where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         guard let data = UserDefaults.pocketbase?.value(forKey: "record") as? Data else {
             return nil
         }
@@ -32,9 +32,9 @@ public struct AuthStore: Sendable {
         return record
     }
     
-    func set<T: AuthRecord>(_ response: AuthResponse<T>) throws {
+    func set<T: AuthRecord>(_ response: AuthResponse<T>) throws where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         // Don't use the internal PocketBase encoder becuase this will skip keys that are intended to be set by the server.
-        let data = try JSONEncoder().encode(response)
+        let data = try JSONEncoder().encode(response, configuration: .cache)
         UserDefaults.pocketbase?.setValue(data, forKey: "record")
     }
     

@@ -5,7 +5,7 @@
 //  Created by Brianna Zamora on 8/7/24.
 //
 
-extension RecordCollection where T: AuthRecord {
+extension RecordCollection where T: AuthRecord, T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     public func login(with method: AuthMethod) async throws -> T {
         switch method {
         case .identity(let identity, let password, let expand, let fields):

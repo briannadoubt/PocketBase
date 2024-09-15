@@ -9,7 +9,7 @@ import Foundation
 
 public extension RecordCollection where T: AuthRecord {
     @Sendable
-    func authWithOAuth2<CreateData: Encodable>(
+    func authWithOAuth2<CreateData: EncodableWithConfiguration>(
         provider: String,
         code: String,
         codeVerifier: String,

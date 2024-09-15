@@ -32,7 +32,7 @@ public extension RecordCollection {
         _ record: T,
         expand: [String] = [],
         fields: [String] = []
-    ) async throws -> T {
+    ) async throws -> T where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         try await patch(
             path: PocketBase.recordPath(collection, record.id),
             query: {

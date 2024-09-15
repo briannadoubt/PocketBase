@@ -58,19 +58,33 @@ extension NetworkInterfacing {
         )
     }
     
-    func post<Body: Encodable>(
+    func post<Body: EncodableWithConfiguration>(
         path: String,
         query: [URLQueryItem] = [],
         headers: HTTPFields,
-        encoder: JSONEncoder? = nil,
         body: Body
+    ) async throws where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+        try await execute(
+            method: .post,
+            path: path,
+            query: query,
+            headers: headers,
+            body: self.encoder.encode(body, configuration: .remote)
+        )
+    }
+    
+    func post(
+        path: String,
+        query: [URLQueryItem] = [],
+        headers: HTTPFields,
+        body: any Encodable & Sendable
     ) async throws {
         try await execute(
             method: .post,
             path: path,
             query: query,
             headers: headers,
-            body: (encoder ?? self.encoder).encode(body)
+            body: self.encoder.encode(body)
         )
     }
     
@@ -90,18 +104,18 @@ extension NetworkInterfacing {
         )
     }
     
-    func post<Response: Decodable & Sendable>(
+    func post<Response: Decodable & Sendable, Body: EncodableWithConfiguration & Sendable>(
         path: String,
         query: [URLQueryItem] = [],
         headers: HTTPFields,
-        body: any Encodable & Sendable
-    ) async throws -> Response {
+        body: Body
+    ) async throws -> Response where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         let response = try await execute(
             method: .post,
             path: path,
             query: query,
             headers: headers,
-            body: encoder.encode(body)
+            body: encoder.encode(body, configuration: .remote)
         )
         return try decoder.decode(Response.self, from: response)
     }
@@ -182,6 +196,24 @@ extension NetworkInterfacing {
                 query: query,
                 headers: headers,
                 body: encoder.encode(body)
+            )
+        )
+    }
+    
+    func patch<Body: EncodableWithConfiguration, Response: Decodable>(
+        path: String,
+        query: [URLQueryItem] = [],
+        headers: HTTPFields,
+        body: Body
+    ) async throws -> Response where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+        try await decoder.decode(
+            Response.self,
+            from: execute(
+                method: .patch,
+                path: path,
+                query: query,
+                headers: headers,
+                body: encoder.encode(body, configuration: .remote)
             )
         )
     }

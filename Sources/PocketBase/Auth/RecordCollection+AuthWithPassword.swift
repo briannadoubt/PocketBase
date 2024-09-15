@@ -24,7 +24,7 @@ public extension RecordCollection where T: AuthRecord {
         password: String,
         expand: [String] = [],
         fields: [String] = []
-    ) async throws -> AuthResponse<T> {
+    ) async throws -> AuthResponse<T> where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         let response: AuthResponse<T> = try await post(
             path: PocketBase.collectionPath(collection) + "auth-with-password",
             query: {
@@ -44,7 +44,20 @@ public extension RecordCollection where T: AuthRecord {
         return response
     }
     
-    private struct AuthWithPasswordBody: Encodable {
+    private struct AuthWithPasswordBody: EncodableWithConfiguration {
+        func encode(to encoder: any Encoder, configuration: RecordCollectionEncodingConfiguration) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(identity, forKey: .identity)
+            try container.encode(password, forKey: .identity)
+        }
+        
+        enum CodingKeys: String, CodingKey {
+            case identity
+            case password
+        }
+        
+        typealias EncodingConfiguration = RecordCollectionEncodingConfiguration
+        
         var identity: String
         var password: String
     }

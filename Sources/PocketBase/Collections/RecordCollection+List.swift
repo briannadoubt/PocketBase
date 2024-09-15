@@ -8,7 +8,7 @@
 import Foundation
 import Collections
 
-public extension RecordCollection where T: BaseRecord {
+public extension RecordCollection where T: BaseRecord, T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     /// Returns a paginated records list, supporting sorting and filtering.
     ///
     /// Depending on the collection's listRule value, the access to this action may or may not have been restricted.
@@ -93,7 +93,9 @@ public extension RecordCollection where T: BaseRecord {
         )
     }
     
-    struct ListResponse: Codable, Sendable {
+    struct ListResponse: Decodable, EncodableWithConfiguration, Sendable {
+        public typealias EncodingConfiguration = RecordCollectionEncodingConfiguration
+        
         public var page: Int
         public var perPage: Int
         public var totalItems: Int
@@ -131,13 +133,13 @@ public extension RecordCollection where T: BaseRecord {
             self.items = try container.decode([T].self, forKey: .items)
         }
         
-        public func encode(to encoder: any Encoder) throws {
+        public func encode(to encoder: any Encoder, configuration: RecordCollectionEncodingConfiguration) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(self.page, forKey: .page)
             try container.encode(self.perPage, forKey: .perPage)
             try container.encode(self.totalItems, forKey: .totalItems)
             try container.encode(self.totalPages, forKey: .totalPages)
-            try container.encode(self.items, forKey: .items)
+            try container.encode(self.items, forKey: .items, configuration: configuration)
         }
     }
 }

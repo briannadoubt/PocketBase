@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol Record: Identifiable, Codable, Sendable, Equatable, Hashable {
+public protocol Record: Identifiable, Decodable, EncodableWithConfiguration, Sendable, Equatable, Hashable {
     /// 15 characters string to store as record ID.
     ///
     /// If not set, it will be auto generated when it is created.
@@ -18,6 +18,8 @@ public protocol Record: Identifiable, Codable, Sendable, Equatable, Hashable {
     var updated: Date { get }
 
     static var collection: String { get }
+    
+    associatedtype EncodingConfiguration = RecordCollectionEncodingConfiguration
 }
 
 public protocol BaseRecord: Record {}

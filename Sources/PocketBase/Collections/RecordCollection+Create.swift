@@ -32,7 +32,7 @@ public extension RecordCollection {
         _ record: T,
         expand: [String] = [],
         fields: [String] = []
-    ) async throws -> T {
+    ) async throws -> T where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         try await post(
             path: PocketBase.recordsPath(collection),
             query: {
@@ -78,7 +78,7 @@ public extension RecordCollection where T: AuthRecord {
         passwordConfirm: String,
         expand: [String] = [],
         fields: [String] = []
-    ) async throws -> T {
+    ) async throws -> T where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         let body = try record.createBody(
             password: password,
             passwordConfirm: passwordConfirm,
@@ -106,14 +106,14 @@ public extension RecordCollection where T: AuthRecord {
     }
 }
 
-extension AuthRecord {
+extension AuthRecord where EncodingConfiguration == RecordCollectionEncodingConfiguration {
     func createBody(
         password: String,
         passwordConfirm: String,
         encoder: JSONEncoder
     ) throws -> Data {
         guard var recordData = try JSONSerialization.jsonObject(
-            with: encoder.encode(self)
+            with: encoder.encode(self, configuration: .remote)
         ) as? [String: Any] else {
             fatalError("The record must be serializable into a dictionary.")
         }

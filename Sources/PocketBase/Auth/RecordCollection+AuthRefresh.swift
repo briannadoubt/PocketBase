@@ -13,7 +13,7 @@ public extension RecordCollection where T: AuthRecord {
     func authRefresh(
         expand: [String] = [],
         fields: [String] = []
-    ) async throws -> AuthResponse<T> {
+    ) async throws -> AuthResponse<T> where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         do {
             let response: AuthResponse<T> = try await post(
                 path: PocketBase.collectionPath(collection) + "auth-refresh",
