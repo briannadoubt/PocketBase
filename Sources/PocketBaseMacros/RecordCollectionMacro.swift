@@ -168,7 +168,7 @@ extension RecordCollectionMacro {
             if isAuthCollection(node) {
                 "// Auth Collection Fields"
                 "username = try container.decode(String.self, forKey: .username)"
-                "email = try container.decode(String?.self, forKey: .email)"
+                "email = try container.decodeIfPresent(String.self, forKey: .email)"
                 "verified = try container.decode(Bool.self, forKey: .verified)"
                 "emailVisibility = try container.decode(Bool.self, forKey: .emailVisibility)"
             }
@@ -199,62 +199,58 @@ extension RecordCollectionMacro {
         }
     }
     
+    static func relationsDictionaryElements(_ variables: [Variable]) -> [DictionaryElementSyntax] {
+        var elements: [DictionaryElementSyntax] = []
+        for variable in variables {
+            switch variable.relation {
+            case .none:
+                continue
+            case .single:
+                elements.append(
+                    DictionaryElementSyntax(
+                        key: StringLiteralExprSyntax(content: "\(variable.name)"),
+                        value: MemberAccessExprSyntax(
+                            base: DeclReferenceExprSyntax(
+                                baseName: "\(variable.type)"
+                            ),
+                            name: .keyword(.self)
+                        )
+                    )
+                )
+            case .multiple:
+                elements.append(
+                    DictionaryElementSyntax(
+                        key: StringLiteralExprSyntax(content: "\(variable.name)"),
+                        value: MemberAccessExprSyntax(
+                            base: DeclReferenceExprSyntax(
+                                baseName: "\(variable.type)"
+                            ),
+                            name: .keyword(.self)
+                        )
+                    )
+                )
+            case .backwards:
+                elements.append(
+                    DictionaryElementSyntax(
+                        key: collectionBackRelationStringInterpolation(variable: variable),
+                        value: MemberAccessExprSyntax(
+                            base: DeclReferenceExprSyntax(
+                                baseName: "\(variable.type)"
+                            ),
+                            name: .keyword(.self)
+                        )
+                    )
+                )
+            }
+        }
+        return elements
+    }
+    
     static func relations(_ variables: [Variable]) throws -> VariableDeclSyntax {
         try VariableDeclSyntax("static var relations: [String: any Record.Type]") {
-            DictionaryExprSyntax(
-                contentBuilder: {
-                    for variable in variables {
-                        switch variable.relation {
-                        case .none:
-                            .init()
-                        case .single:
-                            DictionaryElementSyntax(
-                                key: StringLiteralExprSyntax(content: "\(variable.name)"),
-                                value: MemberAccessExprSyntax(
-                                    base: DeclReferenceExprSyntax(
-                                        baseName: "\(variable.type)"
-                                    ),
-                                    name: .keyword(.self)
-                                )
-                            )
-                        case .multiple:
-                            if let elementType = variable
-                                .type
-                                .as(OptionalTypeSyntax.self)?
-                                .wrappedType
-                                .as(ArrayTypeSyntax.self)?
-                                .element
-                            {
-                                DictionaryElementSyntax(
-                                    key: StringLiteralExprSyntax(content: "\(variable.name)"),
-                                    value: MemberAccessExprSyntax(
-                                        base: DeclReferenceExprSyntax(
-                                            baseName: "\(elementType)"
-                                        ),
-                                        name: .keyword(.self)
-                                    )
-                                )
-                            }
-                        case .backwards:
-                            if let elementType = variable
-                                .type
-                                .as(ArrayTypeSyntax.self)?
-                                .element
-                            {
-                                DictionaryElementSyntax(
-                                    key: StringLiteralExprSyntax(content: "\(variable.name)"),
-                                    value: MemberAccessExprSyntax(
-                                        base: DeclReferenceExprSyntax(
-                                            baseName: "\(elementType)"
-                                        ),
-                                        name: .keyword(.self)
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-            )
+            DictionaryExprSyntax {
+                relationsDictionaryElements(variables)
+            }
         }
     }
     
@@ -390,27 +386,7 @@ extension RecordCollectionMacro {
                                         SwitchCaseSyntax("case .\(variable.name):") {
                                             CodeBlockItemListSyntax {
                                                 if variable.relation == .backwards {
-                                                    StringLiteralExprSyntax(
-                                                        openingQuote: TokenSyntax.stringQuoteToken(),
-                                                        segments: StringLiteralSegmentListSyntax {
-                                                            ExpressionSegmentSyntax(
-                                                                expressions: LabeledExprListSyntax {
-                                                                    LabeledExprSyntax(
-                                                                        expression: MemberAccessExprSyntax(
-                                                                            base: DeclReferenceExprSyntax(
-                                                                                baseName: "\(variable.type)"
-                                                                            ),
-                                                                            name: "collection"
-                                                                        )
-                                                                    )
-                                                                }
-                                                            )
-                                                            StringSegmentSyntax(
-                                                                content: "_via_\(variable.name)"
-                                                            )
-                                                        },
-                                                        closingQuote: TokenSyntax.stringQuoteToken()
-                                                    )
+                                                    collectionBackRelationStringInterpolation(variable: variable)
                                                 } else {
                                                     StringLiteralExprSyntax(content: "\(variable.name)")
                                                 }
@@ -424,6 +400,39 @@ extension RecordCollectionMacro {
                 )
             )
         }
+    }
+    
+    static func collectionBackRelationStringInterpolation(variable: Variable) -> StringLiteralExprSyntax {
+        StringLiteralExprSyntax(
+            openingQuote: .stringQuoteToken(),
+            segments: StringLiteralSegmentListSyntax {
+                ExpressionSegmentSyntax(
+                    expressions: LabeledExprListSyntax {
+                        LabeledExprSyntax(
+                            expression: MemberAccessExprSyntax(
+                                base: DeclReferenceExprSyntax(
+                                    baseName: "\(variable.type)"
+                                ),
+                                name: "collection"
+                            )
+                        )
+                    }
+                )
+                StringSegmentSyntax(
+                    content: TokenSyntax.stringSegment(
+                        "_via_",
+                        trailingTrivia: []
+                    )
+                )
+                StringSegmentSyntax(
+                    content: TokenSyntax.stringSegment(
+                        "\(variable.name.trimmed)",
+                        trailingTrivia: []
+                    )
+                )
+            },
+            closingQuote: .stringQuoteToken()
+        )
     }
     
     static func expandStructCodingKeys(_ variables: [Variable]) throws -> EnumDeclSyntax {

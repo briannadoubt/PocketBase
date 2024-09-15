@@ -20,6 +20,7 @@ struct Post {
     var title: String
     @Relation var owner: User?
     @Relation var tags: [Tag]?
+    @BackRelation var comments: [Comment] = []
 }
 
 @BaseCollection("tags")
@@ -28,6 +29,12 @@ struct Tag {
     @BackRelation var posts: [Post] = []
 }
 
+@BaseCollection("comments")
+struct Comment {
+    var text: String
+    @Relation var post: Post?
+    @Relation var author: User?
+}
 extension Testing.Tag {
     @Tag static var integration: Self
     @Tag static var localhostRequired: Self

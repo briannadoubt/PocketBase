@@ -23,23 +23,23 @@ struct Variable {
     var isOptionalRelationship: Bool
     
     init(_ variable: VariableDeclSyntax) throws {
-        guard let name = variable.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier else {
+        guard let name = variable.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmed else {
             throw VariableError.missingName
         }
         self.name = name
-        guard let type = variable.bindings.first?.typeAnnotation?.type else {
+        guard let type = variable.bindings.first?.typeAnnotation?.type.trimmed else {
             throw VariableError.missingType
         }
         if let array = type.as(ArrayTypeSyntax.self) {
-            self.type = array.element
+            self.type = array.element.trimmed
         } else if let optional = type.as(OptionalTypeSyntax.self) {
             if let array = optional.wrappedType.as(ArrayTypeSyntax.self) {
-                self.type = array.element
+                self.type = array.element.trimmed
             } else {
-                self.type = optional.wrappedType
+                self.type = optional.wrappedType.trimmed
             }
         } else {
-            self.type = type
+            self.type = type.trimmed
         }
         self.isArray = type.isOptional(ArrayTypeSyntax.self)
         self.isDate = type.hasTypeIdentifier("Date")
