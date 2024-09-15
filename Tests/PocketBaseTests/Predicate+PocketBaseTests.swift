@@ -9,26 +9,14 @@
 import Testing
 import SwiftData
 
-@Model
 @BaseCollection("rawrs")
-final class Rawr: @unchecked Sendable {
+struct Rawr {
     var field: String = ""
-    init() {}
 }
 
-@Test(
-    "Test the #Filter macro output",
-    arguments: zip(
-        [
-            #Filter<Rawr>({ $0.field == "rawr" && $0.field ~ "meow" || $0.field ~= "woof" })
-        ],
-        [
-            Filter(rawValue: "(field=\'rawr\'&&field~\'meow\'||field~=\'woof\')")
-        ]
-    )
-)
-func filter(filter: Filter, expected: Filter) async throws {
-    #expect(filter == expected)
+@Test("Test the #Filter macro output")
+func filter() async throws {
+    #expect(#Filter<Rawr>({ $0.field == "rawr" && $0.field ~ "meow" || $0.field ~= "woof" }) == Filter(rawValue: "(field=\'rawr\'&&field~\'meow\'||field~=\'woof\')"))
 }
 
 @Test func sort() async throws {

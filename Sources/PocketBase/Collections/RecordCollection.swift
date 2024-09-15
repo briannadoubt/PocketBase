@@ -8,7 +8,7 @@
 import Foundation
 internal import HTTPTypes
 
-public struct RecordCollection<T: Record>: Identifiable, NetworkInterfacing, Sendable {
+public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
     public var baseURL: URL {
         pocketbase.url
     }
@@ -19,14 +19,10 @@ public struct RecordCollection<T: Record>: Identifiable, NetworkInterfacing, Sen
         pocketbase.session
     }
     
-    public var id: String {
-        collection
-    }
-    
     let collection: String
     
     public let encoder: JSONEncoder = {
-        let encoder = PocketBase.JSONEncoder()
+        let encoder = JSONEncoder()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
         encoder.dateEncodingStrategy = .formatted(formatter)
@@ -34,7 +30,7 @@ public struct RecordCollection<T: Record>: Identifiable, NetworkInterfacing, Sen
     }()
 
     public let decoder: JSONDecoder = {
-        let encoder = PocketBase.JSONDecoder()
+        let encoder = JSONDecoder()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
         encoder.dateDecodingStrategy = .formatted(formatter)

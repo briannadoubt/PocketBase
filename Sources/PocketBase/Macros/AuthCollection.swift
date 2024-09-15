@@ -24,10 +24,11 @@
         named(relations),
         named(init),
         named(init(from:)),
-        named(encode(to:))
+        named(encode(to:)),
+        named(Expand)
 )
 @attached(
     extension,
-    conformances: AuthRecord, Codable
+    conformances: AuthRecord
 )
 public macro AuthCollection(_ collectionName: String) = #externalMacro(module: "PocketBaseMacros", type: "AuthCollection")

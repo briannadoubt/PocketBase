@@ -20,7 +20,7 @@ extension RecordCollection where T: BaseRecord {
             if let rawEvent = event as? RawRecordEvent {
                 for line in rawEvent.value.components(separatedBy: "\n") {
                     do {
-                        let event = try PocketBase.JSONDecoder().decode(RecordEvent<T>.self, from: Data(line.utf8))
+                        let event = try JSONDecoder().decode(RecordEvent<T>.self, from: Data(line.utf8))
                         await handleEvent(event)
                     } catch {
                         Self.logger.error("Failed to decode event with error: \(error)")

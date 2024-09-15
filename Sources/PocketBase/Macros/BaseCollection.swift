@@ -19,7 +19,8 @@
         named(CodingKeys),
         named(init),
         named(encode),
-        named(relations)
+        named(relations),
+        named(Expand)
 )
 @attached(
     extension,

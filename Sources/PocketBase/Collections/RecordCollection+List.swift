@@ -141,13 +141,3 @@ public extension RecordCollection where T: BaseRecord {
         }
     }
 }
-
-extension Predicate {
-    public var pocketbaseFilter: String? {
-        get throws {
-            let encoder = PocketBase.Encoder()
-            try self.encode(to: encoder)
-            return try encoder.encodedData.base64EncodedString()
-        }
-    }
-}

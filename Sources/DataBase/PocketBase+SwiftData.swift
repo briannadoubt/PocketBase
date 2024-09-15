@@ -9,32 +9,6 @@ import Foundation
 import SwiftData
 import PocketBase
 
-@Model
-@AuthCollection("users")
-fileprivate final class User: @unchecked Sendable {
-    @Relationship(deleteRule: .cascade) var rawrs: [Rawr] = []
-    init() {}
-}
-
-@Model
-@BaseCollection("rawrs")
-fileprivate final class Rawr: @unchecked Sendable {
-    var field: String = ""
-    @Relationship var user: User?
-    init() {}
-}
-
-fileprivate struct Cat {
-    func meow() async throws {
-        let container = try ModelContainer(
-            for: User.self, Rawr.self,
-            configurations: .init(isStoredInMemoryOnly: true)
-        )
-        let pocketbase = PocketBase()
-        try await pocketbase.sync(to: container, with: User.self, Rawr.self)
-    }
-}
-
 extension PocketBase: @retroactive HasLogger {
     /// Inspect the latest changes of the given types in a correlated `ModelContainer` instance, and sync those changes with a remote PocketBase instance through atomic network requests.
     ///
@@ -52,6 +26,21 @@ extension PocketBase: @retroactive HasLogger {
     /// 4. Parsing a `#Predicate` into a filter string proved to be difficult. This prompted the creation of `#Filter`, which shares a lot of the same interface conveniences. 
     /// 5. Determining changes in relations (adding a reference from one object to another, for example) is a very imperative pattern through the APIs, so parsing that history and crafting a relevant POST body could prove complicated.
     /// 6. A large sync from the phone could in theory generate a LOT of network requests. We would need to find a way to batch them, intersperse them (rate limit), or ensure this is a scalable pattern.
+    ///
+    /// In an ideal world, this could look something like this:
+    ///
+    /// ```swift
+    /// fileprivate struct Cat {
+    ///     func meow() async throws {
+    ///         let container = try ModelContainer(
+    ///             for: User.self, Rawr.self,
+    ///             configurations: .init(isStoredInMemoryOnly: true)
+    ///         )
+    ///         let pocketbase = PocketBase()
+    ///         try await pocketbase.sync(to: container, with: User.self, Rawr.self)
+    ///     }
+    /// }
+    /// ```
     ///
     /// - Note: An alternative approach could be to store the mutation events (create, update, or delete) as their own model objects, and return the last result as a `Data` blob if the device is offline. Then, once internet is restored, use this sync system to push all the changes to a remote PocketBase instance.
     /// - Parameters:
