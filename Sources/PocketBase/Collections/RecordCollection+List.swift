@@ -62,7 +62,6 @@ public extension RecordCollection where T: BaseRecord, T.EncodingConfiguration =
         perPage: Int? = nil,
         sort: [SortDescriptor<T>] = [],
         filter: Filter? = nil,
-        expand: [String] = [],
         fields: [String] = []
     ) async throws -> ListResponse {
         try await get(
@@ -81,8 +80,8 @@ public extension RecordCollection where T: BaseRecord, T.EncodingConfiguration =
                 if let filter {
                     query.append(URLQueryItem(name: "filter", value: filter.rawValue))
                 }
-                if !expand.isEmpty {
-                    query.append(URLQueryItem(name: "expand", value: expand.joined(separator: ",")))
+                if !T.relations.isEmpty {
+                    query.append(URLQueryItem(name: "expand", value: T.relations.keys.joined(separator: ",")))
                 }
                 if !fields.isEmpty {
                     query.append(URLQueryItem(name: "fields", value: fields.joined(separator: ",")))

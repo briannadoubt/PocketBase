@@ -12,7 +12,7 @@ import Foundation
 
 @AuthCollection("users")
 struct User {
-    @BackRelation var posts: [Post] = []
+    @BackRelation var posts: [Post]?
 }
 
 @BaseCollection("posts")
@@ -20,13 +20,13 @@ struct Post {
     var title: String
     @Relation var owner: User?
     @Relation var tags: [Tag]?
-    @BackRelation var comments: [Comment] = []
+    @BackRelation var comments: [Comment]?
 }
 
 @BaseCollection("tags")
 struct Tag {
     var name: String
-    @BackRelation var posts: [Post] = []
+    @BackRelation var posts: [Post]?
 }
 
 @BaseCollection("comments")
@@ -67,10 +67,10 @@ func happyPath() async throws {
         passwordConfirm: password
     )
     #expect(user.collectionId.isEmpty == false)
-    #expect(user.username == "meowface")
     #expect(user.email == nil)
     #expect(user.verified == false)
     #expect(user.emailVisibility == false)
+    let username = user.username
     
     await #expect(throws: NetworkError.self, performing: {
         // Still shouldn't be logged in yet
@@ -83,7 +83,14 @@ func happyPath() async throws {
     #expect(try pb.authStore.record() as User? == nil)
     
     // Login
-    user = try await users.login(with: .identity(user.username, password: password))
+    user = try await users.login(
+        with: .identity(
+            username,
+            password: password
+        )
+    )
+    
+    #expect(user.username == username)
     
     // Auth store should now be valid with data
     #expect(pb.authStore.isValid == true)
@@ -128,6 +135,8 @@ func happyPath() async throws {
     
     // Login again to delete the user
     user = try await users.login(with: .identity(user.username, password: password))
+    
+    #expect(user.username == username)
     
     // Auth store should now be valid with data (again)
     #expect(pb.authStore.isValid == true)

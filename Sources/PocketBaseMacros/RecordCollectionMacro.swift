@@ -175,23 +175,23 @@ extension RecordCollectionMacro {
             
             if !variables.isEmpty {
                 if hasRelations(variables) {
-                    "let expand = try container.decode(Expand.self, forKey: .expand)"
+                    "let expand = try container.decodeIfPresent(Expand.self, forKey: .expand)"
                 }
                 for variable in variables {
                     switch variable.relation {
                     case .none:
                         "self.\(variable.name) = try container.decode(\(variable.type).self, forKey: .\(variable.name))"
                     case .single:
-                        "self.\(variable.name) = expand.\(variable.name)"
+                        "self.\(variable.name) = expand?.\(variable.name)"
                         "self._\(variable.name)Id = try container.decode(\(variable.type).ID.self, forKey: .\(variable.name))"
                     case .multiple:
-                        "self.\(variable.name) = expand.\(variable.name)"
+                        "self.\(variable.name) = expand?.\(variable.name)"
                         "self._\(variable.name)Ids = try container.decode([\(variable.type).ID].self, forKey: .\(variable.name))"
                     case .backwards:
                         if variable.isOptionalRelationship {
-                            "self.\(variable.name) = expand.\(variable.name) ?? []"
+                            "self.\(variable.name) = expand?.\(variable.name)]"
                         } else {
-                            "self.\(variable.name) = expand.\(variable.name)"
+                            "self.\(variable.name) = expand?.\(variable.name)"
                         }
                     }
                 }
@@ -327,20 +327,26 @@ extension RecordCollectionMacro {
         ]
     }
     
+    static func expandStructRelationMembers(_ variables: [Variable]) -> [DeclSyntax] {
+        var members: [DeclSyntax] = []
+        for variable in variables where variable.relation != .none {
+            switch variable.relation {
+            case .none:
+                continue
+            case .single:
+                members.append("var \(variable.name): \(variable.type)?")
+            case .multiple:
+                members.append("var \(variable.name): [\(variable.type)]?")
+            case .backwards:
+                members.append("var \(variable.name): [\(variable.type)]?")
+            }
+        }
+        return members
+    }
+    
     static func expandStruct(_ variables: [Variable]) throws -> StructDeclSyntax {
         try StructDeclSyntax("struct Expand: Decodable, EncodableWithConfiguration") {
-            for variable in variables where variable.relation != .none {
-                switch variable.relation {
-                case .none: 
-                    ""
-                case .single:
-                    "var \(variable.name): \(variable.type)?"
-                case .multiple:
-                    "var \(variable.name): [\(variable.type)]?"
-                case .backwards:
-                    "var \(variable.name): [\(variable.type)] = []"
-                }
-            }
+            expandStructRelationMembers(variables)
             try expandStructCodingKeys(variables)
             try expandEncodeToEncoderWithConfiguration(variables)
         }

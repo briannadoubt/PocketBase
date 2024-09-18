@@ -8,7 +8,7 @@
 import SwiftUI
 import PocketBase
 
-public struct SignUpButton<T: AuthRecord>: View {
+public struct SignUpButton<T: AuthRecord>: View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     let newRecord: T
     let collection: RecordCollection<T>
     @Binding private var authState: AuthState
@@ -31,7 +31,7 @@ public struct SignUpButton<T: AuthRecord>: View {
             Task {
                 do {
                     switch strategy {
-                    case .identity(let identity, let password, let expand, let fields):
+                    case .identity(let identity, let password, let fields):
                         try await collection.create(
                             newRecord,
                             password: password,
@@ -40,7 +40,6 @@ public struct SignUpButton<T: AuthRecord>: View {
                         try await collection.authWithPassword(
                             identity,
                             password: password,
-                            expand: expand,
                             fields: fields
                         )
                     case .oauth:

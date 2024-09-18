@@ -10,21 +10,19 @@ import SwiftUI
 import Collections
 
 /// <#Description#>
-@MainActor @propertyWrapper public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
+@MainActor @propertyWrapper public struct RealtimeQuery<T: BaseRecord>: DynamicProperty where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     /// <#Description#>
     /// - Parameters:
     ///   - page: <#page description#>
     ///   - perPage: <#perPage description#>
     ///   - shouldPage: <#shouldPage description#>
     ///   - sort: <#sort description#>
-    ///   - expand: <#expand description#>
     ///   - fields: <#fields description#>
     public init(
         page: Int = 0,
         perPage: Int = 30,
         shouldPage: Bool = true,
         sort: [SortDescriptor<T>] = [SortDescriptor(\.created, order: .reverse)],
-        expand: [String] = [],
         fields: [String] = []
     ) {
         self.page = page
@@ -32,7 +30,6 @@ import Collections
             perPage: perPage,
             shouldPage: shouldPage,
             sort: sort,
-            expand: expand,
             fields: fields
         )
         self.configuration = configuration
@@ -148,7 +145,6 @@ import Collections
             page: page,
             perPage: configuration.perPage,
             sort: configuration.sort,
-            expand: configuration.expand,
             fields: configuration.fields
         )
     }
@@ -176,20 +172,17 @@ extension RealtimeQuery {
         public var perPage: Int
         public var shouldPage: Bool
         public var sort: [SortDescriptor<T>]
-        public var expand: [String]
         public var fields: [String]
         
         public init(
             perPage: Int,
             shouldPage: Bool,
             sort: [SortDescriptor<T>],
-            expand: [String],
             fields: [String]
         ) {
             self.perPage = perPage
             self.shouldPage = shouldPage
             self.sort = sort
-            self.expand = expand
             self.fields = fields
         }
     }

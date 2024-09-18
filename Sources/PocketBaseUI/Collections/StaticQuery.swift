@@ -10,7 +10,7 @@ import PocketBase
 import Collections
 
 /// <#Description#>
-@MainActor @propertyWrapper public struct StaticQuery<T: BaseRecord>: DynamicProperty {
+@MainActor @propertyWrapper public struct StaticQuery<T: BaseRecord>: DynamicProperty where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     @Environment(\.pocketbase) private var pocketbase
     
     private var collection: RecordCollection<T> {
@@ -26,7 +26,6 @@ import Collections
     private let perPage: Int
     private let sort: [SortDescriptor<T>]
     private let filter: Filter?
-    private let expand: [String]
     
     /// <#Description#>
     /// - Parameters:
@@ -35,21 +34,18 @@ import Collections
     ///   - shouldPage: <#shouldPage description#>
     ///   - sort: <#sort description#>
     ///   - filter: <#filter description#>
-    ///   - expand: <#expand description#>
     public init(
         page: Int = 1,
         perPage: Int = 30,
         shouldPage: Bool = true,
         sort: [SortDescriptor<T>] = [],
-        filter: Filter? = nil,
-        expand: [String] = []
+        filter: Filter? = nil
     ) {
         _page = State(initialValue: page)
         self.perPage = perPage
         self.shouldPage = shouldPage
         self.sort = sort
         self.filter = filter
-        self.expand = expand
     }
     
     /// <#Description#>
@@ -63,8 +59,7 @@ import Collections
             page: page,
             perPage: perPage,
             sort: sort,
-            filter: filter,
-            expand: expand
+            filter: filter
         )
         page = response.page
         if shouldPage {

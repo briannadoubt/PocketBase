@@ -8,11 +8,10 @@
 extension RecordCollection where T: AuthRecord, T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     public func login(with method: AuthMethod) async throws -> T {
         switch method {
-        case .identity(let identity, let password, let expand, let fields):
+        case .identity(let identity, let password, let fields):
             try await self.authWithPassword(
                 identity,
                 password: password,
-                expand: expand,
                 fields: fields
             ).record
         case .oauth:
@@ -34,7 +33,6 @@ extension RecordCollection where T: AuthRecord, T.EncodingConfiguration == Recor
         case identity(
             _ identity: String,
             password: String,
-            expand: [String] = [],
             fields: [String] = []
         )
 

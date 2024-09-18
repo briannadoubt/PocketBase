@@ -14,7 +14,6 @@ public extension RecordCollection where T: AuthRecord {
     /// - Parameters:
     ///   - identity: <#identity description#>
     ///   - password: <#password description#>
-    ///   - expand: <#expand description#>
     ///   - fields: <#fields description#>
     /// - Returns: <#description#>
     @Sendable
@@ -22,15 +21,14 @@ public extension RecordCollection where T: AuthRecord {
     func authWithPassword(
         _ identity: String,
         password: String,
-        expand: [String] = [],
         fields: [String] = []
     ) async throws -> AuthResponse<T> where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         let response: AuthResponse<T> = try await post(
             path: PocketBase.collectionPath(collection) + "auth-with-password",
             query: {
                 var query: [URLQueryItem] = []
-                if !expand.isEmpty {
-                    query.append(URLQueryItem(name: "expand", value: expand.joined(separator: ",")))
+                if !T.relations.isEmpty {
+                    query.append(URLQueryItem(name: "expand", value: T.relations.keys.joined(separator: ",")))
                 }
                 if !fields.isEmpty {
                     query.append(URLQueryItem(name: "fields", value: fields.joined(separator: ",")))
@@ -48,7 +46,7 @@ public extension RecordCollection where T: AuthRecord {
         func encode(to encoder: any Encoder, configuration: RecordCollectionEncodingConfiguration) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(identity, forKey: .identity)
-            try container.encode(password, forKey: .identity)
+            try container.encode(password, forKey: .password)
         }
         
         enum CodingKeys: String, CodingKey {

@@ -14,7 +14,7 @@ public enum AuthState: Sendable, Equatable {
     case signedOut
 }
 
-public struct SignedOutView<T: AuthRecord>: View {
+public struct SignedOutView<T: AuthRecord>: View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     private let collection: RecordCollection<T>
 
     @Binding private var authState: AuthState

@@ -36,8 +36,8 @@ enum RelationError {
     }
 }
 
-struct Relation: PeerMacro {
-    static func expansion(
+public struct Relation: PeerMacro {
+    public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext
@@ -78,8 +78,8 @@ struct Relation: PeerMacro {
     }
 }
 
-struct BackRelation: PeerMacro {
-    static func expansion(
+public struct BackRelation: PeerMacro {
+    public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
         in context: some MacroExpansionContext

@@ -11,7 +11,6 @@ public extension RecordCollection where T: AuthRecord {
     @Sendable
     @discardableResult
     func authRefresh(
-        expand: [String] = [],
         fields: [String] = []
     ) async throws -> AuthResponse<T> where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         do {
@@ -19,8 +18,8 @@ public extension RecordCollection where T: AuthRecord {
                 path: PocketBase.collectionPath(collection) + "auth-refresh",
                 query: {
                     var query: [URLQueryItem] = []
-                    if !expand.isEmpty {
-                        query.append(URLQueryItem(name: "expand", value: expand.joined(separator: ",")))
+                    if !T.relations.isEmpty {
+                        query.append(URLQueryItem(name: "expand", value: T.relations.keys.joined(separator: ",")))
                     }
                     if !fields.isEmpty {
                         query.append(URLQueryItem(name: "fields", value: fields.joined(separator: ",")))

@@ -14,7 +14,7 @@ extension View {
     /// - Returns: <#description#>
     public func authenticated<T: AuthRecord>(
         newUser: @escaping CreateUser<T>
-    ) -> some View {
+    ) -> some View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         modifier(
             AuthenticationModifier(
                 newUser: newUser
@@ -35,7 +35,7 @@ extension View {
             _ collection: RecordCollection<T>,
             _ authState: Binding<AuthState>
         ) -> SignedOut
-    ) -> some View {
+    ) -> some View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         modifier(
             AuthenticationModifier(
                 loading: loading,
@@ -45,7 +45,7 @@ extension View {
     }
 }
 
-private struct AuthenticationModifier<T: AuthRecord, Loading: View, SignedOut: View>: ViewModifier {
+private struct AuthenticationModifier<T: AuthRecord, Loading: View, SignedOut: View>: ViewModifier where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     @ViewBuilder private var loading: () -> Loading
     
     typealias SignedOutBuilder = Authentication<T, Loading, SignedOut, Content>.SignedOutBuilder

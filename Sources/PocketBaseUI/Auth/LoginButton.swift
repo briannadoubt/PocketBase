@@ -9,7 +9,7 @@ import PocketBase
 import SwiftUI
 
 /// <#Description#>
-public struct LoginButton<T: AuthRecord>: View {
+public struct LoginButton<T: AuthRecord>: View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     private let collection: RecordCollection<T>
     @Binding private var authState: AuthState
     private var strategy: RecordCollection<T>.AuthMethod
@@ -34,11 +34,10 @@ public struct LoginButton<T: AuthRecord>: View {
             Task {
                 do {
                     switch strategy {
-                    case .identity(let identity, let password, let expand, let fields):
+                    case .identity(let identity, let password, let fields):
                         try await collection.authWithPassword(
                             identity,
                             password: password,
-                            expand: expand,
                             fields: fields
                         )
                         authState = .signedIn

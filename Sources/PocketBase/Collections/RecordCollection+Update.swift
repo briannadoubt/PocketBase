@@ -15,10 +15,6 @@ public extension RecordCollection {
     /// *You could find individual generated records API documentation in the "Admin UI > Collections > API Preview".*
     /// - Parameters:
     ///   - record: The record to be updated, with the updates pre-applied.
-    ///   - expand: Auto expand record relations. Ex.: `?expand=relField1,relField2.subRelField`
-    ///             Supports up to 6-levels depth nested relations expansion.
-    ///             The expanded relations will be appended to the record under the expand property (eg. `"expand": {"relField1": {...}, ...}`).
-    ///             Only the relations to which the request user has permissions to view will be expanded.
     ///   - fields: Comma separated string of the fields to return in the JSON response (by default returns all fields). Ex.:
     ///             `?fields=*,expand.relField.name`
     ///             * targets all keys from the specific depth level.
@@ -30,15 +26,14 @@ public extension RecordCollection {
     @discardableResult
     func update(
         _ record: T,
-        expand: [String] = [],
         fields: [String] = []
     ) async throws -> T where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         try await patch(
             path: PocketBase.recordPath(collection, record.id),
             query: {
                 var query: [URLQueryItem] = []
-                if !expand.isEmpty {
-                    query.append(URLQueryItem(name: "expand", value: expand.joined(separator: ",")))
+                if !T.relations.isEmpty {
+                    query.append(URLQueryItem(name: "expand", value: T.relations.keys.joined(separator: ",")))
                 }
                 if !fields.isEmpty {
                     query.append(URLQueryItem(name: "fields", value: fields.joined(separator: ",")))
