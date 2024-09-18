@@ -44,13 +44,13 @@ extension RecordCollectionMacro {
         if isAuthCollection(node) {
             members.append(contentsOf: try authCollectionVariables(node))
         }
-        members.append(DeclSyntax(memberwiseInit(variables)))
+        members.append(DeclSyntax(memberwiseInit(variables, node)))
         members.append(DeclSyntax(try initFromDecoder(node, variables)))
         members.append(DeclSyntax(try encodeToEncoderWithConfiguration(node, variables)))
-        members.append(DeclSyntax(try relations(variables)))
+        members.append(DeclSyntax(try relations(variables, node)))
         members.append(DeclSyntax(try codingKeysEnum(node, variables)))
         if hasRelations(variables) {
-            members.append(DeclSyntax(try expandStruct(variables)))
+            members.append(DeclSyntax(try expandStruct(variables, node)))
         }
         return members
     }
@@ -102,8 +102,14 @@ extension RecordCollectionMacro {
         node.attributeName.as(IdentifierTypeSyntax.self)?.name.text == "AuthCollection"
     }
     
-    static func memberwiseInitParameters(_ variables: [Variable]) -> [FunctionParameterSyntax] {
+    static func memberwiseInitParameters(_ variables: [Variable], _ node: AttributeSyntax) -> [FunctionParameterSyntax] {
         var parameters: [FunctionParameterSyntax] = []
+        if isAuthCollection(node) {
+            parameters.append("username: String? = nil")
+            parameters.append("email: String? = nil")
+            parameters.append("verified: Bool = false")
+            parameters.append("emailVisibility: Bool = false")
+        }
         for variable in variables {
             switch variable.relation {
             case .none:
@@ -123,8 +129,14 @@ extension RecordCollectionMacro {
         return parameters
     }
     
-    static func memberwiseInitMembers(_ variables: [Variable]) -> [CodeBlockItemSyntax] {
+    static func memberwiseInitMembers(_ variables: [Variable], _ node: AttributeSyntax) -> [CodeBlockItemSyntax] {
         var parameters: [CodeBlockItemSyntax] = []
+        if isAuthCollection(node) {
+            parameters.append("self.username = username ?? \"\"")
+            parameters.append("self.email = email")
+            parameters.append("self.verified = verified")
+            parameters.append("self.emailVisibility = emailVisibility")
+        }
         for variable in variables {
             switch variable.relation {
             case .none:
@@ -140,17 +152,17 @@ extension RecordCollectionMacro {
         return parameters
     }
     
-    static func memberwiseInit(_ variables: [Variable]) -> InitializerDeclSyntax {
+    static func memberwiseInit(_ variables: [Variable], _ node: AttributeSyntax) -> InitializerDeclSyntax {
         InitializerDeclSyntax(
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
                     parametersBuilder: {
-                        memberwiseInitParameters(variables)
+                        memberwiseInitParameters(variables, node)
                     }
                 )
             )
         ) {
-            memberwiseInitMembers(variables)
+            memberwiseInitMembers(variables, node)
         }
     }
     
@@ -199,7 +211,7 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func relationsDictionaryElements(_ variables: [Variable]) -> [DictionaryElementSyntax] {
+    static func relationsDictionaryElements(_ variables: [Variable]) throws -> [DictionaryElementSyntax] {
         var elements: [DictionaryElementSyntax] = []
         for variable in variables {
             switch variable.relation {
@@ -229,10 +241,10 @@ extension RecordCollectionMacro {
                         )
                     )
                 )
-            case .backwards:
+            case .backwards(let key):
                 elements.append(
                     DictionaryElementSyntax(
-                        key: collectionBackRelationStringInterpolation(variable: variable),
+                        key: collectionBackRelationStringInterpolation(variable: variable, key: key),
                         value: MemberAccessExprSyntax(
                             base: DeclReferenceExprSyntax(
                                 baseName: "\(variable.type)"
@@ -246,10 +258,10 @@ extension RecordCollectionMacro {
         return elements
     }
     
-    static func relations(_ variables: [Variable]) throws -> VariableDeclSyntax {
+    static func relations(_ variables: [Variable], _ node: AttributeSyntax) throws -> VariableDeclSyntax {
         try VariableDeclSyntax("static var relations: [String: any Record.Type]") {
             DictionaryExprSyntax {
-                relationsDictionaryElements(variables)
+                (try? relationsDictionaryElements(variables)) ?? []
             }
         }
     }
@@ -344,10 +356,10 @@ extension RecordCollectionMacro {
         return members
     }
     
-    static func expandStruct(_ variables: [Variable]) throws -> StructDeclSyntax {
+    static func expandStruct(_ variables: [Variable], _ node: AttributeSyntax) throws -> StructDeclSyntax {
         try StructDeclSyntax("struct Expand: Decodable, EncodableWithConfiguration") {
             expandStructRelationMembers(variables)
-            try expandStructCodingKeys(variables)
+            try expandStructCodingKeys(variables, node)
             try expandEncodeToEncoderWithConfiguration(variables)
         }
     }
@@ -374,7 +386,7 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func expandCodingKeysRawValue(_ variables: [Variable]) throws -> VariableDeclSyntax {
+    static func expandCodingKeysRawValue(_ variables: [Variable], _ node: AttributeSyntax) throws -> VariableDeclSyntax {
         try VariableDeclSyntax(
             bindingSpecifier: "var"
         ) {
@@ -391,9 +403,13 @@ extension RecordCollectionMacro {
                                     SwitchCaseListSyntax {
                                         SwitchCaseSyntax("case .\(variable.name):") {
                                             CodeBlockItemListSyntax {
-                                                if variable.relation == .backwards {
-                                                    collectionBackRelationStringInterpolation(variable: variable)
-                                                } else {
+                                                switch variable.relation {
+                                                case .backwards(let key):
+                                                    collectionBackRelationStringInterpolation(
+                                                        variable: variable,
+                                                        key: key
+                                                    )
+                                                case .single, .multiple, .none:
                                                     StringLiteralExprSyntax(content: "\(variable.name)")
                                                 }
                                             }
@@ -408,7 +424,27 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func collectionBackRelationStringInterpolation(variable: Variable) -> StringLiteralExprSyntax {
+    static func backRelationKeyPathReference(_ node: AttributeSyntax) throws -> String {
+        guard let labeledExpressionList = node.arguments?.as(LabeledExprListSyntax.self) else {
+            throw MacroExpansionErrorMessage("Failed to find labeled expression")
+        }
+        guard let labeledExpression = labeledExpressionList.first else {
+            throw MacroExpansionErrorMessage("Failed to find first labeled expression element")
+        }
+        guard let keyPathExpression = labeledExpression.expression.as(KeyPathExprSyntax.self) else {
+            throw MacroExpansionErrorMessage("Argument is not a KeyPath expression")
+        }
+        guard let component = keyPathExpression.components.first else {
+            throw MacroExpansionErrorMessage("KeyPath has no components")
+        }
+        guard let propertyComponent = component.component.as(KeyPathPropertyComponentSyntax.self) else {
+            throw MacroExpansionErrorMessage("Cannot find propert component")
+        }
+        let referenceExpression = propertyComponent.declName.baseName
+        return referenceExpression.text
+    }
+    
+    static func collectionBackRelationStringInterpolation(variable: Variable, key: String) -> StringLiteralExprSyntax {
         StringLiteralExprSyntax(
             openingQuote: .stringQuoteToken(),
             segments: StringLiteralSegmentListSyntax {
@@ -417,7 +453,7 @@ extension RecordCollectionMacro {
                         LabeledExprSyntax(
                             expression: MemberAccessExprSyntax(
                                 base: DeclReferenceExprSyntax(
-                                    baseName: "\(variable.type)"
+                                    baseName: "\(raw: variable.type.trimmed)"
                                 ),
                                 name: "collection"
                             )
@@ -431,24 +467,21 @@ extension RecordCollectionMacro {
                     )
                 )
                 StringSegmentSyntax(
-                    content: TokenSyntax.stringSegment(
-                        "\(variable.name.trimmed)",
-                        trailingTrivia: []
-                    )
+                    content: TokenSyntax.stringSegment(key, trailingTrivia: [])
                 )
             },
             closingQuote: .stringQuoteToken()
         )
     }
     
-    static func expandStructCodingKeys(_ variables: [Variable]) throws -> EnumDeclSyntax {
+    static func expandStructCodingKeys(_ variables: [Variable], _ node: AttributeSyntax) throws -> EnumDeclSyntax {
         try EnumDeclSyntax("enum CodingKeys: String, CodingKey") {
             for variable in variables where variable.relation != .none {
                 EnumCaseDeclSyntax {
                     EnumCaseElementSyntax(name: variable.name)
                 }
             }
-            try expandCodingKeysRawValue(variables)
+            try expandCodingKeysRawValue(variables, node)
         }
     }
 }

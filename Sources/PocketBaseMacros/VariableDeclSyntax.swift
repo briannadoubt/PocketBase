@@ -18,8 +18,22 @@ extension VariableDeclSyntax {
             return false
         }
     }
+    
+    func backRelationKeyPath() -> String? {
+        guard
+            let attribute = attributes.first?.as(AttributeSyntax.self),
+            let labeledExpressionList = attribute.arguments?.as(LabeledExprListSyntax.self),
+            let labeledExpression = labeledExpressionList.first,
+            let keyPathExpression = labeledExpression.expression.as(KeyPathExprSyntax.self),
+            let component = keyPathExpression.components.first,
+            let propertyComponent = component.component.as(KeyPathPropertyComponentSyntax.self)
+        else {
+            return nil
+        }
+        let referenceExpression = propertyComponent.declName.baseName
+        return referenceExpression.text
+    }
 }
-
 
 extension VariableDeclSyntax {
     func hasAttributeArgument(_ name: String) -> Bool {

@@ -6,14 +6,15 @@
 //
 
 import SwiftSyntax
+import SwiftSyntaxMacros
 
 enum RelationType {
     case single
     case multiple
-    case backwards
+    case backwards(key: String)
     case none
     
-    init(type: TypeSyntax, _ variable: VariableDeclSyntax) {
+    init(type: TypeSyntax, _ variable: VariableDeclSyntax) throws {
         if variable.hasAttribute("Relation") {
             if type.isOptional(ArrayTypeSyntax.self) {
                 self = .multiple
@@ -24,9 +25,16 @@ enum RelationType {
             }
         }
         if variable.hasAttribute("BackRelation") {
-            self = .backwards
+            guard let key = variable.backRelationKeyPath() else {
+                throw MacroExpansionErrorMessage("Missing keypath in BackRelation attribute")
+            }
+            self = .backwards(key: key)
             return
         }
         self = .none
     }
+}
+
+extension RelationType: Equatable {
+    
 }

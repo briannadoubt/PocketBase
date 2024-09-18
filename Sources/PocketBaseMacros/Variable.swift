@@ -43,7 +43,7 @@ struct Variable {
         }
         self.isArray = type.isOptional(ArrayTypeSyntax.self)
         self.isDate = type.hasTypeIdentifier("Date")
-        self.relation = RelationType(type: type, variable)
+        self.relation = try RelationType(type: type, variable)
         self.skipExpand = variable.hasAttributeArgument("skipExpand")
         self.isOptionalRelationship = variable.hasAttributeArgument("optional")
     }
