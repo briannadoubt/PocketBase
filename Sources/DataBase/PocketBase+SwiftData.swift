@@ -55,38 +55,38 @@ extension PocketBase: @retroactive HasLogger {
             for unsynced in unsynced {
                 for (record, operation) in repeat each unsynced {
                     group.addTask {
-//                        let pocketbase = PocketBase()
+                        let pocketbase = PocketBase()
                         switch operation {
                         case .create:
                             func create<R: PersistentModel & Record>(_ record: R) async {
-//                                let collection = pocketbase.collection(R.self)
-//                                do {
-//                                    try await collection.create(record)
-//                                } catch {
-//                                    Self.logger.error("Failed to create \(R.self): \(error)")
-//                                }
+                                let collection = pocketbase.collection(R.self)
+                                do {
+                                    try await collection.create(record)
+                                } catch {
+                                    Self.logger.error("Failed to create \(R.self): \(error)")
+                                }
                             }
                             
                             await create(record)
                         case .update:
                             func update<R: PersistentModel & Record>(_ record: R) async {
-//                                let collection = pocketbase.collection(R.self)
-//                                do {
-//                                    try await collection.update(record)
-//                                } catch {
-//                                    Self.logger.error("Failed to update \(R.self): \(error)")
-//                                }
+                                let collection = pocketbase.collection(R.self)
+                                do {
+                                    try await collection.update(record)
+                                } catch {
+                                    Self.logger.error("Failed to update \(R.self): \(error)")
+                                }
                             }
                             
                             await update(record)
                         case .delete:
                             func delete<R: PersistentModel & Record>(_ record: R) async {
-//                                let collection = pocketbase.collection(R.self)
-//                                do {
-//                                    try await collection.delete(record)
-//                                } catch {
-//                                    Self.logger.error("Failed to delete \(R.self): \(error)")
-//                                }
+                                let collection = pocketbase.collection(R.self)
+                                do {
+                                    try await collection.delete(record)
+                                } catch {
+                                    Self.logger.error("Failed to delete \(R.self): \(error)")
+                                }
                             }
                             
                             await delete(record)

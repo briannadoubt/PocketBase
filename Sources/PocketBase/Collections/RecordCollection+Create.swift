@@ -27,7 +27,7 @@ public extension RecordCollection {
     func create(
         _ record: T,
         fields: [String] = []
-    ) async throws -> T where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws -> T {
         try await post(
             path: PocketBase.recordsPath(collection),
             query: {
@@ -68,7 +68,7 @@ public extension RecordCollection where T: AuthRecord {
         password: String,
         passwordConfirm: String,
         fields: [String] = []
-    ) async throws -> T where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws -> T {
         let body = try record.createBody(
             password: password,
             passwordConfirm: passwordConfirm,
@@ -96,7 +96,7 @@ public extension RecordCollection where T: AuthRecord {
     }
 }
 
-extension AuthRecord where EncodingConfiguration == RecordCollectionEncodingConfiguration {
+extension AuthRecord {
     func createBody(
         password: String,
         passwordConfirm: String,

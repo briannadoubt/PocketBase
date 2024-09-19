@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct AuthResponse<T: AuthRecord>: Decodable, EncodableWithConfiguration, Sendable, Hashable where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public struct AuthResponse<T: AuthRecord>: Decodable, EncodableWithConfiguration, Sendable, Hashable {
     public func encode(to encoder: any Encoder, configuration: RecordCollectionEncodingConfiguration) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(token, forKey: .token)

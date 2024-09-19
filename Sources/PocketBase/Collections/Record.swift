@@ -20,8 +20,6 @@ public protocol Record: Identifiable, Decodable, EncodableWithConfiguration, Sen
     static var collection: String { get }
     
     static var relations: [String: any Record.Type] { get }
-    
-    associatedtype EncodingConfiguration = RecordCollectionEncodingConfiguration
 }
 
 public protocol BaseRecord: Record {}

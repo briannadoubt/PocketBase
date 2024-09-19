@@ -22,7 +22,7 @@ public extension RecordCollection where T: AuthRecord {
         _ identity: String,
         password: String,
         fields: [String] = []
-    ) async throws -> AuthResponse<T> where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws -> AuthResponse<T> {
         let response: AuthResponse<T> = try await post(
             path: PocketBase.collectionPath(collection) + "auth-with-password",
             query: {
