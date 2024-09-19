@@ -8,5 +8,6 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 /Developer/pb_data
-/pb_data/*
+/pb_data/logs.db
+/pb_data/storage
 /Tests/pb_data/*
