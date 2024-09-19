@@ -23,4 +23,38 @@ struct PocketBaseTests {
         UserDefaults.pocketbase?.removeObject(forKey: PocketBase.urlKey)
         #expect(UserDefaults.pocketbase?.url(forKey: PocketBase.urlKey) == nil)
     }
+    
+    @Test("Create Collection")
+    func collection() async {
+        let session = MockNetworkSession()
+        let pb = PocketBase(url: .localhost, session: session)
+        let collection = pb.collection(Rawr.self)
+        await #expect(collection.baseURL == pb.url)
+        await #expect(collection.session as? MockNetworkSession == session)
+        await #expect(collection
+            .collection == Rawr.collection)
+    }
+    
+    @Test("PocketBase Localhost Definition")
+    func localhost() {
+        let pocketbase: PocketBase = .localhost
+        #expect(pocketbase.url == .localhost)
+    }
+    
+    @Test("PocketBase URL Key")
+    func urlKey() {
+        #expect(PocketBase.urlKey == "io.pocketbase.url")
+    }
+    
+    @Test("PocketBase Last Event Key")
+    func lastEventKey() {
+        #expect(PocketBase.lastEventKey == "io.pocketbase.lastEvent")
+    }
+    
+    struct Localhost {
+        @Test("Localhost URL Definition")
+        func localhostURL() {
+            #expect(URL.localhost.absoluteString == "http://localhost:8090")
+        }
+    }
 }
