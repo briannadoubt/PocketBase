@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "C3E97ACD-15F2-4514-BF39-4C5D2757D3ED",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "PocketBaseTests",
+        "name" : "PocketBaseTests"
+      }
+    }
+  ],
+  "version" : 1
+}

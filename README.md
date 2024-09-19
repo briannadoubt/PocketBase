@@ -1,7 +1,8 @@
 # PocketBase
 
-A pure Swift client for interfacing with a PocketBase instance.
+[![Swift](https://github.com/briannadoubt/PocketBase/actions/workflows/swift.yml/badge.svg)](https://github.com/briannadoubt/PocketBase/actions/workflows/swift.yml)
 
+A pure Swift client for interfacing with a PocketBase instance.
 
 ## Getting Started
 
