@@ -20,10 +20,8 @@ jobs:
       with:
         xcode-version: latest-stable
     - name: Start PocketBase
-      run: docker compose up -d
+      uses: hoverkraft-tech/compose-action@v2.0.1
     - name: Build
-      run: swift build -v
+      run: swift build
     - name: Run tests
-      run: swift test -v
-    - name: Stop PocketBase
-      run: docker compose down
+      run: swift test
