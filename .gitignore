@@ -10,4 +10,7 @@ DerivedData/
 /Developer/pb_data
 /pb_data/logs.db
 /pb_data/storage
-/Tests/pb_data/*
+pb_data/data.db-wal
+pb_data/logs.db-shm
+pb_data/logs.db-wal
+pb_data/data.db-shm
