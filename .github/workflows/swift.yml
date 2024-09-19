@@ -15,13 +15,18 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: maxim-lobanov/setup-xcode@v1
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Set Xcode Version
+      uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: latest-stable
-    - name: Start PocketBase
-      uses: hoverkraft-tech/compose-action@v2.0.1
+    - name: Run PocketBase
+      run: docker compose up -d
     - name: Build
       run: swift build
     - name: Run tests
       run: swift test
+    - name: Tear Down PocketBase
+      if: if always()
+      run: docker compose down
