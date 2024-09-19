@@ -7,6 +7,8 @@
 
 import SwiftSyntax
 import SwiftSyntaxMacros
+import SwiftSyntaxMacroExpansion
+import SwiftSyntaxBuilder
 
 protocol RecordCollectionMacro: MemberMacro, ExtensionMacro {}
 
@@ -81,7 +83,7 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func collectionName(_ node: AttributeSyntax) throws -> TokenSyntax? {
+    static func collectionName(_ node: AttributeSyntax) throws -> TokenSyntax {
         guard let collectionName = node
             .arguments?
             .as(LabeledExprListSyntax.self)?
@@ -157,12 +159,16 @@ extension RecordCollectionMacro {
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
                     parametersBuilder: {
-                        memberwiseInitParameters(node, variables)
+                        for parameter in memberwiseInitParameters(node, variables) {
+                            parameter
+                        }
                     }
                 )
             )
         ) {
-            memberwiseInitMembers(node, variables)
+            for member in memberwiseInitMembers(node, variables) {
+                member
+            }
         }
     }
     
@@ -257,7 +263,11 @@ extension RecordCollectionMacro {
     static func relations(_ variables: [Variable]) throws -> VariableDeclSyntax {
         try VariableDeclSyntax("static var relations: [String: any Record.Type]") {
             DictionaryExprSyntax {
-                (try? relationsDictionaryElements(variables)) ?? []
+                if let elements = try? relationsDictionaryElements(variables) {
+                    for element in elements {
+                        element
+                    }
+                }
             }
         }
     }
@@ -278,7 +288,7 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func encodeToEncoderMembers(_ variables: [Variable]) -> [CodeBlockItemSyntax] {
+    static func encodeToEncoderMembers(_ node: AttributeSyntax, _ variables: [Variable]) -> [CodeBlockItemSyntax] {
         var members: [CodeBlockItemSyntax] = []
         let keysToSkipEncoding: [String] = [
             "id",
@@ -287,6 +297,12 @@ extension RecordCollectionMacro {
             "created",
             "updated"
         ]
+        if isAuthCollection(node) {
+            members.append("try container.encode(username, forKey: .username)")
+            members.append("try container.encode(email, forKey: .email)")
+            members.append("try container.encode(verified, forKey: .verified)")
+            members.append("try container.encode(emailVisibility, forKey: .emailVisibility)")
+        }
         for variable in variables {
             if keysToSkipEncoding.contains(variable.name.text) {
                 continue
@@ -319,7 +335,9 @@ extension RecordCollectionMacro {
             }
         
             "// Declared fields"
-            encodeToEncoderMembers(variables)
+            for member in encodeToEncoderMembers(node, variables) {
+                member
+            }
         }
     }
     
@@ -354,7 +372,9 @@ extension RecordCollectionMacro {
     
     static func expandStruct(_ variables: [Variable]) throws -> StructDeclSyntax {
         try StructDeclSyntax("struct Expand: Decodable, EncodableWithConfiguration") {
-            expandStructRelationMembers(variables)
+            for member in expandStructRelationMembers(variables) {
+                member
+            }
             try expandStructCodingKeys(variables)
             try expandInitFromDecoder(variables)
             try expandEncodeToEncoderWithConfiguration(variables)

@@ -9,9 +9,6 @@ import SwiftUI
 import PocketBase
 
 extension View {
-    /// <#Description#>
-    /// - Parameter newUser: <#newUser description#>
-    /// - Returns: <#description#>
     public func authenticated<T: AuthRecord>(
         newUser: @escaping CreateUser<T>
     ) -> some View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
@@ -22,12 +19,6 @@ extension View {
         )
     }
     
-    /// <#Description#>
-    /// - Parameters:
-    ///   - Type: <#Type description#>
-    ///   - loading: <#loading description#>
-    ///   - signedOut: <#signedOut description#>
-    /// - Returns: <#description#>
     public func authenticated<T: AuthRecord, Loading: View, SignedOut: View>(
         as Type: T.Type,
         loading: @escaping () -> Loading,

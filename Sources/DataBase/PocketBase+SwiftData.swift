@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 import PocketBase
 
-extension PocketBase: @retroactive HasLogger {
+extension PocketBase {
     /// Inspect the latest changes of the given types in a correlated `ModelContainer` instance, and sync those changes with a remote PocketBase instance through atomic network requests.
     ///
     /// This is an experimental idea to sync records from SwiftData to a remote PocketBase instance. This would enable atomic, lightning-fast lookups, and realtime updates. The idea was inspired by the official JavaScript and Dart clients, as they have client-side caching.
@@ -46,6 +46,7 @@ extension PocketBase: @retroactive HasLogger {
     /// - Parameters:
     ///   - modelContainer: The `ModelContainer` used to sync the most recent history to a remote PocketBase instance.
     ///   - type: A `repeat`ing type that is iterated over and synced, type-by-type.
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, macCatalyst 18.0, visionOS 2.0, *)
     public func sync<each T: PersistentModel & Record>(
         to modelContainer: ModelContainer,
         with type: repeat (each T).Type
@@ -55,38 +56,38 @@ extension PocketBase: @retroactive HasLogger {
             for unsynced in unsynced {
                 for (record, operation) in repeat each unsynced {
                     group.addTask {
-                        let pocketbase = PocketBase()
+//                        let pocketbase = PocketBase()
                         switch operation {
                         case .create:
                             func create<R: PersistentModel & Record>(_ record: R) async {
-                                let collection = pocketbase.collection(R.self)
-                                do {
-                                    try await collection.create(record)
-                                } catch {
-                                    Self.logger.error("Failed to create \(R.self): \(error)")
-                                }
+//                                let collection = pocketbase.collection(R.self)
+//                                do {
+//                                    try await collection.create(record)
+//                                } catch {
+//                                    Self.logger.error("Failed to create \(R.self): \(error)")
+//                                }
                             }
                             
                             await create(record)
                         case .update:
                             func update<R: PersistentModel & Record>(_ record: R) async {
-                                let collection = pocketbase.collection(R.self)
-                                do {
-                                    try await collection.update(record)
-                                } catch {
-                                    Self.logger.error("Failed to update \(R.self): \(error)")
-                                }
+//                                let collection = pocketbase.collection(R.self)
+//                                do {
+//                                    try await collection.update(record)
+//                                } catch {
+//                                    Self.logger.error("Failed to update \(R.self): \(error)")
+//                                }
                             }
                             
                             await update(record)
                         case .delete:
                             func delete<R: PersistentModel & Record>(_ record: R) async {
-                                let collection = pocketbase.collection(R.self)
-                                do {
-                                    try await collection.delete(record)
-                                } catch {
-                                    Self.logger.error("Failed to delete \(R.self): \(error)")
-                                }
+//                                let collection = pocketbase.collection(R.self)
+//                                do {
+//                                    try await collection.delete(record)
+//                                } catch {
+//                                    Self.logger.error("Failed to delete \(R.self): \(error)")
+//                                }
                             }
                             
                             await delete(record)
@@ -104,6 +105,7 @@ extension PocketBase: @retroactive HasLogger {
         case delete
     }
     
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, macCatalyst 18.0, visionOS 2.0, *)
     func findUnsynced<each T: PersistentModel & Record>(
         in modelContainer: ModelContainer
     ) throws -> [(repeat ((each T), Operation))] {
@@ -123,6 +125,7 @@ extension PocketBase: @retroactive HasLogger {
     
     static let lastHistoryToken: String = "io.pocketbase.lastHistoryToken"
 
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, macCatalyst 18.0, visionOS 2.0, *)
     func findTransactions(
         in modelContainer: ModelContainer,
         after token: DefaultHistoryToken?,
@@ -140,6 +143,7 @@ extension PocketBase: @retroactive HasLogger {
         return transactions
     }
 
+    @available(iOS 18.0, macOS 15.0, tvOS 18.0, watchOS 11.0, macCatalyst 18.0, visionOS 2.0, *)
     func findOperations<each T: PersistentModel & Record>(
         in modelContainer: ModelContainer,
         with type: repeat (each T).Type,

@@ -8,7 +8,7 @@
 import Foundation
 import Collections
 
-public extension RecordCollection {
+public extension RecordCollection where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     /// Returns a paginated records list, supporting sorting and filtering.
     ///
     /// Depending on the collection's listRule value, the access to this action may or may not have been restricted.

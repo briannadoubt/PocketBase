@@ -7,6 +7,7 @@
 
 import SwiftSyntax
 import SwiftSyntaxMacros
+import SwiftSyntaxMacroExpansion
 
 enum RelationType {
     case single

@@ -47,7 +47,7 @@ extension Testing.Tag {
 )
 func happyPath() async throws {
     // Initialize pocketbase
-    let pb = PocketBase(url: URL(string: "http://localhost:8090")!)
+    let pb = PocketBase.localhost
     
     // Define the user collection
     let users = pb.collection(User.self)

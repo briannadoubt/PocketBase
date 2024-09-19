@@ -6,22 +6,24 @@
 //
 
 import Foundation
-internal import KeychainAccess
+@preconcurrency internal import KeychainAccess
 
 public struct AuthStore: Sendable {
     
     public init() {}
+    
+    let keychain = Keychain(service: "io.pocketbase.auth")
     
     public var isValid: Bool {
         token != nil
     }
     
     public var token: String? {
-        Keychain(service: "io.pocketbase.auth")["token"]
+        keychain["token"]
     }
     
     func set(token: String) {
-        Keychain(service: "io.pocketbase.auth")["token"] = token
+        keychain["token"] = token
     }
     
     public func record<T: AuthRecord>() throws -> T? {
@@ -33,7 +35,6 @@ public struct AuthStore: Sendable {
     }
     
     func set<T: AuthRecord>(_ response: AuthResponse<T>) throws {
-        // Don't use the internal PocketBase encoder becuase this will skip keys that are intended to be set by the server.
         let data = try JSONEncoder().encode(response, configuration: .cache)
         UserDefaults.pocketbase?.setValue(data, forKey: "record")
     }
@@ -44,7 +45,7 @@ public struct AuthStore: Sendable {
     }
     
     public func clear() {
-        Keychain(service: "io.pocketbase.auth")["token"] = nil
+        keychain["token"] = nil
         UserDefaults.pocketbase?.removeObject(forKey: "record")
     }
 }

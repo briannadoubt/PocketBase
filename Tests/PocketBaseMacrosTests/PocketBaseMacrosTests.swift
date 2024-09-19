@@ -30,9 +30,14 @@ struct BaseRelationTests {
         assertMacroExpansion(
             """
             @BaseCollection("cats")
-            struct Cat {}
+            struct Cat {
+                
+            }
             """,
             expandedSource: """
+            struct Cat {
+                
+            }
             extension Cat: BaseRecord {}
             """,
             macros: testMacros

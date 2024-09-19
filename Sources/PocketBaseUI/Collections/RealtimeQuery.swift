@@ -9,15 +9,11 @@ import PocketBase
 import SwiftUI
 import Collections
 
-/// <#Description#>
-@MainActor @propertyWrapper public struct RealtimeQuery<T: BaseRecord>: DynamicProperty where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
-    /// <#Description#>
-    /// - Parameters:
-    ///   - page: <#page description#>
-    ///   - perPage: <#perPage description#>
-    ///   - shouldPage: <#shouldPage description#>
-    ///   - sort: <#sort description#>
-    ///   - fields: <#fields description#>
+@MainActor
+@propertyWrapper
+public struct RealtimeQuery<T: BaseRecord>: DynamicProperty
+where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    
     public init(
         page: Int = 0,
         perPage: Int = 30,
@@ -50,14 +46,14 @@ import Collections
         pocketbase.collection(T.self)
     }
     
-    /// <#Description#>
+    /// The records exposed to the view
     public var wrappedValue: [T] {
         records
     }
     
     @State private var mostRecentError: Error?
     
-    /// <#Description#>
+    /// The coodinator object that enables an interface with the realtime query from the view.
     public var projectedValue: Coordinator {
         Coordinator(
             error: mostRecentError

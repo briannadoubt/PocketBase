@@ -8,7 +8,7 @@
 @_exported import Foundation
 
 /// Interface with PocketBase
-public struct PocketBase: Sendable {
+public struct PocketBase: Sendable, HasLogger {
     public let url: URL
     
     public let authStore = AuthStore()
@@ -17,6 +17,7 @@ public struct PocketBase: Sendable {
     let session: NetworkSession
     
     public init(url: URL, session: NetworkSession = URLSession.shared) {
+        Self.logger.trace(#function)
         self.url = url
         self.realtime = Realtime(baseUrl: url)
         self.session = session
@@ -31,11 +32,13 @@ public struct PocketBase: Sendable {
             return url
         }()
     ) {
+        Self.logger.trace(#function)
         self.init(url: url)
     }
     
     public func collection<T: Record>(_ type: T.Type) -> RecordCollection<T> {
-        RecordCollection(T.collection, self)
+        Self.logger.trace(#function)
+        return RecordCollection(T.collection, self)
     }
 }
 
@@ -43,6 +46,7 @@ extension PocketBase {
     public static let localhost = PocketBase(url: URL.localhost)
     
     public static func set(url: URL) {
+        Self.logger.trace(#function)
         UserDefaults.pocketbase?.set(url, forKey: Self.urlKey)
     }
     
