@@ -17,11 +17,11 @@ public struct AuthStore: Sendable {
     }
     
     public var token: String? {
-        Keychain()["token"]
+        Keychain(service: "io.pocketbase.auth")["token"]
     }
     
     func set(token: String) {
-        Keychain()["token"] = token
+        Keychain(service: "io.pocketbase.auth")["token"] = token
     }
     
     public func record<T: AuthRecord>() throws -> T? where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
@@ -44,7 +44,7 @@ public struct AuthStore: Sendable {
     }
     
     public func clear() {
-        Keychain()["token"] = nil
+        Keychain(service: "io.pocketbase.auth")["token"] = nil
         UserDefaults.pocketbase?.removeObject(forKey: "record")
     }
 }

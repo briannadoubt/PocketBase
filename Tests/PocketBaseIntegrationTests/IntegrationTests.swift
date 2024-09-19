@@ -12,7 +12,7 @@ import Foundation
 
 @AuthCollection("users")
 struct User {
-    @BackRelation(\Post.owner) var posts: [Post]?
+    @BackRelation(\Post.owner) var posts: [Post] = []
 }
 
 @BaseCollection("posts")
@@ -20,13 +20,13 @@ struct Post {
     var title: String
     @Relation var owner: User?
     @Relation var tags: [Tag]?
-    @BackRelation(\Comment.post) var postComments: [Comment]?
+    @BackRelation(\Comment.post) var postComments: [Comment] = []
 }
 
 @BaseCollection("tags")
 struct Tag {
     var name: String
-    @BackRelation(\Post.tags) var posts: [Post]?
+    @BackRelation(\Post.tags) var posts: [Post] = []
 }
 
 @BaseCollection("comments")
@@ -35,6 +35,7 @@ struct Comment {
     @Relation var post: Post?
     @Relation var author: User?
 }
+
 extension Testing.Tag {
     @Tag static var integration: Self
     @Tag static var localhostRequired: Self
@@ -142,13 +143,15 @@ func happyPath() async throws {
     let theSamePost = try await posts.view(id: post.id)
     #expect(post.id == theSamePost.id)
     
-    #expect(theSamePost.postComments == [comment])
+    #expect(theSamePost.postComments.count == 1)
+    #expect(theSamePost.postComments.first?.text == comment.text)
+    #expect(theSamePost.postComments.first?.id == comment.id)
     
     try await comments.delete(comment)
     
     post = try await posts.view(id: post.id)
     
-    #expect(post.postComments == nil)
+    #expect(post.postComments == [])
     
     // Delete the post
     try await posts.delete(post)

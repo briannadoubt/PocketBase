@@ -93,15 +93,19 @@ extension NetworkInterfacing {
         query: [URLQueryItem] = [],
         headers: HTTPFields
     ) async throws -> Response {
-        try await decoder.decode(
-            Response.self,
-            from: execute(
-                method: .post,
-                path: path,
-                query: query,
-                headers: headers
+        do {
+            return try await decoder.decode(
+                Response.self,
+                from: execute(
+                    method: .post,
+                    path: path,
+                    query: query,
+                    headers: headers
+                )
             )
-        )
+        } catch {
+            throw error
+        }
     }
     
     func post<Response: Decodable & Sendable, Body: EncodableWithConfiguration & Sendable>(

@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "AC47B309-8CBA-42F3-B911-5804D3044558",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "PocketBaseIntegrationTests",
+        "name" : "PocketBaseIntegrationTests"
+      }
+    }
+  ],
+  "version" : 1
+}
