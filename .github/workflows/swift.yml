@@ -21,17 +21,6 @@ jobs:
       uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: latest-stable
-    - name: Download PocketBase
-      run: |
-        curl -L -o pocketbase.zip https://github.com/pocketbase/pocketbase/releases/download/v0.22.21/pocketbase_0.22.21_darwin_amd64.zip
-        unzip pocketbase.zip
-        chmod +x pocketbase
-    - name: Run PocketBase
-      run: ./pocketbase serve
-    - name: Build
-      run: swift build
     - name: Run tests
-      run: swift test
-    - name: Tear Down PocketBase
-      if: always()
-      run: docker compose down
+      run: xcodebuild -scheme SwiftKeychain test -destination "platform=iOS Simulator,name=iPhone 15,OS=latest"
+
