@@ -29,7 +29,7 @@ struct MockNetworkSession: NetworkSession {
     func dataTask(
         with request: URLRequest,
         completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void
-    ) -> DataSession {
+    ) -> any DataSession {
         guard let stream else {
             completionHandler(nil, nil, NSError(domain: "MockNetworkSession", code: 0))
             preconditionFailure("MockNetworkSession: dataTask called without stream")
@@ -38,7 +38,7 @@ struct MockNetworkSession: NetworkSession {
     }
 }
 
-final class MockURLSessionDataStreamTask: DataSession, Sendable {
+final class MockURLSessionDataStreamTask: NSObject, DataSession, Sendable {
     typealias Response = (data: Data?, response: URLResponse?, error: Error?)
     
     private let completionHandler: @Sendable (Data?, URLResponse?, Error?) -> Void

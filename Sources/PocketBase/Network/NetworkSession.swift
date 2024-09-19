@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol NetworkSession: Sendable {
+public protocol NetworkSession: Sendable, Equatable {
     /// Convenience method to load data using a URLRequest, creates and resumes a URLSessionDataTask internally.
     ///
     /// - Parameter request: The URLRequest for which to load data.
@@ -21,10 +21,10 @@ public protocol NetworkSession: Sendable {
     func dataTask(
         with request: URLRequest,
         completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void
-    ) -> DataSession
+    ) -> any DataSession
 }
 
-public protocol DataSession: AnyObject {
+public protocol DataSession: AnyObject, Equatable {
     func resume()
     func cancel()
 }
