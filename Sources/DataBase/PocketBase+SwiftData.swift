@@ -109,7 +109,7 @@ extension PocketBase {
     func findUnsynced<each T: PersistentModel & Record>(
         in modelContainer: ModelContainer
     ) throws -> [(repeat ((each T), Operation))] {
-        let tokenData = UserDefaults.standard.data(forKey: Self.lastHistoryToken)
+        let tokenData = UserDefaults.pocketbase?.data(forKey: Self.lastHistoryToken)
         var historyToken: DefaultHistoryToken? = nil
         if let tokenData {
             historyToken = try JSONDecoder().decode(DefaultHistoryToken.self, from: tokenData)
@@ -118,7 +118,7 @@ extension PocketBase {
         let result = try findOperations(in: modelContainer, with: repeat (each T).self, in: transactions)
 
         let newTokenData = try JSONEncoder().encode(result.1)
-        UserDefaults.standard.set(newTokenData, forKey: Self.lastHistoryToken)
+        UserDefaults.pocketbase?.set(newTokenData, forKey: Self.lastHistoryToken)
 
         return result.0
     }

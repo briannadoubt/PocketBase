@@ -14,9 +14,12 @@ public struct PocketBase: Sendable, HasLogger {
     public let authStore = AuthStore()
     public let realtime: Realtime
     
-    let session: NetworkSession
+    let session: any NetworkSession
     
-    public init(url: URL, session: NetworkSession = URLSession.shared) {
+    public init(
+        url: URL,
+        session: any NetworkSession = URLSession.shared
+    ) {
         Self.logger.trace(#function)
         self.url = url
         self.realtime = Realtime(baseUrl: url)
@@ -30,10 +33,11 @@ public struct PocketBase: Sendable, HasLogger {
                 preconditionFailure("Please configure a PocketBase URL in UserDefaults with the key \"io.pocketbase.url\". This can be accomplished using `PocketBase.set(url:)`, creating your own instance with `PocketBase(url:)`, or by setting the PocketBase instance within the app’s SwiftUI environment with `.pocketbase(url:)`. By default, localhost is used if no URL is configured.")
             }
             return url
-        }()
+        }(),
+        session: any NetworkSession = URLSession.shared
     ) {
         Self.logger.trace(#function)
-        self.init(url: url)
+        self.init(url: url, session: session)
     }
     
     public func collection<T: Record>(_ type: T.Type) -> RecordCollection<T> {

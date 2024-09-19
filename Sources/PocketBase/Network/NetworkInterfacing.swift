@@ -10,7 +10,7 @@ internal import HTTPTypes
 
 public protocol NetworkInterfacing: Actor, HasLogger {
     var baseURL: URL { get }
-    var session: NetworkSession { get }
+    var session: any NetworkSession { get }
     var decoder: JSONDecoder { get }
     var encoder: JSONEncoder { get }
 }
