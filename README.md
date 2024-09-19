@@ -1,6 +1,6 @@
 # PocketBase
 
-[![Swift](https://github.com/briannadoubt/PocketBase/actions/workflows/swift.yml/badge.svg)](https://github.com/briannadoubt/PocketBase/actions/workflows/swift.yml)
+[![Run Tests](https://github.com/briannadoubt/PocketBase/actions/workflows/run-tests.yml/badge.svg)](https://github.com/briannadoubt/PocketBase/actions/workflows/run-tests.yml)
 
 A pure Swift client for interfacing with a PocketBase instance.
 
