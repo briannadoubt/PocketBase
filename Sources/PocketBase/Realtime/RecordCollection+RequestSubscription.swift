@@ -5,7 +5,6 @@
 //  Created by Brianna Zamora on 8/18/24.
 //
 
-
 extension RecordCollection where T: BaseRecord {
     public func requestSubscription(
         for path: String,

@@ -8,6 +8,7 @@
 import Combine
 import Foundation
 import AsyncAlgorithms
+import EventSource
 
 /// An object used to interact with the PocketBase **Realtime API**.
 public actor Realtime: HasLogger {
@@ -23,7 +24,7 @@ public actor Realtime: HasLogger {
     
     private(set) var subscriptions: [String: Subscription] = [:]
     
-    private var eventSource: EventSource!
+    private var eventSource: EventSource?
     
     /// An object used to interact with the PocketBase **Realtime API**.
     /// - Parameters:
@@ -41,7 +42,7 @@ public actor Realtime: HasLogger {
                 lastEventId: UserDefaults.pocketbase?.string(forKey: PocketBase.lastEventKey)
             )
         )
-        await eventSource.start()
+        await eventSource?.start()
     }
     
     func subscribe<Record: BaseRecord>(

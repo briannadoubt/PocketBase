@@ -7,8 +7,9 @@
 
 import SwiftUI
 import PocketBase
+import os
 
-public struct SignUpButton<T: AuthRecord>: View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public struct SignUpButton<T: AuthRecord>: View, HasLogger where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     let newRecord: T
     let collection: RecordCollection<T>
     @Binding private var authState: AuthState
@@ -26,31 +27,33 @@ public struct SignUpButton<T: AuthRecord>: View where T.EncodingConfiguration ==
         self.strategy = strategy
     }
     
-    public var body: some View {
-        Button {
-            Task {
-                do {
-                    switch strategy {
-                    case .identity(let identity, let password, let fields):
-                        try await collection.create(
-                            newRecord,
-                            password: password,
-                            passwordConfirm: password
-                        )
-                        try await collection.authWithPassword(
-                            identity,
-                            password: password,
-                            fields: fields
-                        )
-                    case .oauth:
-                        fatalError("OAuth is not implemented yet")
-                    }
-                    authState = .signedIn
-                } catch {
-                    print(error)
+    func signUp() {
+        Task {
+            do {
+                switch strategy {
+                case .identity(let identity, let password, let fields):
+                    try await collection.create(
+                        newRecord,
+                        password: password,
+                        passwordConfirm: password
+                    )
+                    try await collection.authWithPassword(
+                        identity,
+                        password: password,
+                        fields: fields
+                    )
+                case .oauth:
+                    fatalError("OAuth is not implemented yet")
                 }
+                authState = .signedIn
+            } catch {
+                Self.logger.error("Failed to sign up: \(error)")
             }
-        } label: {
+        }
+    }
+    
+    public var body: some View {
+        Button(action: signUp) {
             switch strategy {
             case .identity:
                 Label("Sign Up", systemImage: "person.crop.circle.fill")

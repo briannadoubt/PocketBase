@@ -7,7 +7,7 @@
 
 import Foundation
 
-public extension RecordCollection {
+public extension RecordCollection where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     /// Creates a new collection Record.
     ///
     /// Depending on the collection's createRule value, the access to this action may or may not have been restricted.
@@ -96,7 +96,7 @@ public extension RecordCollection where T: AuthRecord {
     }
 }
 
-extension AuthRecord {
+extension AuthRecord where EncodingConfiguration == RecordCollectionEncodingConfiguration {
     func createBody(
         password: String,
         passwordConfirm: String,

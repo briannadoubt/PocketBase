@@ -9,6 +9,7 @@ import Foundation
 import SwiftSyntax
 import SwiftSyntaxMacros
 import SwiftSyntaxBuilder
+import SwiftSyntaxMacroExpansion
 
 enum RelationError {
     case mustBeMarkedAsOptional

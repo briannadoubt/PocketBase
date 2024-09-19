@@ -6,12 +6,12 @@ import CompilerPluginSupport
 let package = Package(
     name: "PocketBase",
     platforms: [
-        .macOS(.v15),
-        .iOS(.v18),
-        .tvOS(.v18),
-        .watchOS(.v11),
-        .macCatalyst(.v18),
-        .visionOS(.v2),
+        .macOS(.v14),
+        .iOS(.v17),
+        .tvOS(.v17),
+        .watchOS(.v10),
+        .macCatalyst(.v17),
+        .visionOS(.v1),
     ],
     products: [
         .library(
@@ -22,12 +22,17 @@ let package = Package(
             name: "PocketBaseUI",
             targets: ["PocketBaseUI"]
         ),
-        .library(
-            name: "DataBase",
-            targets: ["DataBase"]
-        ),
+        // MARK: WIP
+//        .library(
+//            name: "DataBase",
+//            targets: ["DataBase"]
+//        ),
     ],
     dependencies: [
+        .package(
+            url: "https://github.com/briannadoubt/EventSource.git",
+            .upToNextMinor(from: "0.1.0")
+        ),
         .package(
             url: "https://github.com/apple/swift-http-types.git",
             .upToNextMajor(from: "1.0.0")
@@ -58,6 +63,7 @@ let package = Package(
             name: "PocketBase",
             dependencies: [
                 "PocketBaseMacros",
+                .product(name: "EventSource", package: "EventSource"),
                 .product(name: "KeychainAccess", package: "KeychainAccess"),
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),

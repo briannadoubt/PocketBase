@@ -8,17 +8,11 @@
 import PocketBase
 import SwiftUI
 
-/// <#Description#>
-public struct LoginButton<T: AuthRecord>: View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public struct LoginButton<T: AuthRecord>: View, HasLogger where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     private let collection: RecordCollection<T>
     @Binding private var authState: AuthState
     private var strategy: RecordCollection<T>.AuthMethod
     
-    /// <#Description#>
-    /// - Parameters:
-    ///   - collection: <#collection description#>
-    ///   - authState: <#authState description#>
-    ///   - strategy: <#strategy description#>
     public init(
         collection: RecordCollection<T>,
         authState: Binding<AuthState>,

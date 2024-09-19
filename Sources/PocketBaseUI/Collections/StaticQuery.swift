@@ -9,8 +9,10 @@ import SwiftUI
 import PocketBase
 import Collections
 
-/// <#Description#>
-@MainActor @propertyWrapper public struct StaticQuery<T: BaseRecord>: DynamicProperty where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+@MainActor
+@propertyWrapper
+public struct StaticQuery<T: BaseRecord>: DynamicProperty
+where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     @Environment(\.pocketbase) private var pocketbase
     
     private var collection: RecordCollection<T> {
@@ -27,13 +29,6 @@ import Collections
     private let sort: [SortDescriptor<T>]
     private let filter: Filter?
     
-    /// <#Description#>
-    /// - Parameters:
-    ///   - page: <#page description#>
-    ///   - perPage: <#perPage description#>
-    ///   - shouldPage: <#shouldPage description#>
-    ///   - sort: <#sort description#>
-    ///   - filter: <#filter description#>
     public init(
         page: Int = 1,
         perPage: Int = 30,
@@ -48,12 +43,10 @@ import Collections
         self.filter = filter
     }
     
-    /// <#Description#>
     public var wrappedValue: [T] {
         records
     }
     
-    /// <#Description#>
     public func load() async throws {
         let response = try await collection.list(
             page: page,
