@@ -12,7 +12,7 @@ on:
 jobs:
   build:
 
-    runs-on: macos-latest-large
+    runs-on: macos-latest
 
     steps:
     - name: Checkout Code
