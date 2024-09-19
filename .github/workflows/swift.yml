@@ -28,5 +28,5 @@ jobs:
     - name: Run tests
       run: swift test
     - name: Tear Down PocketBase
-      if: if always()
+      if: always()
       run: docker compose down
