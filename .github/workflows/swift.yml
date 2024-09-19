@@ -21,6 +21,8 @@ jobs:
       uses: maxim-lobanov/setup-xcode@v1
       with:
         xcode-version: latest-stable
+    - name: Setup Docker
+      uses: douglascamata/setup-docker-macos-action@v1-alpha
     - name: Run PocketBase
       run: docker compose up -d
     - name: Build
