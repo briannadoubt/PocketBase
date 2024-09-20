@@ -33,25 +33,12 @@ Now you're ready to incorporate the library.
 
 First, be sure to import the right things. This should be all the dependencies required to build an app with PocketBase:
 ```swift
-import PocketBase // <~ Exposes the core `PocketBase` object
+import PocketBase // <~ Exposes the core `PocketBase` object. Imports `Foundation`.
 import PocketBaseUI // <~ Exposes the various SwiftUI helpers surrounding the `PocketBase` instance.
-import SwiftData // <~ Required for defining record collection schemas
 import SwiftUI
 ```
 
 To setup a pocketbase instance on your app, use the Environment. PocketBase will default to `localhost` if no instance is defined here.
-
-```swift
-@main
-struct CatApp: App {
-    var body: some Scene {
-        WindowGroup {
-            ContentView()
-        }
-        .pocketbase(.localhost)
-    }
-}
-```
 
 To set up a custom url, use a similar pattern, but just pass a URL:
 
@@ -62,7 +49,11 @@ struct CatApp: App {
         WindowGroup {
             ContentView()
         }
+        #if DEBUG
+        .pocketbase(.localhost) // <~ optional
+        #else
         .pocketbase(url: URL(string: "https://production.myFancyApp.com/")!)
+        #endif
     }
 }
 ```
@@ -115,7 +106,7 @@ struct CatApp: App {
 }
 
 struct CustomLoginScreen: View {
-    @Environment(\.pocketbase) private var pocketbase
+    @Environment(\.pocketbase) private var pocketbase // <~ get the `PocketBase` instance from the environment to make mutations
     
     var collection: RecordCollection<User>
     @Binding var authState: AuthState
