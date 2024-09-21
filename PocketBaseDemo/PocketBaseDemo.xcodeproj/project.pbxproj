@@ -39,6 +39,7 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
+				PocketBaseDemo.xctestplan,
 			);
 			target = 034922CA2C635F4900FC5AFD /* PocketBaseDemo */;
 		};

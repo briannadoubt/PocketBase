@@ -38,7 +38,7 @@ public extension RecordCollection where T: AuthRecord {
             headers: headers,
             body: AuthWithPasswordBody(identity: identity, password: password)
         )
-        try pocketbase.authStore.set(response: response)
+        try pocketbase.authStore.set(response)
         return response
     }
     

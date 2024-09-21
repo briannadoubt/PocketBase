@@ -119,6 +119,7 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger where T.EncodingConf
                                     authState: $authState,
                                     strategy: .identity(loginIdentity, password: password)
                                 )
+                                .accessibilityIdentifier("btn_login")
                             }
                         }
                         

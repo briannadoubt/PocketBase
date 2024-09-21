@@ -28,7 +28,7 @@ public extension RecordCollection where T: AuthRecord {
                 }(),
                 headers: headers
             )
-            try pocketbase.authStore.set(response: response)
+            try pocketbase.authStore.set(response)
             return response
         } catch {
             pocketbase.authStore.clear()

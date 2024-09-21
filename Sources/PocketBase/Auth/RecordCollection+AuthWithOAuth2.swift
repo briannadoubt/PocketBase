@@ -40,7 +40,7 @@ public extension RecordCollection where T: AuthRecord {
                 ]
             )
         )
-        try pocketbase.authStore.set(response: response)
+        try pocketbase.authStore.set(response)
         return response
     }
 }
