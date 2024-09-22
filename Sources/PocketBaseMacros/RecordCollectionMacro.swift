@@ -40,19 +40,23 @@ extension RecordCollectionMacro {
 }
 
 extension RecordCollectionMacro {
-    static func members(_ node: AttributeSyntax, _ variables: [Variable]) throws -> [DeclSyntax] {
+    static func members(
+        _ modifiers: DeclModifierListSyntax,
+        _ node: AttributeSyntax,
+        _ variables: [Variable]
+    ) throws -> [DeclSyntax] {
         var members: [DeclSyntax] = []
-        members.append(contentsOf: try baseCollectionVariables(node))
+        members.append(contentsOf: try baseCollectionVariables(modifiers, node))
         if isAuthCollection(node) {
-            members.append(contentsOf: try authCollectionVariables(node))
+            members.append(contentsOf: try authCollectionVariables(modifiers, node))
         }
-        members.append(DeclSyntax(memberwiseInit(node, variables)))
-        members.append(DeclSyntax(try initFromDecoder(node, variables)))
-        members.append(DeclSyntax(try encodeToEncoderWithConfiguration(node, variables)))
-        members.append(DeclSyntax(try relations(variables)))
-        members.append(DeclSyntax(try codingKeysEnum(node, variables)))
+        members.append(DeclSyntax(memberwiseInit(modifiers, node, variables)))
+        members.append(DeclSyntax(try initFromDecoder(modifiers, node, variables)))
+        members.append(DeclSyntax(try encodeToEncoderWithConfiguration(modifiers, node, variables)))
+        members.append(DeclSyntax(try relations(modifiers, variables)))
+        members.append(DeclSyntax(try codingKeysEnum(modifiers, node, variables)))
         if hasRelations(variables) {
-            members.append(DeclSyntax(try expandStruct(variables)))
+            members.append(DeclSyntax(try expandStruct(modifiers, variables)))
         }
         return members
     }
@@ -63,17 +67,109 @@ extension RecordCollectionMacro {
         conformingTo protocols: [TypeSyntax],
         in context: some MacroExpansionContext
     ) throws -> [DeclSyntax] {
-        try members(node, declaration.variables.parsed)
+        try members(
+            declaration.modifiers,
+            node,
+            declaration.variables.parsed(
+                modifiers: declaration.modifiers
+            )
+        )
+    }
+}
+
+extension DeclModifierListSyntax {
+    var isPublic: Bool {
+        contains { modifier in
+            modifier.name.tokenKind == .keyword(.public)
+        }
+    }
+    
+    var modifier: TokenSyntax {
+        isPublic
+        ? TokenSyntax(TokenKind.keyword(.public), trailingTrivia: .space, presence: .present)
+        : TokenSyntax(TokenKind.keyword(.internal), trailingTrivia: .space, presence: .missing)
+    }
+}
+
+extension DeclModifierSyntax {
+    static let `public` = DeclModifierSyntax(
+        name: .keyword(.public)
+    )
+}
+
+extension VariableDeclSyntax {
+    init(
+        isPublic: Bool,
+        name: PatternSyntax,
+        type: TokenSyntax,
+        value: some ExprSyntaxProtocol
+    ) {
+        self.init(
+            modifiers: .init {
+                if isPublic {
+                    .public
+                }
+            },
+            .var,
+            name: name,
+            type: .init(
+                type: IdentifierTypeSyntax(name: type)
+            ),
+            initializer: InitializerClauseSyntax(
+                value: value
+            )
+        )
+    }
+}
+
+extension DeclSyntax {
+    static func variable(
+        isPublic: Bool,
+        name: PatternSyntax,
+        type: TokenSyntax,
+        value: some ExprSyntaxProtocol
+    ) -> DeclSyntax {
+        DeclSyntax(
+            VariableDeclSyntax(
+                isPublic: isPublic,
+                name: name,
+                type: type,
+                value: value
+            )
+        )
     }
 }
 
 extension RecordCollectionMacro {
-    static func authCollectionVariables(_ node: AttributeSyntax) throws -> [DeclSyntax] {
+    static func authCollectionVariables(
+        _ modifiers: DeclModifierListSyntax,
+        _ node: AttributeSyntax
+    ) throws -> [DeclSyntax] {
         [
-            "var verified: Bool = false",
-            "var emailVisibility: Bool = false",
-            "var username: String = \"\"",
-            "var email: String? = nil",
+            .variable(
+                isPublic: modifiers.isPublic,
+                name: "verified",
+                type: "Bool",
+                value: BooleanLiteralExprSyntax(false)
+            ),
+            .variable(
+                isPublic: modifiers.isPublic,
+                name: "emailVisibility",
+                type: "Bool",
+                value: BooleanLiteralExprSyntax(false)
+            ),
+            .variable(
+                isPublic: modifiers.isPublic,
+                name: "username",
+                type: "String",
+                value: StringLiteralExprSyntax(content: "")
+            ),
+            .variable(
+                isPublic: modifiers.isPublic,
+                name: "email",
+                type: "String?",
+                value: NilLiteralExprSyntax()
+            )
         ]
     }
     
@@ -118,12 +214,12 @@ extension RecordCollectionMacro {
                 parameters.append("\(variable.name): \(variable.type)")
             case .single:
                 if variable.isOptionalRelationship {
-                    parameters.append("\(variable.name): \(variable.type).ID? = nil")
+                    parameters.append("\(variable.name): String? = nil")
                 } else {
-                    parameters.append("\(variable.name): \(variable.type).ID")
+                    parameters.append("\(variable.name): String")
                 }
             case .multiple:
-                parameters.append("\(variable.name): [\(variable.type).ID] = []")
+                parameters.append("\(variable.name): [String] = []")
             case .backwards:
                 continue
             }
@@ -154,8 +250,11 @@ extension RecordCollectionMacro {
         return parameters
     }
     
-    static func memberwiseInit(_ node: AttributeSyntax, _ variables: [Variable]) -> InitializerDeclSyntax {
+    static func memberwiseInit(_ modifiers: DeclModifierListSyntax, _ node: AttributeSyntax, _ variables: [Variable]) -> InitializerDeclSyntax {
         InitializerDeclSyntax(
+            modifiers: .init {
+                DeclModifierSyntax(name: modifiers.modifier)
+            },
             signature: FunctionSignatureSyntax(
                 parameterClause: FunctionParameterClauseSyntax(
                     parametersBuilder: {
@@ -172,8 +271,14 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func initFromDecoder(_ node: AttributeSyntax, _ variables: [Variable]) throws -> InitializerDeclSyntax {
-        try InitializerDeclSyntax("init(from decoder: Decoder) throws") {
+    static func initFromDecoder(
+        _ modifiers: DeclModifierListSyntax,
+        _ node: AttributeSyntax,
+        _ variables: [Variable]
+    ) throws -> InitializerDeclSyntax {
+        try InitializerDeclSyntax(
+            "\(modifiers.modifier)init(from decoder: Decoder) throws"
+        ) {
             "let container = try decoder.container(keyedBy: CodingKeys.self)"
             "// Base Collection Fields"
             "let id = try container.decode(String.self, forKey: .id)"
@@ -201,10 +306,10 @@ extension RecordCollectionMacro {
                         "self.\(variable.name) = try container.decode(\(variable.type).self, forKey: .\(variable.name))"
                     case .single:
                         "self.\(variable.name) = expand?.\(variable.name)"
-                        "self._\(variable.name)Id = try container.decode(\(variable.type).ID.self, forKey: .\(variable.name))"
+                        "self._\(variable.name)Id = try container.decode(String.self, forKey: .\(variable.name))"
                     case .multiple:
                         "self.\(variable.name) = expand?.\(variable.name)"
-                        "self._\(variable.name)Ids = try container.decode([\(variable.type).ID].self, forKey: .\(variable.name))"
+                        "self._\(variable.name)Ids = try container.decode([String].self, forKey: .\(variable.name))"
                     case .backwards:
                         "self.\(variable.name) = expand?.\(variable.name) ?? []"
                     }
@@ -260,8 +365,11 @@ extension RecordCollectionMacro {
         return elements
     }
     
-    static func relations(_ variables: [Variable]) throws -> VariableDeclSyntax {
-        try VariableDeclSyntax("static var relations: [String: any Record.Type]") {
+    static func relations(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> VariableDeclSyntax {
+        return try VariableDeclSyntax("\(modifiers.modifier)static var relations: [String: any Record.Type]") {
             DictionaryExprSyntax {
                 if let elements = try? relationsDictionaryElements(variables) {
                     for element in elements {
@@ -272,8 +380,14 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func codingKeysEnum(_ node: AttributeSyntax, _ variables: [Variable]) throws -> EnumDeclSyntax {
-        try EnumDeclSyntax("enum CodingKeys: String, CodingKey") {
+    static func codingKeysEnum(
+        _ modifiers: DeclModifierListSyntax,
+        _ node: AttributeSyntax,
+        _ variables: [Variable]
+    ) throws -> EnumDeclSyntax {
+        try EnumDeclSyntax(
+            "\(modifiers.modifier)enum CodingKeys: String, CodingKey"
+        ) {
             "case id, collectionName, collectionId, created, updated, expand"
             if isAuthCollection(node) {
                 "case verified, emailVisibility, username, email"
@@ -288,7 +402,10 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func encodeToEncoderMembers(_ node: AttributeSyntax, _ variables: [Variable]) -> [CodeBlockItemSyntax] {
+    static func encodeToEncoderMembers(
+        _ node: AttributeSyntax,
+        _ variables: [Variable]
+    ) -> [CodeBlockItemSyntax] {
         var members: [CodeBlockItemSyntax] = []
         let keysToSkipEncoding: [String] = [
             "id",
@@ -321,8 +438,14 @@ extension RecordCollectionMacro {
         return members
     }
     
-    static func encodeToEncoderWithConfiguration(_ node: AttributeSyntax, _ variables: [Variable]) throws -> FunctionDeclSyntax {
-        try FunctionDeclSyntax("func encode(to encoder: Encoder, configuration: RecordCollectionEncodingConfiguration) throws") {
+    static func encodeToEncoderWithConfiguration(
+        _ modifiers: DeclModifierListSyntax,
+        _ node: AttributeSyntax,
+        _ variables: [Variable]
+    ) throws -> FunctionDeclSyntax {
+        try FunctionDeclSyntax(
+            "\(modifiers.modifier)func encode(to encoder: Encoder, configuration: RecordCollectionEncodingConfiguration) throws"
+        ) {
             "var container = encoder.container(keyedBy: CodingKeys.self)"
         
             "// BaseRecord fields"
@@ -341,49 +464,61 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func baseCollectionVariables(_ node: AttributeSyntax) throws -> [DeclSyntax] {
+    static func baseCollectionVariables(
+        _ modifiers: DeclModifierListSyntax,
+        _ node: AttributeSyntax
+    ) throws -> [DeclSyntax] {
         [
-            "static let collection: String = \"\(try collectionName(node))\"",
-            "var id: String = \"\"",
-            "var collectionId: String = \"\"",
-            "var collectionName: String = \"\"",
-            "var created: Date = Date.distantPast",
-            "var updated: Date = Date.distantPast",
-            "typealias EncodingConfiguration = RecordCollectionEncodingConfiguration"
+            "\(modifiers.modifier)static let collection: String = \"\(try collectionName(node))\"",
+            "\(modifiers.modifier)var id: String = \"\"",
+            "\(modifiers.modifier)var collectionId: String = \"\"",
+            "\(modifiers.modifier)var collectionName: String = \"\"",
+            "\(modifiers.modifier)var created: Date = Date.distantPast",
+            "\(modifiers.modifier)var updated: Date = Date.distantPast",
+            "\(modifiers.modifier)typealias EncodingConfiguration = RecordCollectionEncodingConfiguration"
         ]
     }
     
-    static func expandStructRelationMembers(_ variables: [Variable]) -> [DeclSyntax] {
+    static func expandStructRelationMembers(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) -> [DeclSyntax] {
         var members: [DeclSyntax] = []
         for variable in variables where variable.relation != .none {
             switch variable.relation {
             case .none:
                 continue
             case .single:
-                members.append("var \(variable.name): \(variable.type)?")
+                members.append("\(modifiers.modifier)var \(variable.name): \(variable.type)?")
             case .multiple:
-                members.append("var \(variable.name): [\(variable.type)] = []")
+                members.append("\(modifiers.modifier)var \(variable.name): [\(variable.type)] = []")
             case .backwards:
-                members.append("var \(variable.name): [\(variable.type)] = []")
+                members.append("\(modifiers.modifier)var \(variable.name): [\(variable.type)] = []")
             }
         }
         return members
     }
     
-    static func expandStruct(_ variables: [Variable]) throws -> StructDeclSyntax {
-        try StructDeclSyntax("struct Expand: Decodable, EncodableWithConfiguration") {
-            for member in expandStructRelationMembers(variables) {
+    static func expandStruct(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> StructDeclSyntax {
+        try StructDeclSyntax("\(modifiers.modifier)struct Expand: Decodable, EncodableWithConfiguration") {
+            for member in expandStructRelationMembers(modifiers, variables) {
                 member
             }
-            try expandStructCodingKeys(variables)
-            try expandInitFromDecoder(variables)
-            try expandEncodeToEncoderWithConfiguration(variables)
+            try expandStructCodingKeys(modifiers, variables)
+            try expandInitFromDecoder(modifiers, variables)
+            try expandEncodeToEncoderWithConfiguration(modifiers, variables)
         }
     }
     
-    static func expandEncodeToEncoderWithConfiguration(_ variables: [Variable]) throws -> FunctionDeclSyntax {
+    static func expandEncodeToEncoderWithConfiguration(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> FunctionDeclSyntax {
         try FunctionDeclSyntax(
-            "func encode(to encoder: Encoder, configuration: RecordCollectionEncodingConfiguration) throws"
+            "\(modifiers.modifier)func encode(to encoder: Encoder, configuration: RecordCollectionEncodingConfiguration) throws"
         ) {
             "var container = encoder.container(keyedBy: CodingKeys.self)"
             for variable in variables where variable.relation != .none {
@@ -403,8 +538,13 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func expandInitFromDecoder(_ variables: [Variable]) throws -> InitializerDeclSyntax {
-        try InitializerDeclSyntax("init(from decoder: Decoder) throws") {
+    static func expandInitFromDecoder(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> InitializerDeclSyntax {
+        try InitializerDeclSyntax(
+            "\(modifiers.modifier)init(from decoder: Decoder) throws"
+        ) {
             "let container = try decoder.container(keyedBy: CodingKeys.self)"
             for variable in variables where variable.relation != .none {
                 switch variable.relation {
@@ -419,8 +559,11 @@ extension RecordCollectionMacro {
         }
     }
     
-    static func expandCodingKeysRawValue(_ variables: [Variable]) throws -> VariableDeclSyntax {
+    static func expandCodingKeysRawValue(_ modifiers: DeclModifierListSyntax, _ variables: [Variable]) throws -> VariableDeclSyntax {
         try VariableDeclSyntax(
+            modifiers: .init {
+                DeclModifierSyntax(name: modifiers.modifier)
+            },
             bindingSpecifier: "var"
         ) {
             PatternBindingSyntax(
@@ -487,14 +630,19 @@ extension RecordCollectionMacro {
         )
     }
     
-    static func expandStructCodingKeys(_ variables: [Variable]) throws -> EnumDeclSyntax {
-        try EnumDeclSyntax("enum CodingKeys: String, CodingKey") {
+    static func expandStructCodingKeys(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> EnumDeclSyntax {
+        try EnumDeclSyntax(
+            "\(modifiers.modifier)enum CodingKeys: String, CodingKey"
+        ) {
             for variable in variables where variable.relation != .none {
                 EnumCaseDeclSyntax {
                     EnumCaseElementSyntax(name: variable.name)
                 }
             }
-            try expandCodingKeysRawValue(variables)
+            try expandCodingKeysRawValue(modifiers, variables)
         }
     }
 }

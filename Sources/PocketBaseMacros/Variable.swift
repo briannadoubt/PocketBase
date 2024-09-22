@@ -21,8 +21,10 @@ struct Variable {
     var relation: RelationType
     var skipExpand: Bool
     var isOptionalRelationship: Bool
+    var modifiers: DeclModifierListSyntax
     
-    init(_ variable: VariableDeclSyntax) throws {
+    init(modifiers: DeclModifierListSyntax, _ variable: VariableDeclSyntax) throws {
+        self.modifiers = modifiers
         guard let name = variable.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmed else {
             throw VariableError.missingName
         }
@@ -50,11 +52,12 @@ struct Variable {
 }
 
 extension Collection where Element == VariableDeclSyntax {
-    var parsed: [Variable] {
-        get throws {
-            try map {
-                try Variable($0)
-            }
+    func parsed(modifiers: DeclModifierListSyntax) throws -> [Variable] {
+        try map {
+            try Variable(
+                modifiers: modifiers,
+                $0
+            )
         }
     }
 }

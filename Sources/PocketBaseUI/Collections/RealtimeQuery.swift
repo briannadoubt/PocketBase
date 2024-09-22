@@ -18,15 +18,13 @@ where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         page: Int = 0,
         perPage: Int = 30,
         shouldPage: Bool = true,
-        sort: [SortDescriptor<T>] = [SortDescriptor(\.created, order: .reverse)],
-        fields: [String] = []
+        sort: [SortDescriptor<T>] = [SortDescriptor(\.created, order: .reverse)]
     ) {
         self.page = page
         let configuration = Configuration(
             perPage: perPage,
             shouldPage: shouldPage,
-            sort: sort,
-            fields: fields
+            sort: sort
         )
         self.configuration = configuration
         self.records = []
@@ -140,8 +138,7 @@ where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
         try await collection.list(
             page: page,
             perPage: configuration.perPage,
-            sort: configuration.sort,
-            fields: configuration.fields
+            sort: configuration.sort
         )
     }
 }
@@ -168,18 +165,15 @@ extension RealtimeQuery {
         public var perPage: Int
         public var shouldPage: Bool
         public var sort: [SortDescriptor<T>]
-        public var fields: [String]
         
         public init(
             perPage: Int,
             shouldPage: Bool,
-            sort: [SortDescriptor<T>],
-            fields: [String]
+            sort: [SortDescriptor<T>]
         ) {
             self.perPage = perPage
             self.shouldPage = shouldPage
             self.sort = sort
-            self.fields = fields
         }
     }
 }

@@ -6,13 +6,38 @@
 //
 
 import Foundation
-@preconcurrency internal import KeychainAccess
+@preconcurrency import KeychainAccess
+
+public protocol KeychainProtocol: AnyObject, Sendable {
+    init(service: String)
+    subscript(_ key: String) -> String? { get set }
+    var service: String { get }
+}
+
+extension Keychain: KeychainProtocol, @unchecked @retroactive Sendable {}
 
 public struct AuthStore: Sendable {
     
-    public init() {}
+    public static var service: String {
+        "io.pocketbase.auth"
+    }
     
-    let keychain = Keychain(service: "io.pocketbase.auth")
+    public init(
+        keychain: KeychainProtocol.Type = Keychain.self,
+        service: String = AuthStore.service
+    ) {
+        self.init(
+            keychain: keychain.init(
+                service: service
+            )
+        )
+    }
+    
+    init(keychain: KeychainProtocol) {
+        self.keychain = keychain
+    }
+    
+    let keychain: KeychainProtocol
     
     public var isValid: Bool {
         token != nil
@@ -35,13 +60,9 @@ public struct AuthStore: Sendable {
     }
     
     func set<T: AuthRecord>(_ response: AuthResponse<T>) throws {
+        set(token: response.token)
         let data = try JSONEncoder().encode(response, configuration: .cache)
         UserDefaults.pocketbase?.setValue(data, forKey: "record")
-    }
-    
-    func set<T: AuthRecord>(response: AuthResponse<T>) throws {
-        set(token: response.token)
-        try set(response)
     }
     
     public func clear() {

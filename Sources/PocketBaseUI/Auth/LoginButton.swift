@@ -28,11 +28,10 @@ public struct LoginButton<T: AuthRecord>: View, HasLogger where T.EncodingConfig
             Task {
                 do {
                     switch strategy {
-                    case .identity(let identity, let password, let fields):
+                    case .identity(let identity, let password):
                         try await collection.authWithPassword(
                             identity,
-                            password: password,
-                            fields: fields
+                            password: password
                         )
                         authState = .signedIn
                     case .oauth:

@@ -1,5 +1,5 @@
 //
-//  AuthProvider.swift
+//  OAuthProvider.swift
 //  PocketBase
 //
 //  Created by Brianna Zamora on 8/5/24.

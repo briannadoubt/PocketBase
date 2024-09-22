@@ -11,20 +11,22 @@
 public struct PocketBase: Sendable, HasLogger {
     public let url: URL
     
-    public let authStore = AuthStore()
+    public let authStore: AuthStore
     public let realtime: Realtime
     
     let session: any NetworkSession
     
     public init(
         url: URL,
-        session: any NetworkSession = URLSession.shared
+        session: any NetworkSession = URLSession.shared,
+        authStore: AuthStore = AuthStore()
     ) {
         Self.logger.trace(#function)
         self.url = url
         self.realtime = Realtime(baseUrl: url)
         self.session = session
         Self.set(url: url)
+        self.authStore = authStore
     }
     
     public init(
@@ -34,11 +36,28 @@ public struct PocketBase: Sendable, HasLogger {
             }
             return url
         }(),
-        session: any NetworkSession = URLSession.shared
+        session: any NetworkSession = URLSession.shared,
+        authStore: AuthStore = AuthStore()
     ) {
         Self.logger.trace(#function)
         self.init(url: url, session: session)
     }
+    
+    public static let encoder: JSONEncoder = {
+        let encoder = JSONEncoder()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+        encoder.dateEncodingStrategy = .formatted(formatter)
+        return encoder
+    }()
+
+    public static let decoder: JSONDecoder = {
+        let encoder = JSONDecoder()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+        encoder.dateDecodingStrategy = .formatted(formatter)
+        return encoder
+    }()
     
     public func collection<T: Record>(_ type: T.Type) -> RecordCollection<T> {
         Self.logger.trace(#function)
