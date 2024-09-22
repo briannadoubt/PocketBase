@@ -46,23 +46,12 @@ public extension RecordCollection where T.EncodingConfiguration == RecordCollect
     ///             `?!~` Any/At least one of NOT Like/Contains (if not specified auto wraps the right string OPERAND in a "%" for wildcard match)
     ///             To group and combine several expressions you could use parenthesis `(...)`, `&&` (AND) and `||` (OR) tokens.
     ///             Single line comments are also supported: `// Example comment`.
-    ///   - expand: Auto expand record relations. Ex.: `?expand=relField1,relField2.subRelField`
-    ///             Supports up to 6-levels depth nested relations expansion.
-    ///             The expanded relations will be appended to the record under the expand property (eg. `"expand": {"relField1": {...}, ...}`).
-    ///             Only the relations to which the request user has permissions to view will be expanded.
-    ///   - fields: Comma separated string of the fields to return in the JSON response (by default returns all fields). Ex.:
-    ///             `?fields=*,expand.relField.name`
-    ///             * targets all keys from the specific depth level.
-    ///             In addition, the following field modifiers are also supported: `:excerpt(maxLength, withEllipsis?)`
-    ///             Returns a short plain text version of the field string value.
-    ///             Ex.: `?fields=*,description:excerpt(200,true)`
     /// - Returns: An array of records.
     func list(
         page: Int? = nil,
         perPage: Int? = nil,
         sort: [SortDescriptor<T>] = [],
-        filter: Filter? = nil,
-        fields: [String] = []
+        filter: Filter? = nil
     ) async throws -> ListResponse {
         try await get(
             path: PocketBase.recordsPath(collection),
@@ -82,9 +71,6 @@ public extension RecordCollection where T.EncodingConfiguration == RecordCollect
                 }
                 if !T.relations.isEmpty {
                     query.append(URLQueryItem(name: "expand", value: T.relations.keys.joined(separator: ",")))
-                }
-                if !fields.isEmpty {
-                    query.append(URLQueryItem(name: "fields", value: fields.joined(separator: ",")))
                 }
                 return query
             }(),

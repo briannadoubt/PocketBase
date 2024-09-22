@@ -22,19 +22,11 @@ public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
     let collection: String
     
     public let encoder: JSONEncoder = {
-        let encoder = JSONEncoder()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
-        encoder.dateEncodingStrategy = .formatted(formatter)
-        return encoder
+        PocketBase.encoder
     }()
 
     public let decoder: JSONDecoder = {
-        let encoder = JSONDecoder()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
-        encoder.dateDecodingStrategy = .formatted(formatter)
-        return encoder
+        PocketBase.decoder
     }()
     
     public init(

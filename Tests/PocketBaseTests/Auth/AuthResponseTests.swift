@@ -10,7 +10,7 @@ import Testing
 
 struct AuthResponseTests {
     let fake = "fake"
-    let tester = Tester()
+    let tester = Tester(username: "meowface")
     var response: AuthResponse<Tester> {
         AuthResponse(
             token: fake,
@@ -18,6 +18,7 @@ struct AuthResponseTests {
             meta: nil
         )
     }
+    
     @Test func initializer() {
         let response = response
         #expect(response.token == fake)

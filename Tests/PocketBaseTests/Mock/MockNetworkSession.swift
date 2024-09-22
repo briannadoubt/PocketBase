@@ -8,17 +8,32 @@
 import Foundation
 import PocketBase
 
-struct MockNetworkSession: NetworkSession {
-    var data: Data = Data()
-    var response: URLResponse = HTTPURLResponse()
-    var shouldThrow = false
+final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
+    var data: Data
+    var response: URLResponse
+    var shouldThrow: Bool
     
     var stream: MockURLSessionDataStreamTask?
+    
+    var lastRequest: URLRequest?
+    
+    init(
+        data: Data = Data(),
+        response: URLResponse = HTTPURLResponse(),
+        shouldThrow: Bool = false,
+        stream: MockURLSessionDataStreamTask? = nil
+    ) {
+        self.data = data
+        self.response = response
+        self.shouldThrow = shouldThrow
+        self.stream = stream
+    }
     
     func data(
         for request: URLRequest,
         delegate: (any URLSessionTaskDelegate)?
     ) async throws -> (Data, URLResponse) {
+        self.lastRequest = request
         if shouldThrow {
             throw NSError(domain: "MockNetworkSession", code: 0)
         }

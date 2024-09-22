@@ -10,9 +10,7 @@ import Foundation
 public extension RecordCollection where T: AuthRecord {
     @Sendable
     @discardableResult
-    func authRefresh(
-        fields: [String] = []
-    ) async throws -> AuthResponse<T> {
+    func authRefresh() async throws -> AuthResponse<T> {
         do {
             let response: AuthResponse<T> = try await post(
                 path: PocketBase.collectionPath(collection) + "auth-refresh",
@@ -20,9 +18,6 @@ public extension RecordCollection where T: AuthRecord {
                     var query: [URLQueryItem] = []
                     if !T.relations.isEmpty {
                         query.append(URLQueryItem(name: "expand", value: T.relations.keys.joined(separator: ",")))
-                    }
-                    if !fields.isEmpty {
-                        query.append(URLQueryItem(name: "fields", value: fields.joined(separator: ",")))
                     }
                     return query
                 }(),

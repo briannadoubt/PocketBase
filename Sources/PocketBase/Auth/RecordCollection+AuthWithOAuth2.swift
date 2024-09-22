@@ -14,8 +14,7 @@ public extension RecordCollection where T: AuthRecord {
         code: String,
         codeVerifier: String,
         redirectUrl: URL,
-        createData: CreateData,
-        fields: [String] = []
+        createData: CreateData
     ) async throws -> AuthResponse<T> {
         let response: AuthResponse<T> = try await post(
             path: PocketBase.collectionPath(collection) + "auth-with-oauth2/",
@@ -23,9 +22,6 @@ public extension RecordCollection where T: AuthRecord {
                 var query: [URLQueryItem] = []
                 if !T.relations.isEmpty {
                     query.append(URLQueryItem(name: "expand", value: T.relations.keys.joined(separator: ",")))
-                }
-                if !fields.isEmpty {
-                    query.append(URLQueryItem(name: "fields", value: fields.joined(separator: ",")))
                 }
                 return query
             }(),

@@ -28,5 +28,7 @@ struct OAuthProviderTests {
         #expect(provider.codeChallenge == fake)
         #expect(provider.codeChallengeMethod == fake)
         #expect(provider.authUrl == url)
+        
+        #expect(provider.id == provider.name)
     }
 }

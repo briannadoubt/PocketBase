@@ -6,13 +6,13 @@
 //
 
 extension RecordCollection where T: AuthRecord {
+    @discardableResult
     public func login(with method: AuthMethod) async throws -> T {
         switch method {
-        case .identity(let identity, let password, let fields):
+        case .identity(let identity, let password):
             try await self.authWithPassword(
                 identity,
-                password: password,
-                fields: fields
+                password: password
             ).record
         case .oauth:
             throw PocketBaseError.notImplemented
@@ -24,18 +24,17 @@ extension RecordCollection where T: AuthRecord {
         NotificationCenter.default.post(name: .pocketbaseDidSignOut, object: nil)
     }
 
-    public enum PocketBaseError: Error {
-        case alreadyAuthenticated
-        case notImplemented
-    }
-
-    public enum AuthMethod {
+    public enum AuthMethod: Sendable {
         case identity(
             _ identity: String,
-            password: String,
-            fields: [String] = []
+            password: String
         )
 
         case oauth(OAuthProvider)
     }
+}
+
+public enum PocketBaseError: Error {
+    case alreadyAuthenticated
+    case notImplemented
 }

@@ -10,16 +10,25 @@ import Testing
 import SwiftData
 
 @AuthCollection("testers")
-struct Tester {
-    @Relation var rawrs: [Rawr]?
+public struct Tester {
     
-    init(rawrs: [Rawr]? = nil) {
-        self.rawrs = rawrs
+    @Relation public var rawrs: [Rawr]?
+    
+    init(id: String, username: String) {
+        self.id = id
+        self.username = username
+        self.created = Self.date
+        self.updated = Self.date
+        self.collectionName = Self.collection
     }
 }
 
+extension Tester {
+    static let date = Date()
+}
+
 @BaseCollection("rawrs")
-struct Rawr {
+public struct Rawr {
     var field: String = ""
 }
 

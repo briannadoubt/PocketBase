@@ -129,9 +129,7 @@ struct CustomLoginScreen: View {
             authState: $authState,
             strategy: .identity(
                 "meowface",
-                password: "Test1234",
-                expand: [],
-                fields: []
+                password: "Test1234"
             )
         )
     }

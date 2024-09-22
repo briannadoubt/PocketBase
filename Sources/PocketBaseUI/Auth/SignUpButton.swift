@@ -31,7 +31,7 @@ public struct SignUpButton<T: AuthRecord>: View, HasLogger where T.EncodingConfi
         Task {
             do {
                 switch strategy {
-                case .identity(let identity, let password, let fields):
+                case .identity(let identity, let password):
                     try await collection.create(
                         newRecord,
                         password: password,
@@ -39,8 +39,7 @@ public struct SignUpButton<T: AuthRecord>: View, HasLogger where T.EncodingConfi
                     )
                     try await collection.authWithPassword(
                         identity,
-                        password: password,
-                        fields: fields
+                        password: password
                     )
                 case .oauth:
                     fatalError("OAuth is not implemented yet")
