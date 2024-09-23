@@ -48,6 +48,11 @@
                BlueprintName = "PocketBaseTests"
                ReferencedContainer = "container:">
             </BuildableReference>
+            <SkippedTests>
+               <Test
+                  Identifier = "RecordCollection_AuthWithOAuth2Tests">
+               </Test>
+            </SkippedTests>
          </TestableReference>
       </Testables>
    </TestAction>

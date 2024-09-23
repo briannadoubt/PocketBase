@@ -7,12 +7,12 @@
 
 import Foundation
 
-public struct LinkedAuthProvider: Decodable, Sendable {
-    var id: String
-    var created: Date
-    var updated: Date
-    var recordId: String
-    var collectionId: String
-    var provider: String
-    var providerId: String
+public struct LinkedAuthProvider: Codable, Sendable, Equatable {
+    public var id: String
+    public var created: Date
+    public var updated: Date
+    public var recordId: String
+    public var collectionId: String
+    public var provider: String
+    public var providerId: String
 }

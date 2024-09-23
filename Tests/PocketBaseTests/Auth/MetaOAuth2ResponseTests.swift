@@ -8,12 +8,15 @@
 import Testing
 @testable import PocketBase
 
+@Suite("MetaOAuth2Response Tests")
 struct MetaOAuth2ResponseTests {
-    @Test func pocketbaseDidSignOutNotificationName() {
+    @Test("\"Did Sign Out\" Notification Name")
+    func pocketbaseDidSignOutNotificationName() {
         #expect(Notification.Name.pocketbaseDidSignOut.rawValue == "pocketbaseDidSignOut")
     }
 
-    @Test func initialize() async throws {
+    @Test("Initializer")
+    func initialize() async throws {
         let fake = "fake"
         let date = Date()
         let url = URL(string: "fake.com")!

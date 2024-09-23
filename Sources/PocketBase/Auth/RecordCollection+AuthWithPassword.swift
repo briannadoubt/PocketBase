@@ -12,10 +12,10 @@ public extension RecordCollection where T: AuthRecord {
     ///
     /// You can customize the supported authentication options from your Auth collection configuration (including disabling all auth options).
     /// - Parameters:
-    ///   - identity: <#identity description#>
-    ///   - password: <#password description#>
+    ///   - identity: The username or email that the user types in
+    ///   - password: The password for the new user
 
-    /// - Returns: <#description#>
+    /// - Returns: The auth response containing a token and a record
     @Sendable
     @discardableResult
     func authWithPassword(
@@ -39,7 +39,7 @@ public extension RecordCollection where T: AuthRecord {
     }
 }
 
-struct AuthWithPasswordBody: EncodableWithConfiguration {
+struct AuthWithPasswordBody: EncodableWithConfiguration, Decodable, Equatable {
     func encode(to encoder: any Encoder, configuration: RecordCollectionEncodingConfiguration) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(identity, forKey: .identity)

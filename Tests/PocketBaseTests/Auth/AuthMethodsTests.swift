@@ -8,9 +8,11 @@
 import Testing
 @testable import PocketBase
 
+@Suite("AuthMethods Tests")
 struct AuthMethodsTests {
 
-    @Test func initializer() async throws {
+    @Test("AuthMethods Initializer")
+    func initializer() async throws {
         let methods = AuthMethods(
             usernamePassword: true,
             emailPassword: true,

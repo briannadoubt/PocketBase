@@ -12,6 +12,8 @@ import EventSource
 
 /// An object used to interact with the PocketBase **Realtime API**.
 public actor Realtime: HasLogger {
+    let defaults: UserDefaults?
+    
     /// The baseURL for all requests to PocketBase.
     public let baseUrl: URL
     
@@ -30,8 +32,9 @@ public actor Realtime: HasLogger {
     /// - Parameters:
     ///  - baseUrl: The baseURL for all requests to PocketBase.
     ///  - interceptor: The request's optional interceptor, defaults to nil. Use the interceptor to apply retry policies or attach headers as necessary.
-    public init(baseUrl: URL) {
+    public init(baseUrl: URL, defaults: UserDefaults? = UserDefaults.pocketbase) {
         self.baseUrl = baseUrl
+        self.defaults = defaults
     }
     
     public func connect() async {
@@ -39,7 +42,7 @@ public actor Realtime: HasLogger {
             config: EventSource.Config(
                 handler: self,
                 url: baseUrl.appendingPathComponent("api/realtime"),
-                lastEventId: UserDefaults.pocketbase?.string(forKey: PocketBase.lastEventKey)
+                lastEventId: defaults?.string(forKey: PocketBase.lastEventKey)
             )
         )
         await eventSource?.start()
@@ -96,7 +99,7 @@ extension Realtime: EventHandler {
         eventType: String,
         messageEvent: MessageEvent
     ) async {
-        UserDefaults.pocketbase?.set(messageEvent.lastEventId, forKey: "io.pocketbase.lastEventId")
+        defaults?.set(messageEvent.lastEventId, forKey: "io.pocketbase.lastEventId")
         if
             let debugData = try? JSONSerialization.data(withJSONObject: messageEvent.data, options: [.prettyPrinted, .fragmentsAllowed, .withoutEscapingSlashes]),
             let debugMessage = String(data: debugData, encoding: .utf8)

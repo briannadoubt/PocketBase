@@ -18,6 +18,7 @@ public struct PocketBase: Sendable, HasLogger {
     
     public init(
         url: URL,
+        defaults: UserDefaults? = UserDefaults.pocketbase,
         session: any NetworkSession = URLSession.shared,
         authStore: AuthStore = AuthStore()
     ) {
@@ -25,22 +26,20 @@ public struct PocketBase: Sendable, HasLogger {
         self.url = url
         self.realtime = Realtime(baseUrl: url)
         self.session = session
-        Self.set(url: url)
+        Self.set(url: url, defaults: defaults)
         self.authStore = authStore
     }
     
     public init(
-        fromStoredURL url: URL = {
-            guard let url = UserDefaults.pocketbase?.url(forKey: PocketBase.urlKey) else {
-                preconditionFailure("Please configure a PocketBase URL in UserDefaults with the key \"io.pocketbase.url\". This can be accomplished using `PocketBase.set(url:)`, creating your own instance with `PocketBase(url:)`, or by setting the PocketBase instance within the app’s SwiftUI environment with `.pocketbase(url:)`. By default, localhost is used if no URL is configured.")
-            }
-            return url
-        }(),
+        fromStoredURL defaults: UserDefaults? = UserDefaults.pocketbase,
         session: any NetworkSession = URLSession.shared,
         authStore: AuthStore = AuthStore()
     ) {
+        guard let url = defaults?.url(forKey: PocketBase.urlKey) else {
+            preconditionFailure("Please configure a PocketBase URL in UserDefaults with the key \"io.pocketbase.url\". This can be accomplished using `PocketBase.set(url:)`, creating your own instance with `PocketBase(url:)`, or by setting the PocketBase instance within the app’s SwiftUI environment with `.pocketbase(url:)`. By default, localhost is used if no URL is configured.")
+        }
         Self.logger.trace(#function)
-        self.init(url: url, session: session)
+        self.init(url: url, defaults: defaults, session: session, authStore: authStore)
     }
     
     public static let encoder: JSONEncoder = {
@@ -66,11 +65,13 @@ public struct PocketBase: Sendable, HasLogger {
 }
 
 extension PocketBase {
-    public static let localhost = PocketBase(url: URL.localhost)
+    public static let localhost = PocketBase(
+        url: URL.localhost
+    )
     
-    public static func set(url: URL) {
+    public static func set(url: URL, defaults: UserDefaults? = UserDefaults.pocketbase) {
         Self.logger.trace(#function)
-        UserDefaults.pocketbase?.set(url, forKey: Self.urlKey)
+        defaults?.set(url, forKey: Self.urlKey)
     }
     
     public static let urlKey: String = "io.pocketbase.url"
