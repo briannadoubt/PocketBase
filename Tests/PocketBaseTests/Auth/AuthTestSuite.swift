@@ -11,6 +11,14 @@ import Testing
 protocol AuthTestSuite {}
 
 extension AuthTestSuite {
+    static var email: String {
+        "meow@meow.com"
+    }
+    
+    static var newEmail: String {
+        "meow2@meow.com"
+    }
+    
     static var identityLogin: RecordCollection<Tester>.AuthMethod {
         .identity(
             username,

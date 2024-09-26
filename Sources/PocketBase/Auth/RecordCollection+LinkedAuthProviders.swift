@@ -10,7 +10,6 @@ import Foundation
 public extension RecordCollection where T: AuthRecord {
     @Sendable
     func listLinkedAuthProviders(
-        _ type: T.Type,
         id recordId: String
     ) async throws -> [LinkedAuthProvider] {
         try await get(
@@ -21,13 +20,11 @@ public extension RecordCollection where T: AuthRecord {
     
     @Sendable
     func unlinkExternalAuthProvider(
-        _ type: T.Type,
         id recordId: String,
         provider: String
     ) async throws {
         try await delete(
-            path: PocketBase.recordsPath(collection) + "external-auths/\(provider)/",
-            query: [],
+            path: PocketBase.recordsPath(collection) + "external-auths/\(provider)",
             headers: headers
         )
     }

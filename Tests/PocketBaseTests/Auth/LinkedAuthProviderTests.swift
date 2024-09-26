@@ -8,9 +8,11 @@
 import Testing
 @testable import PocketBase
 
+@Suite("LinkedAuthProvider Tests")
 struct LinkedAuthProviderTests {
 
-    @Test func initilize() async throws {
+    @Test("LinkedAuthProvider Initializer")
+    func initilize() async throws {
         let date = Date()
         let provider = LinkedAuthProvider(
             id: "fake",

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct OAuthProvider: Decodable, Sendable, Identifiable {
+public struct OAuthProvider: Codable, Sendable, Identifiable, Equatable {
     public var id: String { name }
     public var name: String
     public var state: String

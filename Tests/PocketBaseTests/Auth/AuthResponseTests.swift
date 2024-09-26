@@ -8,6 +8,7 @@
 import Testing
 @testable import PocketBase
 
+@Suite("AuthResponse Tests")
 struct AuthResponseTests {
     let fake = "fake"
     let tester = Tester(username: "meowface")
@@ -19,14 +20,16 @@ struct AuthResponseTests {
         )
     }
     
-    @Test func initializer() {
+    @Test("AuthResponse Initializer")
+    func initializer() {
         let response = response
         #expect(response.token == fake)
         #expect(response.record == tester)
         #expect(response.meta == nil)
     }
     
-    @Test func encode() throws {
+    @Test("Encode to data")
+    func encode() throws {
         let response = response
         let data = try JSONEncoder().encode(response, configuration: .cache)
         guard let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {

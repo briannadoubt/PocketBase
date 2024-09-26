@@ -8,12 +8,15 @@
 import Testing
 @testable import PocketBase
 
+@Suite("AuthStore Tests")
 struct AuthStoreTests {
-    @Test func service() {
+    @Test("Keychain Service String")
+    func service() {
         #expect(AuthStore.service == "io.pocketbase.auth")
     }
     
-    @Test func initialization() {
+    @Test("Initialize AuthStore")
+    func initialization() {
         let uuid = UUID().uuidString
         let store = AuthStore(
             keychain: MockKeychain.self,
@@ -24,7 +27,8 @@ struct AuthStoreTests {
         #expect(store.isValid == false)
     }
     
-    @Test func setToken() {
+    @Test("Set Token")
+    func setToken() {
         let uuid = UUID().uuidString
         let store = AuthStore(
             keychain: MockKeychain.self,
@@ -37,7 +41,8 @@ struct AuthStoreTests {
         #expect(store.isValid)
     }
     
-    @Test func createUpdateDelete() throws {
+    @Test("Create/Update/Delete")
+    func createUpdateDelete() throws {
         let uuid = UUID().uuidString
         let mockKeychain = MockKeychain(service: uuid)
         let fake = "fake"

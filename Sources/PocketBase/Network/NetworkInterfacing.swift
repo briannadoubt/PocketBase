@@ -15,11 +15,6 @@ public protocol NetworkInterfacing: Actor, HasLogger {
     var encoder: JSONEncoder { get }
 }
 
-public extension NetworkInterfacing {
-    var decoder: JSONDecoder { JSONDecoder() }
-    var encoder: JSONEncoder { JSONEncoder() }
-}
-
 extension NetworkInterfacing {
     // MARK: Execution
     

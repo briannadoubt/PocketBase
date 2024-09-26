@@ -11,23 +11,63 @@ import Foundation
 
 @Suite("Test PocketBase")
 struct PocketBaseTests {
-    @Test func initFromStoredURL() async {
-        UserDefaults.pocketbase?.set(URL.localhost, forKey: PocketBase.urlKey)
-        #expect(UserDefaults.pocketbase?.url(forKey: PocketBase.urlKey) == .localhost)
+    @Test("Initialize from stored URL")
+    func initFromStoredURL() async {
+        let userDefaults = UserDefaultsSpy(suiteName: #function)
+        let url = URL(string: "www.fake.com")!
+        userDefaults?.set(url, forKey: PocketBase.urlKey)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == url)
         let session = MockNetworkSession()
-        let pocketbase = PocketBase(session: session)
+        let pocketbase = PocketBase(
+            fromStoredURL: userDefaults,
+            session: session,
+            authStore: AuthStore(
+                keychain: MockKeychain(service: "meow"),
+                defaults: userDefaults
+            )
+        )
+        #expect(pocketbase.url == url)
+        await #expect(pocketbase.realtime.baseUrl == url)
+        #expect(pocketbase.session as? MockNetworkSession == session)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == url)
+        userDefaults?.removeObject(forKey: PocketBase.urlKey)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == nil)
+    }
+    
+    @Test("Initialize with no URL, fallback to localhost")
+    func initWithNoStoredURL_fallbackToLocalhost() async {
+        let userDefaults = UserDefaultsSpy(suiteName: #function)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == nil)
+        let session = MockNetworkSession()
+        let pocketbase = PocketBase(
+            fromStoredURL: userDefaults,
+            session: session,
+            authStore: AuthStore(
+                keychain: MockKeychain(service: "meow"),
+                defaults: userDefaults
+            )
+        )
         #expect(pocketbase.url == .localhost)
         await #expect(pocketbase.realtime.baseUrl == .localhost)
         #expect(pocketbase.session as? MockNetworkSession == session)
-        #expect(UserDefaults.pocketbase?.url(forKey: PocketBase.urlKey) == .localhost)
-        UserDefaults.pocketbase?.removeObject(forKey: PocketBase.urlKey)
-        #expect(UserDefaults.pocketbase?.url(forKey: PocketBase.urlKey) == nil)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == .localhost)
+        userDefaults?.removeObject(forKey: PocketBase.urlKey)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == nil)
     }
     
     @Test("Create Collection")
     func collection() async {
+        let defaults = UserDefaultsSpy(suiteName: #function)
         let session = MockNetworkSession()
-        let pb = PocketBase(url: .localhost, session: session)
+        let pb = PocketBase(
+            url: .localhost,
+            defaults: defaults,
+            session: session,
+            authStore: AuthStore(
+                keychain: MockKeychain(service: "fake"),
+                defaults: defaults
+            )
+        )
         let collection = pb.collection(Rawr.self)
         await #expect(collection.baseURL == pb.url)
         await #expect(collection.session as? MockNetworkSession == session)

@@ -8,8 +8,9 @@
 import Testing
 @testable import PocketBase
 
+@Suite("OAuthProvider Tests")
 struct OAuthProviderTests {
-    @Test
+    @Test("Initializer")
     func initializer() {
         let name = "meowface"
         let fake = "fake"

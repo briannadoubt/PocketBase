@@ -8,6 +8,11 @@
 import Foundation
 import PocketBase
 
+enum MockNetworkError: Error {
+    case youToldMeTo
+    case missingStream
+}
+
 final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
     var data: Data
     var response: URLResponse
@@ -35,7 +40,7 @@ final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
     ) async throws -> (Data, URLResponse) {
         self.lastRequest = request
         if shouldThrow {
-            throw NSError(domain: "MockNetworkSession", code: 0)
+            throw MockNetworkError.youToldMeTo
         }
         try? await Task.sleep(for: .milliseconds(100))
         return (data, response)
@@ -46,7 +51,7 @@ final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
         completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void
     ) -> any DataSession {
         guard let stream else {
-            completionHandler(nil, nil, NSError(domain: "MockNetworkSession", code: 0))
+            completionHandler(nil, nil, MockNetworkError.missingStream)
             preconditionFailure("MockNetworkSession: dataTask called without stream")
         }
         return stream
