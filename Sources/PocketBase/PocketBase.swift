@@ -35,10 +35,14 @@ public struct PocketBase: Sendable, HasLogger {
         session: any NetworkSession = URLSession.shared,
         authStore: AuthStore = AuthStore()
     ) {
-        guard let url = defaults?.url(forKey: PocketBase.urlKey) else {
-            preconditionFailure("Please configure a PocketBase URL in UserDefaults with the key \"io.pocketbase.url\". This can be accomplished using `PocketBase.set(url:)`, creating your own instance with `PocketBase(url:)`, or by setting the PocketBase instance within the app’s SwiftUI environment with `.pocketbase(url:)`. By default, localhost is used if no URL is configured.")
-        }
         Self.logger.trace(#function)
+        let url: URL
+        if let cachedURL = defaults?.url(forKey: PocketBase.urlKey) {
+            url = cachedURL
+        } else {
+            Self.logger.fault("Please configure a PocketBase URL in UserDefaults with the key \"io.pocketbase.url\". This can be accomplished using `PocketBase.set(url:)`, creating your own instance with `PocketBase(url:)`, or by setting the PocketBase instance within the app’s SwiftUI environment with `.pocketbase(url:)`. By default, localhost is used if no URL is configured.")
+            url = .localhost
+        }
         self.init(url: url, defaults: defaults, session: session, authStore: authStore)
     }
     

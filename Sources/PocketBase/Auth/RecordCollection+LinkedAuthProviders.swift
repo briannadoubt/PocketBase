@@ -24,8 +24,7 @@ public extension RecordCollection where T: AuthRecord {
         provider: String
     ) async throws {
         try await delete(
-            path: PocketBase.recordsPath(collection) + "external-auths/\(provider)/",
-            query: [],
+            path: PocketBase.recordsPath(collection) + "external-auths/\(provider)",
             headers: headers
         )
     }

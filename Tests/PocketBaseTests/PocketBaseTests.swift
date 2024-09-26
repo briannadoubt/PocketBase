@@ -14,8 +14,30 @@ struct PocketBaseTests {
     @Test("Initialize from stored URL")
     func initFromStoredURL() async {
         let userDefaults = UserDefaultsSpy(suiteName: #function)
-        userDefaults?.set(URL.localhost, forKey: PocketBase.urlKey)
-        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == .localhost)
+        let url = URL(string: "www.fake.com")!
+        userDefaults?.set(url, forKey: PocketBase.urlKey)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == url)
+        let session = MockNetworkSession()
+        let pocketbase = PocketBase(
+            fromStoredURL: userDefaults,
+            session: session,
+            authStore: AuthStore(
+                keychain: MockKeychain(service: "meow"),
+                defaults: userDefaults
+            )
+        )
+        #expect(pocketbase.url == url)
+        await #expect(pocketbase.realtime.baseUrl == url)
+        #expect(pocketbase.session as? MockNetworkSession == session)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == url)
+        userDefaults?.removeObject(forKey: PocketBase.urlKey)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == nil)
+    }
+    
+    @Test("Initialize with no URL, fallback to localhost")
+    func initWithNoStoredURL_fallbackToLocalhost() async {
+        let userDefaults = UserDefaultsSpy(suiteName: #function)
+        #expect(userDefaults?.url(forKey: PocketBase.urlKey) == nil)
         let session = MockNetworkSession()
         let pocketbase = PocketBase(
             fromStoredURL: userDefaults,

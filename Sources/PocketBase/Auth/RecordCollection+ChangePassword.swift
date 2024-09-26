@@ -12,7 +12,6 @@ public extension RecordCollection where T: AuthRecord {
     ) async throws {
         try await post(
             path: PocketBase.collectionPath(collection) + "request-password-reset",
-            query: [],
             headers: headers,
             body: ["email": email]
         )
@@ -26,7 +25,6 @@ public extension RecordCollection where T: AuthRecord {
     ) async throws {
         try await post(
             path: PocketBase.collectionPath(collection) + "confirm-password-reset",
-            query: [],
             headers: headers,
             body: [
                 "token": token,

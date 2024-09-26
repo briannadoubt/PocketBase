@@ -8,11 +8,10 @@
 public extension RecordCollection where T: AuthRecord {
     @Sendable
     func requestVerification(
-        _ type: T.Type,
         email: String
     ) async throws {
         try await post(
-            path: PocketBase.collectionPath(collection) + "request-verification/",
+            path: PocketBase.collectionPath(collection) + "request-verification",
             query: [],
             headers: headers,
             body: ["email": email]
@@ -21,13 +20,12 @@ public extension RecordCollection where T: AuthRecord {
     
     @Sendable
     func confirmVerification(
-        _ type: T.Type,
         token: String,
         password: String,
         passwordConfirm: String
     ) async throws {
         try await post(
-            path: PocketBase.collectionPath(collection) + "confirm-verification/",
+            path: PocketBase.collectionPath(collection) + "confirm-verification",
             query: [],
             headers: headers,
             body: [
