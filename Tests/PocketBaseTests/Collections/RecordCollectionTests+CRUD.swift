@@ -10,8 +10,26 @@ import Testing
 
 extension RecordCollectionTests {
     @Suite("CRUD Tests")
-    struct CRUDTests: AuthTestSuite {
     struct CRUDTests: NetworkResponseTestSuite {
+        @Test("Create Record")
+        func createRecord() async throws {
+            let expectedRawr = Self.rawr
+            let response = try PocketBase.encoder.encode(expectedRawr, configuration: .cache)
+            let baseURL = Self.baseURL
+            let environment = testEnvironment(baseURL: baseURL, response: response)
+            let collection = environment.pocketbase.collection(Rawr.self)
+            
+            let rawr = try await collection.create(Rawr(field: Self.field))
+            #expect(rawr.id == expectedRawr.id)
+            #expect(rawr.field == Self.field)
+            
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/rawrs/records",
+                method: "POST",
+                body: ["field": Self.field]
+            )
+        }
+        
         @Test("Create Auth Record")
         func createAuthRecord() async throws {
             let response = try PocketBase.encoder.encode(Self.tester, configuration: .cache)
