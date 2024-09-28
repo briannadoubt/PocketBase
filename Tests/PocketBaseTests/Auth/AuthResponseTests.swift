@@ -59,5 +59,4 @@ struct AuthResponseTests {
             Issue.record(error, "Failed to re-encode record")
         }
     }
-
 }

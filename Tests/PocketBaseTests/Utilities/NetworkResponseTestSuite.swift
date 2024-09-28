@@ -1,5 +1,5 @@
 //
-//  AuthTestSuite.swift
+//  NetworkResponseTestSuite.swift
 //  PocketBase
 //
 //  Created by Brianna Zamora on 9/22/24.
@@ -8,9 +8,9 @@
 import Testing
 @testable import PocketBase
 
-protocol AuthTestSuite {}
+protocol NetworkResponseTestSuite {}
 
-extension AuthTestSuite {
+extension NetworkResponseTestSuite {
     static var baseURL: URL {
         URL(string: UUID().uuidString + ".com")!
     }
@@ -75,5 +75,13 @@ extension AuthTestSuite {
             id: id,
             username: username
         )
+    }
+    
+    static var field: String {
+        "meow"
+    }
+    
+    static var rawr: Rawr {
+        Rawr(id: id, field: field)
     }
 }

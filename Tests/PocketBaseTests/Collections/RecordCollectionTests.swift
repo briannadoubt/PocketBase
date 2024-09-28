@@ -9,7 +9,7 @@ import Testing
 @testable import PocketBase
 
 @Suite("RecordCollection Tests")
-struct RecordCollectionTests: AuthTestSuite {
+struct RecordCollectionTests: NetworkResponseTestSuite {
     @Test("Initialize")
     func initialize() async throws {
         let userDefaults = UserDefaultsSpy(suiteName: #function)

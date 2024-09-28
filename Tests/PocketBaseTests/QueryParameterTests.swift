@@ -30,6 +30,18 @@ extension Tester {
 @BaseCollection("rawrs")
 public struct Rawr {
     var field: String = ""
+    
+    init(id: String, field: String) {
+        self.id = id
+        self.field = field
+        self.created = Self.date
+        self.updated = Self.date
+        self.collectionName = Self.collection
+    }
+}
+
+extension Rawr {
+    static let date = Date()
 }
 
 @Suite("Query parameter tests")
