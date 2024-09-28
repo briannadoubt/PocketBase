@@ -29,22 +29,13 @@ extension RecordCollectionTests {
             method: RecordCollection<Tester>.AuthMethod,
             response: AuthResponse<Tester>
         ) async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            let mockSession = MockNetworkSession(
-                data: try PocketBase.encoder.encode(response, configuration: .cache)
+            let responseData = try PocketBase.encoder.encode(response, configuration: .cache)
+            let baseURL = Self.baseURL
+            let environment = PocketBase.testEnvironment(
+                baseURL: baseURL,
+                response: responseData
             )
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain(
-                        service: Self.keychainService
-                    ),
-                    defaults: defaults
-                )
-            )
-            let collection = pocketbase.collection(Tester.self)
+            let collection = environment.pocketbase.collection(Tester.self)
             switch method {
             case .identity:
                 let tester = try await collection.login(with: method)
@@ -52,22 +43,19 @@ extension RecordCollectionTests {
                 #expect(response.record.username == tester.username)
                 
                 // Test cache
-                #expect(pocketbase.authStore.token == response.token)
-                let cachedTester: Tester? = try pocketbase.authStore.record()
+                #expect(environment.pocketbase.authStore.token == response.token)
+                let cachedTester: Tester? = try environment.pocketbase.authStore.record()
                 #expect(cachedTester?.id == response.record.id)
                 
-                #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/auth-with-password?expand=rawrs")
-                guard let body = mockSession.lastRequest?.httpBody else {
-                    #expect(mockSession.lastRequest?.httpBody != nil)
-                    return
-                }
-                let decodedBody = try JSONDecoder().decode(AuthWithPasswordBody.self, from: body)
-                #expect(decodedBody == AuthWithPasswordBody(
-                    identity: Self.username,
-                    password: Self.password
-                ))
-                #expect(mockSession.lastRequest?.httpMethod == "POST")
-                #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+                try PocketBase.assertNetworkRequest(
+                    lastRequest: environment.session.lastRequest,
+                    url: baseURL.absoluteString + "/api/collections/testers/auth-with-password?expand=rawrs",
+                    method: "POST",
+                    body: AuthWithPasswordBody(
+                        identity: Self.username,
+                        password: Self.password
+                    )
+                )
             case .oauth:
                 await #expect(
                     throws: PocketBaseError.notImplemented,
