@@ -8,9 +8,46 @@
 import Testing
 @testable import PocketBase
 
+struct AuthTestEnvironment {
+    var defaults: UserDefaultsSpy?
+    var session: MockNetworkSession
+    var keychain: MockKeychain
+    var pocketbase: PocketBase
+}
+
 protocol AuthTestSuite {}
 
 extension AuthTestSuite {
+    static var baseURL: URL {
+        URL(string: UUID().uuidString + ".com")!
+    }
+    
+    func testEnvironment(
+        baseURL: URL,
+        response: Data = Data(),
+        suiteName: String = #function,
+        service: String = #function
+    ) -> AuthTestEnvironment {
+        let defaults = UserDefaultsSpy(suiteName: suiteName)
+        let session = MockNetworkSession(data: response)
+        let keychain = MockKeychain(service: service)
+        let pocketbase = PocketBase(
+            url: baseURL,
+            defaults: defaults,
+            session: session,
+            authStore: AuthStore(
+                keychain: keychain,
+                defaults: defaults
+            )
+        )
+        return AuthTestEnvironment(
+            defaults: defaults,
+            session: session,
+            keychain: keychain,
+            pocketbase: pocketbase
+        )
+    }
+    
     static var email: String {
         "meow@meow.com"
     }

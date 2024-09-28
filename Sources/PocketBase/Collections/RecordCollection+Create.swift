@@ -7,7 +7,7 @@
 
 import Foundation
 
-public extension RecordCollection where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public extension RecordCollection where T: BaseRecord, T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
     /// Creates a new collection Record.
     ///
     /// Depending on the collection's createRule value, the access to this action may or may not have been restricted.
@@ -70,7 +70,7 @@ public extension RecordCollection where T: AuthRecord {
             body: body
         )
         if let token = pocketbase.authStore.token {
-            try pocketbase.authStore.set(AuthResponse(token: token, record: newAuthRecord))
+            try pocketbase.authStore.set(token: token, record: newAuthRecord)
         }
         return newAuthRecord
     }
@@ -85,7 +85,12 @@ extension AuthRecord where EncodingConfiguration == RecordCollectionEncodingConf
         guard var recordData = try JSONSerialization.jsonObject(
             with: encoder.encode(self, configuration: .remote)
         ) as? [String: Any] else {
-            fatalError("The record must be serializable into a dictionary.")
+            throw DecodingError.dataCorrupted(
+                DecodingError.Context(
+                    codingPath: [],
+                    debugDescription: "The record must be serializable into a dictionary."
+                )
+            )
         }
         recordData["password"] = password
         recordData["passwordConfirm"] = passwordConfirm

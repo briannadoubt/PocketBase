@@ -34,7 +34,6 @@ extension NetworkInterfacing {
                 var request = URLRequest(
                     url: {
                         let url = baseURL.appending(path: path)
-                        let query = query
                         if query.isEmpty {
                             return url
                         }

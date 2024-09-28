@@ -13,18 +13,17 @@ public extension RecordCollection where T: AuthRecord {
         id recordId: String
     ) async throws -> [LinkedAuthProvider] {
         try await get(
-            path: PocketBase.recordsPath(collection) + "external-auths",
+            path: PocketBase.recordsPath(collection) + "/external-auths",
             headers: headers
         )
     }
     
-    @Sendable
     func unlinkExternalAuthProvider(
         id recordId: String,
-        provider: String
+        provider: String // TODO: Make semantic provider enum
     ) async throws {
         try await delete(
-            path: PocketBase.recordsPath(collection) + "external-auths/\(provider)",
+            path: PocketBase.recordsPath(collection) + "/external-auths/\(provider)",
             headers: headers
         )
     }

@@ -32,4 +32,6 @@
     extension,
     conformances: AuthRecord
 )
-public macro AuthCollection(_ collectionName: String) = #externalMacro(module: "PocketBaseMacros", type: "AuthCollection")
+public macro AuthCollection(
+    _ collectionName: String
+) = #externalMacro(module: "PocketBaseMacros", type: "AuthCollection")

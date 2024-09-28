@@ -68,8 +68,12 @@ public struct AuthStore: Sendable {
     }
     
     func set<T: AuthRecord>(_ response: AuthResponse<T>) throws {
-        set(token: response.token)
-        let data = try JSONEncoder().encode(response, configuration: .cache)
+        try set(token: response.token, record: response.record)
+    }
+    
+    func set<T: AuthRecord>(token: String, record: T) throws {
+        set(token: token)
+        let data = try JSONEncoder().encode(AuthResponse(token: token, record: record), configuration: .cache)
         defaults?.setValue(data, forKey: "record")
     }
     

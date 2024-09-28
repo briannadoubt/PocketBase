@@ -13,10 +13,10 @@ extension PocketBase {
     }
     
     static func recordsPath(_ collectionIdOrName: String) -> String {
-        collectionPath(collectionIdOrName) + "records/"
+        collectionPath(collectionIdOrName) + "records"
     }
     
     static func recordPath(_ collectionIdOrName: String, _ recordId: String) -> String {
-        recordsPath(collectionIdOrName) + "/" + recordId
+        "/" + recordsPath(collectionIdOrName) + "/" + recordId
     }
 }
