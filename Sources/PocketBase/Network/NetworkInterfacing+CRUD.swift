@@ -9,24 +9,6 @@ import Foundation
 internal import HTTPTypes
 
 extension NetworkInterfacing {
-    // MARK: GET
-    
-    func list<Response: Decodable>(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields
-    ) async throws -> [Response] {
-        try await decoder.decode(
-            [Response].self,
-            from: execute(
-                method: .get,
-                path: path,
-                query: query,
-                headers: headers
-            )
-        )
-    }
-    
     func get<Response: Decodable>(
         path: String,
         query: [URLQueryItem] = [],
@@ -44,34 +26,6 @@ extension NetworkInterfacing {
     }
     
     // MARK: POST
-    
-    func post(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields
-    ) async throws {
-        try await execute(
-            method: .post,
-            path: path,
-            query: query,
-            headers: headers
-        )
-    }
-    
-    func post<Body: EncodableWithConfiguration>(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields,
-        body: Body
-    ) async throws where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
-        try await execute(
-            method: .post,
-            path: path,
-            query: query,
-            headers: headers,
-            body: self.encoder.encode(body, configuration: .remote)
-        )
-    }
     
     func post(
         path: String,
@@ -113,13 +67,13 @@ extension NetworkInterfacing {
         query: [URLQueryItem] = [],
         headers: HTTPFields,
         body: Body
-    ) async throws -> Response where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws -> Response where Body.EncodingConfiguration == PocketBase.EncodingConfiguration {
         let response = try await execute(
             method: .post,
             path: path,
             query: query,
             headers: headers,
-            body: encoder.encode(body, configuration: .remote)
+            body: encoder.encode(body, configuration: .remoteBody)
         )
         return try decoder.decode(Response.self, from: response)
     }
@@ -142,74 +96,12 @@ extension NetworkInterfacing {
     
     // MARK: PATCH
     
-    func patch(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields
-    ) async throws {
-        try await execute(
-            method: .patch,
-            path: path,
-            query: query,
-            headers: headers
-        )
-    }
-    
-    func patch<Body: Encodable>(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields,
-        body: Body
-    ) async throws {
-        try await execute(
-            method: .patch,
-            path: path,
-            query: query,
-            headers: headers,
-            body: encoder.encode(body)
-        )
-    }
-    
-    func patch<Response: Decodable>(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields
-    ) async throws -> Response {
-        try await decoder.decode(
-            Response.self,
-            from: execute(
-                method: .patch,
-                path: path,
-                query: query,
-                headers: headers
-            )
-        )
-    }
-    
-    func patch<Body: Encodable, Response: Decodable>(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields,
-        body: Body
-    ) async throws -> Response {
-        try await decoder.decode(
-            Response.self,
-            from: execute(
-                method: .patch,
-                path: path,
-                query: query,
-                headers: headers,
-                body: encoder.encode(body)
-            )
-        )
-    }
-    
     func patch<Body: EncodableWithConfiguration, Response: Decodable>(
         path: String,
         query: [URLQueryItem] = [],
         headers: HTTPFields,
         body: Body
-    ) async throws -> Response where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws -> Response where Body.EncodingConfiguration == PocketBase.EncodingConfiguration {
         try await decoder.decode(
             Response.self,
             from: execute(
@@ -217,7 +109,7 @@ extension NetworkInterfacing {
                 path: path,
                 query: query,
                 headers: headers,
-                body: encoder.encode(body, configuration: .remote)
+                body: encoder.encode(body, configuration: .remoteBody)
             )
         )
     }
@@ -234,55 +126,6 @@ extension NetworkInterfacing {
             path: path,
             query: query,
             headers: headers
-        )
-    }
-    
-    func delete<Body: Encodable>(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields,
-        body: Body
-    ) async throws {
-        try await execute(
-            method: .delete,
-            path: path,
-            query: query,
-            headers: headers,
-            body: encoder.encode(body)
-        )
-    }
-    
-    func delete<Response: Decodable>(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields
-    ) async throws -> Response {
-        try await decoder.decode(
-            Response.self,
-            from: execute(
-                method: .delete,
-                path: path,
-                query: query,
-                headers: headers
-            )
-        )
-    }
-    
-    func delete<Body: Encodable, Response: Decodable>(
-        path: String,
-        query: [URLQueryItem] = [],
-        headers: HTTPFields,
-        body: Body
-    ) async throws -> Response {
-        try await decoder.decode(
-            Response.self,
-            from: execute(
-                method: .delete,
-                path: path,
-                query: query,
-                headers: headers,
-                body: encoder.encode(body)
-            )
         )
     }
 }

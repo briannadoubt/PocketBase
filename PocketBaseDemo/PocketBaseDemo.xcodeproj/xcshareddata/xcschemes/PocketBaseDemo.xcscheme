@@ -57,6 +57,17 @@
                ReferencedContainer = "container:PocketBaseDemo.xcodeproj">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "03B77BA42CA9154A00F2657F"
+               BuildableName = "PocketBaseIntegrationTests.xctest"
+               BlueprintName = "PocketBaseIntegrationTests"
+               ReferencedContainer = "container:PocketBaseDemo.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

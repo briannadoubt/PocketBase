@@ -9,6 +9,7 @@ import PocketBase
 import Testing
 import SwiftData
 import Foundation
+import TestUtilities
 
 @AuthCollection("users")
 struct User {
@@ -47,7 +48,14 @@ extension Testing.Tag {
 )
 func happyPath() async throws {
     // Initialize pocketbase
-    let pb = PocketBase.localhost
+    let pb = PocketBase(
+        url: .localhost,
+        authStore: AuthStore(
+            keychain: MockKeychain.self,
+            service: #function,
+            defaults: UserDefaultsSpy(suiteName: #function)
+        )
+    )
     
     // Define the user collection
     let users = pb.collection(User.self)

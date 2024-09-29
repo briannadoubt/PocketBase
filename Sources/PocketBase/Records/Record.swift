@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol Record: Identifiable, Decodable, EncodableWithConfiguration, Sendable, Equatable, Hashable {
+public protocol Record: Identifiable, Decodable, EncodableWithConfiguration, Sendable, Equatable, Hashable where EncodingConfiguration == PocketBase.EncodingConfiguration {
     /// 15 characters string to store as record ID.
     ///
     /// If not set, it will be auto generated when it is created.

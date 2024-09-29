@@ -8,21 +8,21 @@
 import Foundation
 import PocketBase
 
-enum MockNetworkError: Error {
+public enum MockNetworkError: Error {
     case youToldMeTo
     case missingStream
 }
 
-final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
-    var data: Data
-    var response: URLResponse
-    var shouldThrow: Bool
+public final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
+    public var data: Data
+    public var response: URLResponse
+    public var shouldThrow: Bool
     
-    var stream: MockURLSessionDataStreamTask?
+    public var stream: MockURLSessionDataStreamTask?
     
-    var lastRequest: URLRequest?
+    public var lastRequest: URLRequest?
     
-    init(
+    public init(
         data: Data = Data(),
         response: URLResponse = HTTPURLResponse(),
         shouldThrow: Bool = false,
@@ -34,7 +34,7 @@ final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
         self.stream = stream
     }
     
-    func data(
+    public func data(
         for request: URLRequest,
         delegate: (any URLSessionTaskDelegate)?
     ) async throws -> (Data, URLResponse) {
@@ -46,7 +46,7 @@ final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
         return (data, response)
     }
     
-    func dataTask(
+    public func dataTask(
         with request: URLRequest,
         completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void
     ) -> any DataSession {
@@ -58,21 +58,21 @@ final class MockNetworkSession: NSObject, NetworkSession, @unchecked Sendable {
     }
 }
 
-final class MockURLSessionDataStreamTask: NSObject, DataSession, Sendable {
-    typealias Response = (data: Data?, response: URLResponse?, error: Error?)
+public final class MockURLSessionDataStreamTask: NSObject, DataSession, Sendable {
+    public typealias Response = (data: Data?, response: URLResponse?, error: Error?)
     
     private let completionHandler: @Sendable (Data?, URLResponse?, Error?) -> Void
     private let responses: [Response]
 
-    init(
-        responses: [(Data?, URLResponse?, Error?)],
+    public init(
+        responses: [Response],
         completionHandler: @escaping @Sendable (Data?, URLResponse?, Error?) -> Void
     ) {
         self.responses = responses
         self.completionHandler = completionHandler
     }
 
-    func resume() {
+    public func resume() {
         // Call the completion handler with mock data after a short delay to simulate network latency
         Task {
             for response in responses {
@@ -82,7 +82,7 @@ final class MockURLSessionDataStreamTask: NSObject, DataSession, Sendable {
         }
     }
 
-    func cancel() {
+    public func cancel() {
         // Handle cancellation logic if necessary
     }
 }

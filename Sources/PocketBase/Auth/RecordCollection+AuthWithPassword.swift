@@ -40,7 +40,7 @@ public extension RecordCollection where T: AuthRecord {
 }
 
 struct AuthWithPasswordBody: EncodableWithConfiguration, Decodable, Equatable {
-    func encode(to encoder: any Encoder, configuration: RecordCollectionEncodingConfiguration) throws {
+    func encode(to encoder: any Encoder, configuration: PocketBase.EncodingConfiguration) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(identity, forKey: .identity)
         try container.encode(password, forKey: .password)
@@ -51,7 +51,7 @@ struct AuthWithPasswordBody: EncodableWithConfiguration, Decodable, Equatable {
         case password
     }
     
-    typealias EncodingConfiguration = RecordCollectionEncodingConfiguration
+    typealias EncodingConfiguration = PocketBase.EncodingConfiguration
     
     var identity: String
     var password: String

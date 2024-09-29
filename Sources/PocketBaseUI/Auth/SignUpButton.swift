@@ -9,7 +9,7 @@ import SwiftUI
 import PocketBase
 import os
 
-public struct SignUpButton<T: AuthRecord>: View, HasLogger where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public struct SignUpButton<T: AuthRecord>: View, HasLogger {
     let newRecord: T
     let collection: RecordCollection<T>
     @Binding private var authState: AuthState

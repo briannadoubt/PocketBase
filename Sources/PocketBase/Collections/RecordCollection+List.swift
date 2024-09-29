@@ -8,7 +8,7 @@
 import Foundation
 import Collections
 
-public extension RecordCollection where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public extension RecordCollection {
     /// Returns a paginated records list, supporting sorting and filtering.
     ///
     /// Depending on the collection's listRule value, the access to this action may or may not have been restricted.
@@ -54,7 +54,7 @@ public extension RecordCollection where T.EncodingConfiguration == RecordCollect
         filter: Filter? = nil
     ) async throws -> ListResponse {
         try await get(
-            path: PocketBase.recordsPath(collection),
+            path: PocketBase.recordsPath(collection, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
                 if let page {
@@ -78,8 +78,8 @@ public extension RecordCollection where T.EncodingConfiguration == RecordCollect
         )
     }
     
-    struct ListResponse: Decodable, EncodableWithConfiguration, Sendable {
-        public typealias EncodingConfiguration = RecordCollectionEncodingConfiguration
+    struct ListResponse: Decodable, EncodableWithConfiguration, Sendable, Equatable {
+        public typealias EncodingConfiguration = PocketBase.EncodingConfiguration
         
         public var page: Int
         public var perPage: Int
@@ -118,7 +118,7 @@ public extension RecordCollection where T.EncodingConfiguration == RecordCollect
             self.items = try container.decode([T].self, forKey: .items)
         }
         
-        public func encode(to encoder: any Encoder, configuration: RecordCollectionEncodingConfiguration) throws {
+        public func encode(to encoder: any Encoder, configuration: PocketBase.EncodingConfiguration) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(self.page, forKey: .page)
             try container.encode(self.perPage, forKey: .perPage)

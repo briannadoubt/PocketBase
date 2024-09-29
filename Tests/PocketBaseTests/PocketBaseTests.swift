@@ -8,6 +8,7 @@
 import Testing
 @testable import PocketBase
 import Foundation
+import TestUtilities
 
 @Suite("Test PocketBase")
 struct PocketBaseTests {

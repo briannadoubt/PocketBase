@@ -7,6 +7,7 @@
 
 import Testing
 @testable import PocketBase
+import TestUtilities
 
 @Suite("AuthStore Tests")
 struct AuthStoreTests {

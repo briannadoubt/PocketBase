@@ -20,9 +20,9 @@ public extension RecordCollection {
     @discardableResult
     func update(
         _ record: T
-    ) async throws -> T where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws -> T {
         try await patch(
-            path: PocketBase.recordPath(collection, record.id),
+            path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
                 if !T.relations.isEmpty {

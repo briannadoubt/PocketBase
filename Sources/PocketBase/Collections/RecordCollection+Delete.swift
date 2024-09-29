@@ -7,7 +7,7 @@
 
 import Foundation
 
-public extension RecordCollection {
+public extension RecordCollection where T: BaseRecord {
     /// Deletes a single collection Record by its ID.
     ///
     /// Depending on the collection's `deleteRule` value, the access to this action may or may not have been restricted.
@@ -19,8 +19,7 @@ public extension RecordCollection {
     @Sendable
     func delete(_ record: T) async throws {
         try await delete(
-            path: PocketBase.recordPath(collection, record.id),
-            query: [],
+            path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
             headers: headers
         )
     }
@@ -38,8 +37,7 @@ public extension RecordCollection where T: AuthRecord {
     @Sendable
     func delete(_ record: T) async throws {
         try await delete(
-            path: PocketBase.recordPath(collection, record.id),
-            query: [],
+            path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
             headers: headers
         )
         pocketbase.authStore.clear()

@@ -82,6 +82,13 @@ extension PocketBase {
     public static let lastEventKey: String = "io.pocketbase.lastEvent"
 }
 
+extension PocketBase {
+    public enum EncodingConfiguration {
+        case remoteBody
+        case none
+    }
+}
+
 extension URL {
     public static let localhost = URL(string: "http://localhost:8090")!
 }
