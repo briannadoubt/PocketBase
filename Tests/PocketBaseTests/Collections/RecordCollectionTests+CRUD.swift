@@ -24,7 +24,7 @@ extension RecordCollectionTests {
             #expect(rawr.field == Self.field)
             
             try environment.assertNetworkRequest(
-                url: baseURL.absoluteString + "/api/collections/rawrs/records",
+                url: baseURL.absoluteString + "/api/collections/rawrs/records?expand=testers_via_rawrs",
                 method: "POST",
                 body: ["field": Self.field]
             )
@@ -32,7 +32,7 @@ extension RecordCollectionTests {
         
         @Test("Create Auth Record")
         func createAuthRecord() async throws {
-            let response = try PocketBase.encoder.encode(Self.tester, configuration: .cache)
+            let response = try PocketBase.encoder.encode(Tester(id: Self.id, username: Self.username), configuration: .none)
             let baseURL = Self.baseURL
             let environment = testEnvironment(baseURL: baseURL, response: response)
             let collection = environment.pocketbase.collection(Tester.self)
@@ -60,6 +60,37 @@ extension RecordCollectionTests {
             var verified: Bool = false
             var username: String = "meowface"
             var password: String = "Test1234"
+        }
+        
+        @Test("Delete Record")
+        func deleteRecord() async throws {
+            let baseURL = Self.baseURL
+            let environment = testEnvironment(baseURL: baseURL)
+            let collection = environment.pocketbase.collection(Rawr.self)
+            
+            try await collection.delete(Self.rawr)
+            
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/rawrs/records/meow1234",
+                method: "DELETE"
+            )
+        }
+        
+        @Test("Delete Auth Record")
+        func deleteAuthRecord() async throws {
+            let baseURL = Self.baseURL
+            let environment = testEnvironment(baseURL: baseURL)
+            let collection = environment.pocketbase.collection(Tester.self)
+            
+            environment.session.data = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
+            try await collection.login(with: .identity(Self.username, password: Self.password))
+            
+            try await collection.delete(Self.tester)
+            
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/records/meow1234",
+                method: "DELETE"
+            )
         }
     }
 }
