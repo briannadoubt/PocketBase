@@ -78,7 +78,7 @@ public extension RecordCollection {
         )
     }
     
-    struct ListResponse: Decodable, EncodableWithConfiguration, Sendable {
+    struct ListResponse: Decodable, EncodableWithConfiguration, Sendable, Equatable {
         public typealias EncodingConfiguration = PocketBase.EncodingConfiguration
         
         public var page: Int

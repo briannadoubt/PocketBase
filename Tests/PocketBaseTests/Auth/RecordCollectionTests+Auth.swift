@@ -25,7 +25,7 @@ extension RecordCollectionTests {
         ) async throws {
             let responseData = try PocketBase.encoder.encode(response, configuration: .none)
             let baseURL = Self.baseURL
-            let environment = testEnvironment(
+            let environment = PocketBase.TestEnvironment(
                 baseURL: baseURL,
                 response: responseData
             )
@@ -43,7 +43,7 @@ extension RecordCollectionTests {
                 
                 try environment.assertNetworkRequest(
                     url: baseURL.absoluteString + "/api/collections/testers/auth-with-password?expand=rawrs",
-                    method: "POST",
+                    method: .post,
                     body: AuthWithPasswordBody(
                         identity: Self.username,
                         password: Self.password
@@ -63,7 +63,7 @@ extension RecordCollectionTests {
         func logout() async throws {
             let baseURL = Self.baseURL
             let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
-            let environment = testEnvironment(
+            let environment = PocketBase.TestEnvironment(
                 baseURL: baseURL,
                 response: response
             )
@@ -82,7 +82,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/auth-with-password?expand=rawrs",
-                method: "POST",
+                method: .post,
                 body: AuthWithPasswordBody(
                     identity: Self.username,
                     password: Self.password
@@ -105,7 +105,7 @@ extension RecordCollectionTests {
         func refresh() async throws {
             let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
             let baseURL = Self.baseURL
-            let environment = testEnvironment(
+            let environment = PocketBase.TestEnvironment(
                 baseURL: baseURL,
                 response: response
             )
@@ -124,7 +124,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/auth-refresh?expand=rawrs",
-                method: "POST"
+                method: .post
             )
             
             await collection.logout()
@@ -138,7 +138,7 @@ extension RecordCollectionTests {
         func refreshErrorClearsAuthState() async throws {
             let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
             let baseURL = Self.baseURL
-            let environment = testEnvironment(
+            let environment = PocketBase.TestEnvironment(
                 baseURL: baseURL,
                 response: response
             )
@@ -158,7 +158,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/auth-refresh?expand=rawrs",
-                method: "POST"
+                method: .post
             )
             
             // MARK: Network layer throws here to mock a network error
@@ -176,7 +176,7 @@ extension RecordCollectionTests {
         @Test("Request Email Change")
         func requestEmailChange() async throws {
             let baseURL = Self.baseURL
-            let environment = testEnvironment(baseURL: baseURL)
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
             let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
@@ -184,7 +184,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/request-email-change",
-                method: "POST",
+                method: .post,
                 body: ["newEmail": "meow@meow.com"]
             )
         }
@@ -192,7 +192,7 @@ extension RecordCollectionTests {
         @Test("Confirm Email Change")
         func confirmEmailChange() async throws {
             let baseURL = Self.baseURL
-            let environment = testEnvironment(baseURL: baseURL)
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
             let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
@@ -203,7 +203,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/confirm-email-change",
-                method: "POST",
+                method: .post,
                 body: ["password": Self.password, "token": Self.token]
             )
         }
@@ -211,7 +211,7 @@ extension RecordCollectionTests {
         @Test("Change Password")
         func changePassword() async throws {
             let baseURL = Self.baseURL
-            let environment = testEnvironment(baseURL: baseURL)
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
             let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
@@ -219,7 +219,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/request-password-reset",
-                method: "POST",
+                method: .post,
                 body: ["email": "meow@meow.com"]
             )
         }
@@ -227,7 +227,7 @@ extension RecordCollectionTests {
         @Test("Confirm Password Reset")
         func confirmPasswordReset() async throws {
             let baseURL = Self.baseURL
-            let environment = testEnvironment(baseURL: baseURL)
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
             let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
@@ -239,7 +239,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/confirm-password-reset",
-                method: "POST",
+                method: .post,
                 body: [
                     "passwordConfirm": Self.password,
                     "token": Self.token,
@@ -261,7 +261,7 @@ extension RecordCollectionTests {
                 providerId: "meowmeow"
             )
             let response = try PocketBase.encoder.encode([expectedProvider])
-            let environment = testEnvironment(
+            let environment = PocketBase.TestEnvironment(
                 baseURL: baseURL,
                 response: response
             )
@@ -274,14 +274,14 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/records/external-auths",
-                method: "GET"
+                method: .get
             )
         }
         
         @Test("Unlink External Auth Provider")
         func unlinkExternalAuthProvider() async throws {
             let baseURL = Self.baseURL
-            let environment = testEnvironment(baseURL: baseURL)
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
             let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
@@ -289,7 +289,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/records/external-auths/meow",
-                method: "DELETE"
+                method: .delete
             )
         }
         
@@ -301,7 +301,7 @@ extension RecordCollectionTests {
                 emailPassword: true,
                 authProviders: []
             )
-            let environment = testEnvironment(
+            let environment = PocketBase.TestEnvironment(
                 baseURL: baseURL,
                 response: try PocketBase.encoder.encode(methods)
             )
@@ -313,14 +313,14 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/auth-methods",
-                method: "GET"
+                method: .get
             )
         }
         
         @Test("Request Verification")
         func requestVerification() async throws {
             let baseURL = Self.baseURL
-            let environment = testEnvironment(baseURL: baseURL)
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
             let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
@@ -328,7 +328,7 @@ extension RecordCollectionTests {
             
             try environment.assertNetworkRequest(
                 url: baseURL.absoluteString + "/api/collections/testers/request-verification",
-                method: "POST",
+                method: .post,
                 body: ["email": "meow@meow.com"]
             )
         }
