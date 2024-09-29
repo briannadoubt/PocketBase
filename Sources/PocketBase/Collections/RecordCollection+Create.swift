@@ -69,9 +69,6 @@ public extension RecordCollection where T: AuthRecord {
             headers: headers,
             body: body
         )
-        if let token = pocketbase.authStore.token {
-            try pocketbase.authStore.set(token: token, record: newAuthRecord)
-        }
         return newAuthRecord
     }
 }
@@ -82,19 +79,11 @@ extension AuthRecord {
         passwordConfirm: String,
         encoder: JSONEncoder
     ) throws -> Data {
-        guard var recordData = try JSONSerialization.jsonObject(
-            with: encoder.encode(self, configuration: .remoteBody)
-        ) as? [String: Any] else {
-            throw DecodingError.dataCorrupted(
-                DecodingError.Context(
-                    codingPath: [],
-                    debugDescription: "The record must be serializable into a dictionary."
-                )
-            )
-        }
-        recordData["password"] = password
-        recordData["passwordConfirm"] = passwordConfirm
-        let body = try JSONSerialization.data(withJSONObject: recordData)
+        let data = try encoder.encode(self, configuration: .remoteBody)
+        var record = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        record["password"] = password
+        record["passwordConfirm"] = passwordConfirm
+        let body = try JSONSerialization.data(withJSONObject: record)
         return body
     }
 }

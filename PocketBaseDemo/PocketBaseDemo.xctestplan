@@ -17,6 +17,13 @@
   },
   "testTargets" : [
     {
+      "target" : {
+        "containerPath" : "container:PocketBaseDemo.xcodeproj",
+        "identifier" : "03B77BA42CA9154A00F2657F",
+        "name" : "PocketBaseIntegrationTests"
+      }
+    },
+    {
       "parallelizable" : true,
       "target" : {
         "containerPath" : "container:PocketBaseDemo.xcodeproj",

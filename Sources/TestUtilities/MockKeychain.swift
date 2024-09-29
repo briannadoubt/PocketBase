@@ -7,16 +7,16 @@
 
 import PocketBase
 
-final class MockKeychain: KeychainProtocol {
-    let service: String
+public final class MockKeychain: KeychainProtocol {
+    public let service: String
     
-    init(service: String) {
+    public init(service: String) {
         self.service = service
     }
     
-    nonisolated(unsafe) var values: [String: String] = [:]
+    public nonisolated(unsafe) var values: [String: String] = [:]
     
-    subscript(key: String) -> String? {
+    public subscript(key: String) -> String? {
         get {
             values[key]
         }

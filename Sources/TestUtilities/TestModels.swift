@@ -12,7 +12,7 @@ public struct Tester {
     
     @Relation public var rawrs: [Rawr]?
     
-    init(id: String, username: String) {
+    public init(id: String, username: String) {
         self.id = id
         self.username = username
         self.created = Self.date
@@ -21,16 +21,16 @@ public struct Tester {
     }
 }
 
-extension Tester {
+public extension Tester {
     static let date = Date()
 }
 
 @BaseCollection("rawrs")
 public struct Rawr {
-    var field: String = ""
-    @BackRelation(\Tester.rawrs) var testers: [Tester] = []
+    public var field: String = ""
+    @BackRelation(\Tester.rawrs) public var testers: [Tester] = []
     
-    init(id: String, field: String) {
+    public init(id: String, field: String) {
         self.id = id
         self.field = field
         self.created = Self.date
@@ -39,6 +39,6 @@ public struct Rawr {
     }
 }
 
-extension Rawr {
+public extension Rawr {
     static let date = Date()
 }

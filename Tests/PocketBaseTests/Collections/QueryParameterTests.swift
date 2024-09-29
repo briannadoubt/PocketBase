@@ -8,6 +8,7 @@
 @testable import PocketBase
 import Testing
 import SwiftData
+import TestUtilities
 
 @Suite("Query parameter tests")
 struct QueryParameterTests {

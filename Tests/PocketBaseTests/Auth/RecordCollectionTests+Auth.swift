@@ -7,6 +7,7 @@
 
 import Testing
 @testable import PocketBase
+import TestUtilities
 
 extension RecordCollectionTests {
     @Suite("Authentication Tests")

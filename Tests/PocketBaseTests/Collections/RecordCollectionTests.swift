@@ -7,6 +7,7 @@
 
 import Testing
 @testable import PocketBase
+import TestUtilities
 
 @Suite("RecordCollection Tests")
 struct RecordCollectionTests: NetworkResponseTestSuite {

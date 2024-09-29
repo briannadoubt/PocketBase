@@ -6,15 +6,6 @@
 //
 
 import Foundation
-@preconcurrency import KeychainAccess
-
-public protocol KeychainProtocol: AnyObject, Sendable {
-    init(service: String)
-    subscript(_ key: String) -> String? { get set }
-    var service: String { get }
-}
-
-extension Keychain: KeychainProtocol, @unchecked @retroactive Sendable {}
 
 public struct AuthStore: Sendable {
     
@@ -25,14 +16,12 @@ public struct AuthStore: Sendable {
     nonisolated(unsafe) let defaults: UserDefaults?
     
     public init(
-        keychain: KeychainProtocol.Type = Keychain.self,
+        keychain: KeychainProtocol.Type = DefaultKeychain.self,
         service: String = AuthStore.service,
         defaults: UserDefaults? = UserDefaults.pocketbase
     ) {
         self.init(
-            keychain: keychain.init(
-                service: service
-            ),
+            keychain: keychain.init(service: service),
             defaults: defaults
         )
     }

@@ -8,9 +8,9 @@
 import Testing
 @testable import PocketBase
 
-protocol NetworkResponseTestSuite {}
+public protocol NetworkResponseTestSuite {}
 
-extension NetworkResponseTestSuite {
+public extension NetworkResponseTestSuite {
     static var baseURL: URL {
         URL(string: UUID().uuidString + ".com")!
     }

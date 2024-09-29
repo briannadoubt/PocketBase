@@ -9,7 +9,7 @@ import Testing
 @testable import PocketBase
 import HTTPTypes
 
-func testEnvironment(
+public func testEnvironment(
     baseURL: URL,
     response: Data = Data(),
     suiteName: String = UUID().uuidString,
@@ -36,13 +36,13 @@ func testEnvironment(
 }
 
 extension PocketBase {
-    struct TestEnvironment {
-        var defaults: UserDefaultsSpy?
-        var session: MockNetworkSession
-        var keychain: MockKeychain
-        var pocketbase: PocketBase
+    public struct TestEnvironment {
+        public var defaults: UserDefaultsSpy?
+        public var session: MockNetworkSession
+        public var keychain: MockKeychain
+        public var pocketbase: PocketBase
         
-        func assertNetworkRequest<T: Decodable & Equatable>(
+        public func assertNetworkRequest<T: Decodable & Equatable>(
             url: String,
             method: String,
             headers: [String: String] = ["Content-Type": "application/json"],

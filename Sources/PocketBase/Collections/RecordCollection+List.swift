@@ -54,7 +54,7 @@ public extension RecordCollection {
         filter: Filter? = nil
     ) async throws -> ListResponse {
         try await get(
-            path: PocketBase.recordsPath(collection),
+            path: PocketBase.recordsPath(collection, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
                 if let page {
