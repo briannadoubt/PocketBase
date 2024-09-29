@@ -11,7 +11,7 @@ import PocketBase
 extension View {
     public func authenticated<T: AuthRecord>(
         newUser: @escaping CreateUser<T>
-    ) -> some View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) -> some View {
         modifier(
             AuthenticationModifier(
                 newUser: newUser
@@ -26,7 +26,7 @@ extension View {
             _ collection: RecordCollection<T>,
             _ authState: Binding<AuthState>
         ) -> SignedOut
-    ) -> some View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) -> some View {
         modifier(
             AuthenticationModifier(
                 loading: loading,
@@ -36,7 +36,7 @@ extension View {
     }
 }
 
-private struct AuthenticationModifier<T: AuthRecord, Loading: View, SignedOut: View>: ViewModifier where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+private struct AuthenticationModifier<T: AuthRecord, Loading: View, SignedOut: View>: ViewModifier {
     @ViewBuilder private var loading: () -> Loading
     
     typealias SignedOutBuilder = Authentication<T, Loading, SignedOut, Content>.SignedOutBuilder

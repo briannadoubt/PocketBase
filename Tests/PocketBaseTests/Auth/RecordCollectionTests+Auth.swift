@@ -22,7 +22,7 @@ extension RecordCollectionTests {
             method: RecordCollection<Tester>.AuthMethod,
             response: AuthResponse<Tester>
         ) async throws {
-            let responseData = try PocketBase.encoder.encode(response, configuration: .cache)
+            let responseData = try PocketBase.encoder.encode(response, configuration: .none)
             let baseURL = Self.baseURL
             let environment = testEnvironment(
                 baseURL: baseURL,
@@ -61,7 +61,7 @@ extension RecordCollectionTests {
         @Test("Logout")
         func logout() async throws {
             let baseURL = Self.baseURL
-            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .cache)
+            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
             let environment = testEnvironment(
                 baseURL: baseURL,
                 response: response
@@ -102,7 +102,7 @@ extension RecordCollectionTests {
         
         @Test("Refresh")
         func refresh() async throws {
-            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .cache)
+            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
             let baseURL = Self.baseURL
             let environment = testEnvironment(
                 baseURL: baseURL,
@@ -135,7 +135,7 @@ extension RecordCollectionTests {
         
         @Test("Refresh, Error clears auth state")
         func refreshErrorClearsAuthState() async throws {
-            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .cache)
+            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
             let baseURL = Self.baseURL
             let environment = testEnvironment(
                 baseURL: baseURL,

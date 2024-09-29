@@ -31,7 +31,7 @@ struct AuthResponseTests {
     @Test("Encode to data")
     func encode() throws {
         let response = response
-        let data = try JSONEncoder().encode(response, configuration: .cache)
+        let data = try JSONEncoder().encode(response, configuration: .none)
         guard let dictionary = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
             Issue.record("Failed to decode JSON")
             return

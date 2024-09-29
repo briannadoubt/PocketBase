@@ -9,41 +9,6 @@
 import Testing
 import SwiftData
 
-@AuthCollection("testers")
-public struct Tester {
-    
-    @Relation public var rawrs: [Rawr]?
-    
-    init(id: String, username: String) {
-        self.id = id
-        self.username = username
-        self.created = Self.date
-        self.updated = Self.date
-        self.collectionName = Self.collection
-    }
-}
-
-extension Tester {
-    static let date = Date()
-}
-
-@BaseCollection("rawrs")
-public struct Rawr {
-    var field: String = ""
-    
-    init(id: String, field: String) {
-        self.id = id
-        self.field = field
-        self.created = Self.date
-        self.updated = Self.date
-        self.collectionName = Self.collection
-    }
-}
-
-extension Rawr {
-    static let date = Date()
-}
-
 @Suite("Query parameter tests")
 struct QueryParameterTests {
     @Test("#Filter macro output")

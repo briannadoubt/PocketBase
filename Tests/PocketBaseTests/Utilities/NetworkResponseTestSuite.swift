@@ -64,17 +64,11 @@ extension NetworkResponseTestSuite {
     }
     
     static var authResponse: AuthResponse<Tester> {
-        AuthResponse(
-            token: token,
-            record: tester
-        )
+        AuthResponse(token: token, record: tester)
     }
     
     static var tester: Tester {
-        Tester(
-            id: id,
-            username: username
-        )
+        Tester(id: id, username: username)
     }
     
     static var field: String {

@@ -14,7 +14,7 @@ extension RecordCollectionTests {
         @Test("Create Record")
         func createRecord() async throws {
             let expectedRawr = Self.rawr
-            let response = try PocketBase.encoder.encode(expectedRawr, configuration: .cache)
+            let response = try PocketBase.encoder.encode(expectedRawr, configuration: .none)
             let baseURL = Self.baseURL
             let environment = testEnvironment(baseURL: baseURL, response: response)
             let collection = environment.pocketbase.collection(Rawr.self)

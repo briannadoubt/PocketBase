@@ -63,13 +63,13 @@ extension NetworkInterfacing {
         query: [URLQueryItem] = [],
         headers: HTTPFields,
         body: Body
-    ) async throws where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws where Body.EncodingConfiguration == PocketBase.EncodingConfiguration {
         try await execute(
             method: .post,
             path: path,
             query: query,
             headers: headers,
-            body: self.encoder.encode(body, configuration: .remote)
+            body: self.encoder.encode(body, configuration: .remoteBody)
         )
     }
     
@@ -113,13 +113,13 @@ extension NetworkInterfacing {
         query: [URLQueryItem] = [],
         headers: HTTPFields,
         body: Body
-    ) async throws -> Response where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws -> Response where Body.EncodingConfiguration == PocketBase.EncodingConfiguration {
         let response = try await execute(
             method: .post,
             path: path,
             query: query,
             headers: headers,
-            body: encoder.encode(body, configuration: .remote)
+            body: encoder.encode(body, configuration: .remoteBody)
         )
         return try decoder.decode(Response.self, from: response)
     }
@@ -209,7 +209,7 @@ extension NetworkInterfacing {
         query: [URLQueryItem] = [],
         headers: HTTPFields,
         body: Body
-    ) async throws -> Response where Body.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+    ) async throws -> Response where Body.EncodingConfiguration == PocketBase.EncodingConfiguration {
         try await decoder.decode(
             Response.self,
             from: execute(
@@ -217,7 +217,7 @@ extension NetworkInterfacing {
                 path: path,
                 query: query,
                 headers: headers,
-                body: encoder.encode(body, configuration: .remote)
+                body: encoder.encode(body, configuration: .remoteBody)
             )
         )
     }

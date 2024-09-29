@@ -7,7 +7,7 @@
 
 import Foundation
 
-public extension RecordCollection where T: BaseRecord, T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public extension RecordCollection where T: BaseRecord {
     /// Creates a new collection Record.
     ///
     /// Depending on the collection's createRule value, the access to this action may or may not have been restricted.
@@ -22,7 +22,7 @@ public extension RecordCollection where T: BaseRecord, T.EncodingConfiguration =
         _ record: T
     ) async throws -> T {
         try await post(
-            path: PocketBase.recordsPath(collection),
+            path: PocketBase.recordsPath(collection, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
                 if !T.relations.isEmpty {
@@ -58,7 +58,7 @@ public extension RecordCollection where T: AuthRecord {
             encoder: encoder
         )
         let newAuthRecord: T = try await post(
-            path: PocketBase.recordsPath(collection),
+            path: PocketBase.recordsPath(collection, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
                 if !T.relations.isEmpty {
@@ -76,14 +76,14 @@ public extension RecordCollection where T: AuthRecord {
     }
 }
 
-extension AuthRecord where EncodingConfiguration == RecordCollectionEncodingConfiguration {
+extension AuthRecord {
     func createBody(
         password: String,
         passwordConfirm: String,
         encoder: JSONEncoder
     ) throws -> Data {
         guard var recordData = try JSONSerialization.jsonObject(
-            with: encoder.encode(self, configuration: .remote)
+            with: encoder.encode(self, configuration: .remoteBody)
         ) as? [String: Any] else {
             throw DecodingError.dataCorrupted(
                 DecodingError.Context(
