@@ -28,6 +28,7 @@ extension Tester {
 @BaseCollection("rawrs")
 public struct Rawr {
     var field: String = ""
+    @BackRelation(\Tester.rawrs) var testers: [Tester] = []
     
     init(id: String, field: String) {
         self.id = id
