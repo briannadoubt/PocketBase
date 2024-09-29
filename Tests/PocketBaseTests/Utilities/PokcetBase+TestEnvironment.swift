@@ -7,12 +7,13 @@
 
 import Testing
 @testable import PocketBase
+import HTTPTypes
 
 func testEnvironment(
     baseURL: URL,
     response: Data = Data(),
-    suiteName: String = #function,
-    service: String = #function
+    suiteName: String = UUID().uuidString,
+    service: String = UUID().uuidString
 ) -> PocketBase.TestEnvironment {
     let defaults = UserDefaultsSpy(suiteName: suiteName)
     let session = MockNetworkSession(data: response)
