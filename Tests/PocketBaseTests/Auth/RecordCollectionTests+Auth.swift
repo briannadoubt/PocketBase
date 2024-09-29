@@ -7,44 +7,29 @@
 
 import Testing
 @testable import PocketBase
+import TestUtilities
 
 extension RecordCollectionTests {
     @Suite("Authentication Tests")
-    struct AuthTests: AuthTestSuite {
-        
+    struct AuthTests: NetworkResponseTestSuite {
         @Test(
             "Login",
             arguments: zip(
-                [
-                    Self.identityLogin,
-                    Self.oauthLogin,
-                ],
-                [
-                    Self.authResponse,
-                    Self.authResponse
-                ]
+                [Self.identityLogin, Self.oauthLogin],
+                [Self.authResponse, Self.authResponse]
             )
         )
         func login(
             method: RecordCollection<Tester>.AuthMethod,
             response: AuthResponse<Tester>
         ) async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            let mockSession = MockNetworkSession(
-                data: try PocketBase.encoder.encode(response, configuration: .cache)
+            let responseData = try PocketBase.encoder.encode(response, configuration: .none)
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(
+                baseURL: baseURL,
+                response: responseData
             )
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain(
-                        service: Self.keychainService
-                    ),
-                    defaults: defaults
-                )
-            )
-            let collection = pocketbase.collection(Tester.self)
+            let collection = environment.pocketbase.collection(Tester.self)
             switch method {
             case .identity:
                 let tester = try await collection.login(with: method)
@@ -52,22 +37,18 @@ extension RecordCollectionTests {
                 #expect(response.record.username == tester.username)
                 
                 // Test cache
-                #expect(pocketbase.authStore.token == response.token)
-                let cachedTester: Tester? = try pocketbase.authStore.record()
+                #expect(environment.pocketbase.authStore.token == response.token)
+                let cachedTester: Tester? = try environment.pocketbase.authStore.record()
                 #expect(cachedTester?.id == response.record.id)
                 
-                #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/auth-with-password?expand=rawrs")
-                guard let body = mockSession.lastRequest?.httpBody else {
-                    #expect(mockSession.lastRequest?.httpBody != nil)
-                    return
-                }
-                let decodedBody = try JSONDecoder().decode(AuthWithPasswordBody.self, from: body)
-                #expect(decodedBody == AuthWithPasswordBody(
-                    identity: Self.username,
-                    password: Self.password
-                ))
-                #expect(mockSession.lastRequest?.httpMethod == "POST")
-                #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+                try environment.assertNetworkRequest(
+                    url: baseURL.absoluteString + "/api/collections/testers/auth-with-password?expand=rawrs",
+                    method: .post,
+                    body: AuthWithPasswordBody(
+                        identity: Self.username,
+                        password: Self.password
+                    )
+                )
             case .oauth:
                 await #expect(
                     throws: PocketBaseError.notImplemented,
@@ -80,25 +61,15 @@ extension RecordCollectionTests {
         
         @Test("Logout")
         func logout() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            // MARK: GIVEN a logged in user
-            let mockSession = MockNetworkSession(
-                data: try PocketBase.encoder.encode(
-                    Self.authResponse,
-                    configuration: .cache
-                )
+            let baseURL = Self.baseURL
+            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
+            let environment = PocketBase.TestEnvironment(
+                baseURL: baseURL,
+                response: response
             )
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain(
-                        service: Self.keychainService
-                    ),
-                    defaults: defaults
-                )
-            )
+            let pocketbase = environment.pocketbase
+            let session = environment.session
+            
             let collection = pocketbase.collection(Tester.self)
             
             let tester = try await collection.login(with: Self.identityLogin)
@@ -109,18 +80,14 @@ extension RecordCollectionTests {
             #expect(pocketbase.authStore.token == Self.authResponse.token)
             #expect((try pocketbase.authStore.record() as Tester?)?.id == Self.authResponse.record.id)
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/auth-with-password?expand=rawrs")
-            guard let body = mockSession.lastRequest?.httpBody else {
-                #expect(mockSession.lastRequest?.httpBody != nil)
-                return
-            }
-            let decodedBody = try JSONDecoder().decode(AuthWithPasswordBody.self, from: body)
-            #expect(decodedBody == AuthWithPasswordBody(
-                identity: Self.username,
-                password: Self.password
-            ))
-            #expect(mockSession.lastRequest?.httpMethod == "POST")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/auth-with-password?expand=rawrs",
+                method: .post,
+                body: AuthWithPasswordBody(
+                    identity: Self.username,
+                    password: Self.password
+                )
+            )
             
             // MARK: WHEN Logged out
             await collection.logout()
@@ -130,29 +97,19 @@ extension RecordCollectionTests {
             #expect(try pocketbase.authStore.record() as Tester? == nil)
             
             // MARK: No requests should be made, thus the last request should match the prior one!
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/auth-with-password?expand=rawrs")
+            #expect(session.lastRequest?.url?.absoluteString == baseURL.absoluteString
+                + "/api/collections/testers/auth-with-password?expand=rawrs")
         }
         
         @Test("Refresh")
         func refresh() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            // MARK: GIVEN a logged in user
-            let mockSession = MockNetworkSession(
-                data: try PocketBase.encoder.encode(
-                    Self.authResponse,
-                    configuration: .cache
-                )
+            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(
+                baseURL: baseURL,
+                response: response
             )
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             #expect(pocketbase.authStore.token == nil)
@@ -165,34 +122,28 @@ extension RecordCollectionTests {
             let usernameAgain = (try pocketbase.authStore.record() as Tester?)?.username
             #expect(usernameAgain == Self.username)
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/auth-refresh?expand=rawrs")
-            #expect(mockSession.lastRequest?.httpBody == nil)
-            #expect(mockSession.lastRequest?.httpMethod == "POST")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/auth-refresh?expand=rawrs",
+                method: .post
+            )
             
             await collection.logout()
+            
+            #expect(pocketbase.authStore.token == nil)
+            let anotherUsername = (try pocketbase.authStore.record() as Tester?)?.username
+            #expect(anotherUsername == nil || anotherUsername == "")
         }
         
         @Test("Refresh, Error clears auth state")
         func refreshErrorClearsAuthState() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            // MARK: GIVEN a logged in user
-            let mockSession = MockNetworkSession(
-                data: try PocketBase.encoder.encode(
-                    Self.authResponse,
-                    configuration: .cache
-                )
+            let response = try PocketBase.encoder.encode(Self.authResponse, configuration: .none)
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(
+                baseURL: baseURL,
+                response: response
             )
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let pocketbase = environment.pocketbase
+            let session = environment.session
             let collection = pocketbase.collection(Tester.self)
             
             #expect(pocketbase.authStore.token == nil)
@@ -205,13 +156,13 @@ extension RecordCollectionTests {
             let usernameAgain = (try pocketbase.authStore.record() as Tester?)?.username
             #expect(usernameAgain == Self.username)
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/auth-refresh?expand=rawrs")
-            #expect(mockSession.lastRequest?.httpBody == nil)
-            #expect(mockSession.lastRequest?.httpMethod == "POST")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/auth-refresh?expand=rawrs",
+                method: .post
+            )
             
             // MARK: Network layer throws here to mock a network error
-            mockSession.shouldThrow = true
+            session.shouldThrow = true
             
             await #expect(throws: MockNetworkError.youToldMeTo) {
                 try await collection.authRefresh()
@@ -224,50 +175,25 @@ extension RecordCollectionTests {
         
         @Test("Request Email Change")
         func requestEmailChange() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            let mockSession = MockNetworkSession()
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             try await collection.requestEmailChange(newEmail: "meow@meow.com")
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/request-email-change")
-            guard let body = mockSession.lastRequest?.httpBody else {
-                #expect(mockSession.lastRequest?.httpBody != nil)
-                return
-            }
-            guard let decodedBody = try JSONSerialization.jsonObject(with: body) as? [String: String] else {
-                Issue.record("No JSON object in body")
-                return
-            }
-            #expect(decodedBody == ["newEmail": "meow@meow.com"])
-            #expect(mockSession.lastRequest?.httpMethod == "POST")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/request-email-change",
+                method: .post,
+                body: ["newEmail": "meow@meow.com"]
+            )
         }
         
         @Test("Confirm Email Change")
         func confirmEmailChange() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            let mockSession = MockNetworkSession()
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             try await collection.confirmEmailChange(
@@ -275,66 +201,34 @@ extension RecordCollectionTests {
                 password: Self.password
             )
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/confirm-email-change")
-            guard let body = mockSession.lastRequest?.httpBody else {
-                #expect(mockSession.lastRequest?.httpBody != nil)
-                return
-            }
-            guard let decodedBody = try JSONSerialization.jsonObject(with: body) as? [String: String] else {
-                Issue.record("No JSON object in body")
-                return
-            }
-            #expect(decodedBody == ["password": Self.password, "token": Self.token])
-            #expect(mockSession.lastRequest?.httpMethod == "POST")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/confirm-email-change",
+                method: .post,
+                body: ["password": Self.password, "token": Self.token]
+            )
         }
         
         @Test("Change Password")
         func changePassword() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            let mockSession = MockNetworkSession()
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             try await collection.requestPasswordReset(email: "meow@meow.com")
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/request-password-reset")
-            guard let body = mockSession.lastRequest?.httpBody else {
-                #expect(mockSession.lastRequest?.httpBody != nil)
-                return
-            }
-            guard let decodedBody = try JSONSerialization.jsonObject(with: body) as? [String: String] else {
-                Issue.record("No JSON object in body")
-                return
-            }
-            #expect(decodedBody == ["email": "meow@meow.com"])
-            #expect(mockSession.lastRequest?.httpMethod == "POST")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/request-password-reset",
+                method: .post,
+                body: ["email": "meow@meow.com"]
+            )
         }
         
         @Test("Confirm Password Reset")
         func confirmPasswordReset() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            let mockSession = MockNetworkSession()
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             try await collection.confirmPasswordReset(
@@ -343,28 +237,20 @@ extension RecordCollectionTests {
                 passwordConfirm: Self.password
             )
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/confirm-password-reset")
-            #expect(mockSession.lastRequest?.httpMethod == "POST")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
-            guard let body = mockSession.lastRequest?.httpBody else {
-                #expect(mockSession.lastRequest?.httpBody != nil)
-                return
-            }
-            guard let decodedBody = try JSONSerialization.jsonObject(with: body) as? [String: String] else {
-                Issue.record("No JSON object in body")
-                return
-            }
-            let expectedBody = [
-                "passwordConfirm": Self.password,
-                "token": Self.token,
-                "password": Self.password
-            ]
-            #expect(decodedBody == expectedBody)
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/confirm-password-reset",
+                method: .post,
+                body: [
+                    "passwordConfirm": Self.password,
+                    "token": Self.token,
+                    "password": Self.password
+                ]
+            )
         }
         
         @Test("List Linked Auth Providers")
         func listLinkedAuthProviders() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
+            let baseURL = Self.baseURL
             let expectedProvider = LinkedAuthProvider(
                 id: Self.id,
                 created: .init(timeIntervalSince1970: 0),
@@ -374,120 +260,77 @@ extension RecordCollectionTests {
                 provider: "meow",
                 providerId: "meowmeow"
             )
-            // MARK: GIVEN a logged in user
-            let mockSession = MockNetworkSession(
-                data: try PocketBase.encoder.encode([expectedProvider])
+            let response = try PocketBase.encoder.encode([expectedProvider])
+            let environment = PocketBase.TestEnvironment(
+                baseURL: baseURL,
+                response: response
             )
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             let providers = try await collection.listLinkedAuthProviders(id: Self.id)
             
             #expect(providers == [expectedProvider])
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/records/external-auths")
-            #expect(mockSession.lastRequest?.httpBody == nil)
-            #expect(mockSession.lastRequest?.httpMethod == "GET")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/records/external-auths",
+                method: .get
+            )
         }
         
         @Test("Unlink External Auth Provider")
         func unlinkExternalAuthProvider() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            // MARK: GIVEN a logged in user
-            let mockSession = MockNetworkSession()
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             try await collection.unlinkExternalAuthProvider(id: Self.id, provider: "meow")
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/records/external-auths/meow")
-            #expect(mockSession.lastRequest?.httpBody == nil)
-            #expect(mockSession.lastRequest?.httpMethod == "DELETE")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/records/external-auths/meow",
+                method: .delete
+            )
         }
         
         @Test("List Auth Methods")
         func listAuthMethods() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            // MARK: GIVEN a logged in user
+            let baseURL = Self.baseURL
             let methods = AuthMethods(
                 usernamePassword: true,
                 emailPassword: true,
                 authProviders: []
             )
-            let mockSession = MockNetworkSession(
-                data: try PocketBase.encoder.encode(methods)
+            let environment = PocketBase.TestEnvironment(
+                baseURL: baseURL,
+                response: try PocketBase.encoder.encode(methods)
             )
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             let authMethods = try await collection.listAuthMethods()
             #expect(authMethods == methods)
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/auth-methods")
-            #expect(mockSession.lastRequest?.httpBody == nil)
-            #expect(mockSession.lastRequest?.httpMethod == "GET")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/auth-methods",
+                method: .get
+            )
         }
         
         @Test("Request Verification")
         func requestVerification() async throws {
-            let defaults = UserDefaultsSpy(suiteName: #function)
-            let mockSession = MockNetworkSession()
-            let pocketbase = PocketBase(
-                url: .localhost,
-                defaults: defaults,
-                session: mockSession,
-                authStore: AuthStore(
-                    keychain: MockKeychain.self,
-                    service: Self.keychainService,
-                    defaults: defaults
-                )
-            )
+            let baseURL = Self.baseURL
+            let environment = PocketBase.TestEnvironment(baseURL: baseURL)
+            let pocketbase = environment.pocketbase
             let collection = pocketbase.collection(Tester.self)
             
             try await collection.requestVerification(email: Self.email)
             
-            #expect(mockSession.lastRequest?.url?.absoluteString == "http://localhost:8090/api/collections/testers/request-verification")
-            guard let body = mockSession.lastRequest?.httpBody else {
-                #expect(mockSession.lastRequest?.httpBody != nil)
-                return
-            }
-            guard let decodedBody = try JSONSerialization.jsonObject(with: body) as? [String: String] else {
-                Issue.record("No JSON object in body")
-                return
-            }
-            #expect(decodedBody == ["email": "meow@meow.com"])
-            #expect(mockSession.lastRequest?.httpMethod == "POST")
-            #expect(mockSession.lastRequest?.allHTTPHeaderFields == ["Content-Type": "application/json"])
+            try environment.assertNetworkRequest(
+                url: baseURL.absoluteString + "/api/collections/testers/request-verification",
+                method: .post,
+                body: ["email": "meow@meow.com"]
+            )
         }
         
         @Test("Confirm Verification")

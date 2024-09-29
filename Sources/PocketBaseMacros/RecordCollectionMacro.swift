@@ -444,12 +444,12 @@ extension RecordCollectionMacro {
         _ variables: [Variable]
     ) throws -> FunctionDeclSyntax {
         try FunctionDeclSyntax(
-            "\(modifiers.modifier)func encode(to encoder: Encoder, configuration: RecordCollectionEncodingConfiguration) throws"
+            "\(modifiers.modifier)func encode(to encoder: Encoder, configuration: PocketBase.EncodingConfiguration) throws"
         ) {
             "var container = encoder.container(keyedBy: CodingKeys.self)"
         
             "// BaseRecord fields"
-            try IfExprSyntax("if configuration == .cache") {
+            try IfExprSyntax("if configuration == .none") {
                 "try container.encode(id, forKey: .id)"
                 "try container.encode(collectionName, forKey: .collectionName)"
                 "try container.encode(collectionId, forKey: .collectionId)"
@@ -475,7 +475,7 @@ extension RecordCollectionMacro {
             "\(modifiers.modifier)var collectionName: String = \"\"",
             "\(modifiers.modifier)var created: Date = Date.distantPast",
             "\(modifiers.modifier)var updated: Date = Date.distantPast",
-            "\(modifiers.modifier)typealias EncodingConfiguration = RecordCollectionEncodingConfiguration"
+            "\(modifiers.modifier)typealias EncodingConfiguration = PocketBase.EncodingConfiguration"
         ]
     }
     
@@ -518,7 +518,7 @@ extension RecordCollectionMacro {
         _ variables: [Variable]
     ) throws -> FunctionDeclSyntax {
         try FunctionDeclSyntax(
-            "\(modifiers.modifier)func encode(to encoder: Encoder, configuration: RecordCollectionEncodingConfiguration) throws"
+            "\(modifiers.modifier)func encode(to encoder: Encoder, configuration: PocketBase.EncodingConfiguration) throws"
         ) {
             "var container = encoder.container(keyedBy: CodingKeys.self)"
             for variable in variables where variable.relation != .none {
@@ -530,7 +530,7 @@ extension RecordCollectionMacro {
                 case .multiple:
                     "try container.encode(\(variable.name), forKey: .\(variable.name), configuration: configuration)"
                 case .backwards:
-                    try IfExprSyntax.init("if configuration == .cache") {
+                    try IfExprSyntax.init("if configuration == .none") {
                         "try container.encode(\(variable.name), forKey: .\(variable.name), configuration: configuration)"
                     }
                 }

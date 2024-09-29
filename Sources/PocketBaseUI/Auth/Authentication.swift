@@ -8,7 +8,7 @@
 import PocketBase
 import SwiftUI
 
-public struct Authentication<T: AuthRecord, Loading: View, SignedOut: View, Content: View>: View where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public struct Authentication<T: AuthRecord, Loading: View, SignedOut: View, Content: View>: View {
     public typealias SignedOutBuilder = (
         _ collection: RecordCollection<T>,
         _ authState: Binding<AuthState>

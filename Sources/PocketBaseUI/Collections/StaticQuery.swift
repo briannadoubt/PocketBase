@@ -11,8 +11,7 @@ import Collections
 
 @MainActor
 @propertyWrapper
-public struct StaticQuery<T: BaseRecord>: DynamicProperty
-where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public struct StaticQuery<T: BaseRecord>: DynamicProperty {
     @Environment(\.pocketbase) private var pocketbase
     
     private var collection: RecordCollection<T> {

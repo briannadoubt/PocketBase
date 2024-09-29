@@ -77,6 +77,18 @@ let package = Package(
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
             ]
         ),
+        .target(
+            name: "PocketBaseUI",
+            dependencies: ["PocketBase"]
+        ),
+        .target(
+            name: "TestUtilities",
+            dependencies: ["PocketBase"]
+        ),
+        .testTarget(
+            name: "PocketBaseIntegrationTests",
+            dependencies: ["PocketBase", "TestUtilities"]
+        ),
         .testTarget(
             name: "PocketBaseMacrosTests",
             dependencies: [
@@ -84,17 +96,9 @@ let package = Package(
                 .product(name: "SwiftSyntaxMacrosTestSupport", package: "swift-syntax"),
             ]
         ),
-        .target(
-            name: "PocketBaseUI",
-            dependencies: ["PocketBase"]
-        ),
         .testTarget(
             name: "PocketBaseTests",
-            dependencies: ["PocketBase"]
-        ),
-        .testTarget(
-            name: "PocketBaseIntegrationTests",
-            dependencies: ["PocketBase"]
+            dependencies: ["PocketBase", "TestUtilities"]
         ),
     ]
 )

@@ -29,4 +29,6 @@
     extension,
     conformances: BaseRecord
 )
-public macro BaseCollection(_ collectionName: String) = #externalMacro(module: "PocketBaseMacros", type: "BaseCollection")
+public macro BaseCollection(
+    _ collectionName: String
+) = #externalMacro(module: "PocketBaseMacros", type: "BaseCollection")

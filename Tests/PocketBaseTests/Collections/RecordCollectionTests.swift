@@ -7,14 +7,15 @@
 
 import Testing
 @testable import PocketBase
+import TestUtilities
 
 @Suite("RecordCollection Tests")
-struct RecordCollectionTests: AuthTestSuite {
+struct RecordCollectionTests: NetworkResponseTestSuite {
     @Test("Initialize")
     func initialize() async throws {
         let userDefaults = UserDefaultsSpy(suiteName: #function)
         let session = MockNetworkSession(
-            data: try PocketBase.encoder.encode(Self.tester, configuration: .cache)
+            data: try PocketBase.encoder.encode(Self.tester, configuration: .none)
         )
         
         let collection = RecordCollection<Rawr>(
@@ -39,7 +40,7 @@ struct RecordCollectionTests: AuthTestSuite {
     func headers(isAuthenticated: Bool) async throws {
         let userDefaults = UserDefaultsSpy(suiteName: #function)
         
-        let response = isAuthenticated ? try PocketBase.encoder.encode(Self.authResponse, configuration: .cache) : Data()
+        let response = isAuthenticated ? try PocketBase.encoder.encode(Self.authResponse, configuration: .none) : Data()
         let session = MockNetworkSession(
             data: response
         )

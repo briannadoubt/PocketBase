@@ -21,7 +21,7 @@ public extension RecordCollection {
         id recordId: String
     ) async throws -> T {
         try await get(
-            path: PocketBase.recordPath(collection, recordId),
+            path: PocketBase.recordPath(collection, recordId, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
                 if !T.relations.isEmpty {

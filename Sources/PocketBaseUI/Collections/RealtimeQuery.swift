@@ -11,8 +11,7 @@ import Collections
 
 @MainActor
 @propertyWrapper
-public struct RealtimeQuery<T: BaseRecord>: DynamicProperty
-where T.EncodingConfiguration == RecordCollectionEncodingConfiguration {
+public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
     
     public init(
         page: Int = 0,
