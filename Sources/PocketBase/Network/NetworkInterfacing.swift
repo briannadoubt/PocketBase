@@ -26,9 +26,6 @@ extension NetworkInterfacing {
         headers: HTTPFields,
         body: Data? = nil
     ) async throws -> Data {
-        if body != nil, method == .get {
-            throw NetworkError.invalidRequest(reason: .getRequestWithBody)
-        }
         let (data, response) = try await session.data(
             for: {
                 var request = URLRequest(
