@@ -8,7 +8,6 @@
 import Combine
 import Foundation
 import AsyncAlgorithms
-import EventSource
 
 /// An object used to interact with the PocketBase **Realtime API**.
 public actor Realtime: HasLogger {
