@@ -75,10 +75,7 @@ public actor Realtime: HasLogger {
             for: path,
             clientId: clientId
         )
-        subscriptions[path] = Subscription(
-            type: Record.self,
-            channel: AsyncChannel<any Event>()
-        )
+        subscriptions[path] = Subscription(Record.self)
         guard let channel = subscriptions[path]?.channel else {
             throw NSError(domain: "QueryObservable.BadRequest.InvalidChannel", code: 500)
         }
