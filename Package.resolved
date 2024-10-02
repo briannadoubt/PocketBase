@@ -1,15 +1,6 @@
 {
-  "originHash" : "230c615f1f87047f3e8f427da26a1cc18e86b46756118b65cfa0c3e9192698d8",
+  "originHash" : "f45cd3ee1bae7befecc296ae6f3cd769401d2f530870a7fdc1f33a62406d12d9",
   "pins" : [
-    {
-      "identity" : "eventsource",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/briannadoubt/EventSource.git",
-      "state" : {
-        "revision" : "67e4d952e895d848142e4b16af3b96ab1b2a09b7",
-        "version" : "0.1.0"
-      }
-    },
     {
       "identity" : "keychainaccess",
       "kind" : "remoteSourceControl",

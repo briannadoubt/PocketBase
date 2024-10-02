@@ -116,6 +116,15 @@ func happyPath() async throws {
     
     // Create a post
     let posts = pb.collection(Post.self)
+    var events: [RecordEvent<Post>] = []
+    let stream = try await posts.events()
+    
+    Task { @MainActor in
+        for await event in stream {
+            events.append(event)
+        }
+    }
+    
     var post = try await posts.create(
         Post(
             title: "Hello World",
@@ -124,6 +133,8 @@ func happyPath() async throws {
         )
     )
     var allPosts = try await posts.list()
+    #expect(events.map(\.action) == [.create])
+//    #expect(events.map(\.record) == allPosts.items)
     #expect(allPosts.items.count == 1)
     #expect(allPosts.items.first == post)
     #expect(post.id != nil)
@@ -134,6 +145,8 @@ func happyPath() async throws {
     post.title = "Updated Title"
     post = try await posts.update(post)
     #expect(post.title == "Updated Title")
+    
+    #expect(events.map(\.action) == [.create, .update])
     
     let comments = pb.collection(Comment.self)
     
@@ -150,6 +163,7 @@ func happyPath() async throws {
     // View the same post
     let theSamePost = try await posts.view(id: post.id)
     #expect(post.id == theSamePost.id)
+    #expect(events.map(\.action) == [.create, .update])
     
     #expect(theSamePost.postComments.count == 1)
     #expect(theSamePost.postComments.first?.text == comment.text)
@@ -163,8 +177,11 @@ func happyPath() async throws {
     
     // Delete the post
     try await posts.delete(post)
+    
     allPosts = try await posts.list()
     #expect(allPosts.items.count == 0)
+    
+    #expect(events.map(\.action) == [.create, .update, .delete])
     
     try await tags.delete(tag1)
     try await tags.delete(tag2)

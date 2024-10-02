@@ -9,7 +9,20 @@
     }
   ],
   "defaultOptions" : {
-
+    "codeCoverage" : {
+      "targets" : [
+        {
+          "containerPath" : "container:",
+          "identifier" : "PocketBase",
+          "name" : "PocketBase"
+        }
+      ]
+    },
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:",
+      "identifier" : "PocketBase",
+      "name" : "PocketBase"
+    }
   },
   "testTargets" : [
     {

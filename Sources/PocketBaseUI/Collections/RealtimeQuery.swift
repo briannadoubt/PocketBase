@@ -55,31 +55,28 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
         Coordinator(
             error: mostRecentError
         ) {
-            await start()
+            try await start()
         } load: {
             await load()
         }
     }
     
-    func start() async {
+    func start() async throws {
         self.mostRecentError = nil
         if records.isEmpty {
             await load()
         }
-        do {
-            try await collection.subscribe() { event in
-                let record = event.value
-                switch event.action {
-                case .create:
-                    await insert(record)
-                case .update:
-                    await update(record)
-                case .delete:
-                    await remove(record)
-                }
+        let events = try await collection.events()
+        for await event in events {
+            let record = event.value
+            switch event.action {
+            case .create:
+                insert(record)
+            case .update:
+                update(record)
+            case .delete:
+                remove(record)
             }
-        } catch {
-            self.mostRecentError = error
         }
     }
     
@@ -180,7 +177,7 @@ extension RealtimeQuery {
 extension RealtimeQuery {
     public struct Coordinator: Sendable {
         public var error: (any Error)?
-        public var start: @Sendable () async -> Void
+        public var start: @Sendable () async throws -> Void
         public var load: @Sendable () async -> Void
     }
 }

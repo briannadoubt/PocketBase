@@ -6,28 +6,32 @@
 //
 
 extension RecordCollection where T: BaseRecord {
-    public func subscribe(
-        _ recordId: String? = "*",
-        handleEvent: @Sendable (RecordEvent<T>) async -> ()
-    ) async throws {
+    public func events(_ recordId: String? = "*") async throws -> AsyncStream<RecordEvent<T>> {
         let path = if let recordId {
             "\(T.collection)/\(recordId)"
         } else {
             T.collection
         }
         let subscription = try await pocketbase.realtime.subscribe(self, at: path)
-        for await event in subscription {
-            if let rawEvent = event as? RawRecordEvent {
-                for line in rawEvent.value.components(separatedBy: "\n") {
-                    do {
-                        let event = try JSONDecoder().decode(RecordEvent<T>.self, from: Data(line.utf8))
-                        await handleEvent(event)
-                    } catch {
-                        Self.logger.error("Failed to decode event with error: \(error)")
+        return AsyncStream { continuation in
+            Task {
+                for await event in subscription {
+                    guard let rawEvent = event as? RawRecordEvent else {
+                        Self.logger.error("Event is not raw record event")
+                        continue
+                    }
+                    for line in rawEvent.value.components(separatedBy: "\n") {
+                        do {
+                            let event = try PocketBase.decoder.decode(
+                                RecordEvent<T>.self,
+                                from: Data(line.utf8)
+                            )
+                            continuation.yield(event)
+                        } catch {
+                            Self.logger.error("Failed to decode event with error: \(error)")
+                        }
                     }
                 }
-            } else {
-                Self.logger.error("Failed to decode record event")
             }
         }
     }

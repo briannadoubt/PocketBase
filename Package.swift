@@ -29,10 +29,10 @@ let package = Package(
 //        ),
     ],
     dependencies: [
-        .package(
-            url: "https://github.com/briannadoubt/EventSource.git",
-            .upToNextMinor(from: "0.1.0")
-        ),
+//        .package(
+//            url: "https://github.com/briannadoubt/EventSource.git",
+//            .upToNextMinor(from: "0.1.0")
+//        ),
         .package(
             url: "https://github.com/apple/swift-http-types.git",
             .upToNextMajor(from: "1.0.0")
@@ -63,7 +63,7 @@ let package = Package(
             name: "PocketBase",
             dependencies: [
                 "PocketBaseMacros",
-                .product(name: "EventSource", package: "EventSource"),
+//                .product(name: "EventSource", package: "EventSource"),
                 .product(name: "KeychainAccess", package: "KeychainAccess"),
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
@@ -100,5 +100,6 @@ let package = Package(
             name: "PocketBaseTests",
             dependencies: ["PocketBase", "TestUtilities"]
         ),
-    ]
+    ],
+    swiftLanguageModes: [.v6]
 )
