@@ -189,10 +189,31 @@ struct RealtimeRawrs: View {
 }
 ```
 
+Or, if you want to handle state on your own, you can hook into the async events stream:
+
+```swift
+let pocketbase = PocketBase()
+var events: [RecordEvent<Rawr>] = []
+let stream = try await pocketbase.collection(Rawr.self).events()
+for await event in stream {
+    let record = event.record
+    switch event.action {
+    case .create:
+        // Do
+    case .update:
+        // Yo
+    case .delete:
+        // Thang
+    }
+}
+// etc.
+```
+
 Any other data mutations can be made with the `RecordCollection<T>` that is generated with `PocketBase().collection(Rawr.self)`:
 
 ```swift
-let collection = PocketBase().collection(Rawr.self)
+let pocketbase = PocketBase()
+let collection = pocketbase.collection(Rawr.self)
 let new = Rawr(field: "meow")
 let created = try await collection.create(new)
 let results = try await collection.list()
