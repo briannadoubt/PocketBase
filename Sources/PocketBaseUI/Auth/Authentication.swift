@@ -69,8 +69,6 @@ struct Authentication<T: AuthRecord, Loading: View, SignedOut: View, Content: Vi
     }
 }
 
-public typealias CreateUser<T: AuthRecord> = (_ username: String, _ email: String) -> T
-
 extension Authentication where Loading == ProgressView<Text, EmptyView>, SignedOut == SignedOutView<T> {
     init(
         newUser: @escaping CreateUser<T>,
