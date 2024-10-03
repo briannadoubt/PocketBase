@@ -8,19 +8,24 @@
 import Foundation
 
 public extension RecordCollection {
-    /// Returns a single collection record by its ID.
+    /// Update a given record by passing in an updated record.
     ///
-    /// Depending on the collection's viewRule value, the access to this action may or may not have been restricted.
+    /// ```swift
+    /// let pocketbase = PocketBase()
+    /// let cats = pocketbase.collection(Cat.self)
+    /// var cat = try await cats.view("some-id-meow-meow") // cat.age is 4, arbitrarily.
+    /// cat.age += 1 // cat.age is now 5
+    /// let updatedCat = try await cats.update(cat)
+    /// // updatedCat.age is 5
+    /// ```
     ///
-    /// *You could find individual generated records API documentation in the "Admin UI > Collections > API Preview".*
+    /// - note: Depending on the collection's `updateRule` value, the access to this action may or may not have been restricted.
     /// - Parameters:
-    ///   - record: The record to be updated, with the updates pre-applied.
+    ///   - record: The record to be updated, with the updates pre-applied locally.
     /// - Returns: Returns a single collection record by its ID.
     @Sendable
     @discardableResult
-    func update(
-        _ record: T
-    ) async throws -> T {
+    func update(_ record: T) async throws -> T {
         try await patch(
             path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
             query: {

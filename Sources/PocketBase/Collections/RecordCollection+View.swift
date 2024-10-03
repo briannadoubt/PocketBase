@@ -10,9 +10,7 @@ import Foundation
 public extension RecordCollection {
     /// Returns a single collection record by its ID.
     ///
-    /// Depending on the collection's viewRule value, the access to this action may or may not have been restricted.
-    ///
-    /// *You could find individual generated records API documentation in the "Admin UI > Collections > API Preview".*
+    /// - note: Depending on the collection's `viewRule` value, the access to this action may or may not have been restricted.
     /// - Parameters:
     ///   - id: ID of the record to view.
     /// - Returns: Returns a single collection record by its ID.

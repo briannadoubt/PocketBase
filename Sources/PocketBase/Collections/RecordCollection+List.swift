@@ -11,17 +11,11 @@ import Collections
 public extension RecordCollection {
     /// Returns a paginated records list, supporting sorting and filtering.
     ///
-    /// Depending on the collection's listRule value, the access to this action may or may not have been restricted.
-    ///
-    /// *You could find individual generated records API documentation in the "Admin UI > Collections > API Preview".*
+    /// - note: Depending on the collection's `listRule` value, the access to this action may or may not have been restricted.
     /// - Parameters:
     ///   - page: The page (aka. offset) of the paginated list _(default to 1 on the server)_.
     ///   - perPage: The max returned records per page _(default to 30 on the server)_.
     ///   - sort: Specify the ORDER BY fields.
-    ///           Add - / + (default) in front of the attribute for DESC / ASC order, eg.:
-    ///           `?sort=-created,id`
-    ///           Supported record sort fields:
-    ///           `@random, id, created, updated, and any other field from the collection schema.`
     ///   - filter: Filter expression to filter/search the returned records list (in addition to the collection's listRule), eg.: `?filter=(title~'abc' && created>'2022-01-01')`
     ///             Supported record filter fields:
     ///             `id`, `created`, `updated`, + any field from the collection schema.

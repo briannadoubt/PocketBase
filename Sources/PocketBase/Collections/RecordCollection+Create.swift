@@ -10,9 +10,7 @@ import Foundation
 public extension RecordCollection where T: BaseRecord {
     /// Creates a new collection Record.
     ///
-    /// Depending on the collection's createRule value, the access to this action may or may not have been restricted.
-    ///
-    /// You could find individual generated records API documentation from the admin UI.
+    /// - note: Depending on the collection's `createRule` value, the access to this action may or may not have been restricted.
     /// - Parameters:
     ///   - record: The collection's related schema object.
     /// - Returns: The created Record with
@@ -39,9 +37,7 @@ public extension RecordCollection where T: BaseRecord {
 public extension RecordCollection where T: AuthRecord {
     /// Creates a new collection Record.
     ///
-    /// Depending on the collection's createRule value, the access to this action may or may not have been restricted.
-    ///
-    /// You could find individual generated records API documentation from the admin UI.
+    /// - note: Depending on the collection's `createRule` value, the access to this action may or may not have been restricted.
     /// - Parameters:
     ///   - record: The collection's related schema object.
     /// - Returns: The created Record with

@@ -10,9 +10,7 @@ import Foundation
 public extension RecordCollection where T: BaseRecord {
     /// Deletes a single collection Record by its ID.
     ///
-    /// Depending on the collection's `deleteRule` value, the access to this action may or may not have been restricted.
-    ///
-    /// *You could find individual generated records API documentation in the "Admin UI > Collections > API Preview".*
+    /// - note: Depending on the collection's `deleteRule` value, the access to this action may or may not have been restricted.
     /// - Parameters:
     ///   - record: The record to be deleted
     /// - Returns: Returns a single collection record by its ID.
@@ -28,9 +26,7 @@ public extension RecordCollection where T: BaseRecord {
 public extension RecordCollection where T: AuthRecord {
     /// Deletes a single collection Record by its ID.
     ///
-    /// Depending on the collection's `deleteRule` value, the access to this action may or may not have been restricted.
-    ///
-    /// *You could find individual generated records API documentation in the "Admin UI > Collections > API Preview".*
+    /// - note: Depending on the collection's `deleteRule` value, the access to this action may or may not have been restricted.
     /// - Parameters:
     ///   - record: The record to be deleted
     /// - Returns: Returns a single collection record by its ID.

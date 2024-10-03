@@ -9,10 +9,16 @@ import PocketBase
 import SwiftUI
 import Collections
 
+/// Observe a set of records given
 @MainActor
 @propertyWrapper
 public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
-    
+    /// <#Description#>
+    /// - Parameters:
+    ///   - page: <#page description#>
+    ///   - perPage: <#perPage description#>
+    ///   - shouldPage: <#shouldPage description#>
+    ///   - sort: <#sort description#>
     public init(
         page: Int = 0,
         perPage: Int = 30,
@@ -43,14 +49,14 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
         pocketbase.collection(T.self)
     }
     
-    /// The records exposed to the view
+    /// The records exposed to the view.
     public var wrappedValue: [T] {
         records
     }
     
     @State private var mostRecentError: Error?
     
-    /// The coodinator object that enables an interface with the realtime query from the view.
+    /// The `Coodinator` object that enables an interface with the `RealtimeQuery`'s interface from the view.
     public var projectedValue: Coordinator {
         Coordinator(
             error: mostRecentError
@@ -62,6 +68,7 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
     }
     
     func start() async throws {
+    /// - note: This should stay `internal`. Public access is available through the `projectedValue`.
         self.mostRecentError = nil
         if records.isEmpty {
             await load()
