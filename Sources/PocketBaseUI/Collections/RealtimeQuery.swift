@@ -41,10 +41,6 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
     @State private var page: Int
     @State private var nextPage: Int?
     
-    private var realtime: Realtime {
-        pocketbase.realtime
-    }
-    
     private var collection: RecordCollection<T> {
         pocketbase.collection(T.self)
     }
