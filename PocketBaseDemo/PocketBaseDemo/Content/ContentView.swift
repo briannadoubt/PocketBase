@@ -12,7 +12,7 @@ import os
 struct ContentView: View {
     @Environment(\.pocketbase) private var pocketbase
     
-    @RealtimeQuery<Rawr>(sort: [.init(\.field)]) private var rawrs
+    @RealtimeQuery<Rawr>(sort: [.init(\.created, order: .reverse)]) private var rawrs
     
     static let logger = Logger(
         subsystem: "PocketBaseDemo",
