@@ -5,6 +5,7 @@
 //  Created by Brianna Zamora on 8/7/24.
 //
 
+import PocketBase
 import PocketBaseUI
 import SwiftUI
 import os
@@ -13,7 +14,12 @@ struct ContentView: View {
     @Environment(\.pocketbase) private var pocketbase
     
     @RealtimeQuery<Rawr>(sort: [.init(\.created, order: .reverse)]) private var rawrs
-    
+
+//    @StaticQuery(
+//        sort: [.init(\Rawr.created, order: .reverse)],
+//        filter: #Filter<Rawr>({ $0.created < .now })
+//    ) var rawrs
+
     static let logger = Logger(
         subsystem: "PocketBaseDemo",
         category: "ContentView"

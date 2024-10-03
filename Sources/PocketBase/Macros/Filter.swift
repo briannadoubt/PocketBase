@@ -8,7 +8,7 @@
 import Foundation
 
 @freestanding(expression)
-public macro Filter<each Input: Record>(
+public macro Filter<each Input>(
     _ body: (repeat each Input) -> Bool
 ) -> Filter = #externalMacro(module: "PocketBaseMacros", type: "Filter")
 
