@@ -24,6 +24,7 @@ struct RawrView: View {
 
     init(rawr: Rawr) {
         self.rawr = rawr
+        self.editText = rawr.field
     }
     
     var body: some View {

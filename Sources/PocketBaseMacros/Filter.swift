@@ -14,7 +14,11 @@ public struct Filter: ExpressionMacro {
         of node: some FreestandingMacroExpansionSyntax,
         in context: some MacroExpansionContext
     ) throws -> ExprSyntax {
+        #if os(macOS)
+        let arguments = node.argumentList
+        #else
         let arguments = node.arguments
+        #endif
         guard
             let operationClosure = arguments.first?
                 .expression

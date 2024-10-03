@@ -19,6 +19,14 @@ struct ContentView: View {
         category: "ContentView"
     )
     
+    func start() async {
+        do {
+            try await $rawrs.start()
+        } catch {
+            Self.logger.log("Failed to start realtime query with error: \(error)")
+        }
+    }
+    
     var body: some View {
         NavigationStack {
             List {
@@ -28,7 +36,7 @@ struct ContentView: View {
                 .onDelete(perform: delete)
             }
             .refreshable {
-                await $rawrs.start()
+                await start()
             }
             .navigationTitle("Rawrs")
             .toolbar {
@@ -37,7 +45,7 @@ struct ContentView: View {
             }
         }
         .task {
-            await $rawrs.start()
+            await start()
         }
     }
     

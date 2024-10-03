@@ -91,12 +91,6 @@ extension DeclModifierListSyntax {
     }
 }
 
-extension DeclModifierSyntax {
-    static let `public` = DeclModifierSyntax(
-        name: .keyword(.public)
-    )
-}
-
 extension VariableDeclSyntax {
     init(
         isPublic: Bool,
@@ -107,7 +101,9 @@ extension VariableDeclSyntax {
         self.init(
             modifiers: .init {
                 if isPublic {
-                    .public
+                    DeclModifierSyntax(
+                        name: .keyword(.public)
+                    )
                 }
             },
             .var,

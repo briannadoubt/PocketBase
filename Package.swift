@@ -30,6 +30,7 @@ let package = Package(
     ],
     dependencies: [
 //        .package(
+//            path: "../EventSource"
 //            url: "https://github.com/briannadoubt/EventSource.git",
 //            .upToNextMinor(from: "0.1.0")
 //        ),
