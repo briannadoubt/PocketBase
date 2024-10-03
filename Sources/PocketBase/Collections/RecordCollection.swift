@@ -9,23 +9,23 @@ import Foundation
 internal import HTTPTypes
 
 public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
-    public var baseURL: URL {
+    var baseURL: URL {
         pocketbase.url
     }
     
     let pocketbase: PocketBase
     
-    public var session: any NetworkSession {
+    var session: any NetworkSession {
         pocketbase.session
     }
     
     let collection: String
     
-    public let encoder: JSONEncoder = {
+    let encoder: JSONEncoder = {
         PocketBase.encoder
     }()
 
-    public let decoder: JSONDecoder = {
+    let decoder: JSONDecoder = {
         PocketBase.decoder
     }()
     

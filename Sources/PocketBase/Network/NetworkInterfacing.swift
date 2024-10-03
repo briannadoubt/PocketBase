@@ -8,7 +8,7 @@
 import Foundation
 internal import HTTPTypes
 
-public protocol NetworkInterfacing: Actor, HasLogger {
+protocol NetworkInterfacing: Actor, HasLogger {
     var baseURL: URL { get }
     var session: any NetworkSession { get }
     var decoder: JSONDecoder { get }

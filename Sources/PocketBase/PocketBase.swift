@@ -12,7 +12,7 @@ public struct PocketBase: Sendable, HasLogger {
     public let url: URL
     
     public let authStore: AuthStore
-    public let realtime: Realtime
+    let realtime: Realtime
     
     let session: any NetworkSession
     

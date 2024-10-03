@@ -8,13 +8,13 @@
 import PocketBase
 import SwiftUI
 
-public struct Authentication<T: AuthRecord, Loading: View, SignedOut: View, Content: View>: View {
-    public typealias SignedOutBuilder = (
+struct Authentication<T: AuthRecord, Loading: View, SignedOut: View, Content: View>: View {
+    typealias SignedOutBuilder = (
         _ collection: RecordCollection<T>,
         _ authState: Binding<AuthState>
     ) -> SignedOut
     
-    public init(
+    init(
         @ViewBuilder loading: @escaping () -> Loading,
         @ViewBuilder signedOut: @escaping SignedOutBuilder,
         @ViewBuilder content: @escaping () -> Content
@@ -36,7 +36,7 @@ public struct Authentication<T: AuthRecord, Loading: View, SignedOut: View, Cont
         pocketbase.collection(T.self)
     }
     
-    public var body: some View {
+    var body: some View {
         Group {
             switch authState {
             case .loading:
@@ -72,7 +72,7 @@ public struct Authentication<T: AuthRecord, Loading: View, SignedOut: View, Cont
 public typealias CreateUser<T: AuthRecord> = (_ username: String, _ email: String) -> T
 
 extension Authentication where Loading == ProgressView<Text, EmptyView>, SignedOut == SignedOutView<T> {
-    public init(
+    init(
         newUser: @escaping CreateUser<T>,
         content: @escaping () -> Content
     ) {

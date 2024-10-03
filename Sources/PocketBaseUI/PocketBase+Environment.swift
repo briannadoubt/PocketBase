@@ -8,8 +8,8 @@
 import PocketBase
 import SwiftUI
 
-extension EnvironmentValues {
-    @Entry public var pocketbase = PocketBase.localhost
+public extension EnvironmentValues {
+    @Entry var pocketbase = PocketBase.localhost
 }
 
 public extension Scene {

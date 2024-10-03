@@ -67,8 +67,8 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
         }
     }
     
-    func start() async throws {
     /// - note: This should stay `internal`. Public access is available through the `projectedValue`.
+    internal func start() async throws {
         self.mostRecentError = nil
         if records.isEmpty {
             await load()
@@ -111,33 +111,36 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
     @State
     private var configuration: RealtimeQuery<T>.Configuration
 
-    /// Set the messages via the main thread.
-    func set(_ response: RecordCollection<T>.ListResponse) {
+    @MainActor
+    private func set(_ response: RecordCollection<T>.ListResponse) {
         self.records = response.items
     }
     
-    /// Append a record to the stored records via the main thread.
-    func insert(_ record: T) {
+    @MainActor
+    private func insert(_ record: T) {
         records.append(record)
         sort()
     }
     
-    /// Remove a record from the stored records via the main thread
-    func remove(_ record: T) {
+    @MainActor
+    private func remove(_ record: T) {
         records[record.id] = nil
     }
     
-    func update(_ record: T) {
+    @MainActor
+    private func update(_ record: T) {
         guard let existingIndex = records.firstIndex(where: { $0.id == record.id }) else { return }
         records[existingIndex] = record
         sort()
     }
     
-    func sort() {
+    @MainActor
+    private func sort() {
         records = records.sorted(using: configuration.sort)
     }
     
-    func getRecords() async throws -> RecordCollection<T>.ListResponse {
+    @MainActor
+    private func getRecords() async throws -> RecordCollection<T>.ListResponse {
         try await collection.list(
             page: page,
             perPage: configuration.perPage,

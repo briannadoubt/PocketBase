@@ -9,7 +9,7 @@ import Foundation
 import AsyncAlgorithms
 
 /// An object used to interact with the PocketBase **Realtime API**.
-public actor Realtime: HasLogger {
+actor Realtime: HasLogger {
     let defaults: UserDefaults?
     
     /// The baseURL for all requests to PocketBase.
