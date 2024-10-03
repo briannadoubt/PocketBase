@@ -85,7 +85,7 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger {
                             }
                             Section {
                                 SignUpButton<T>(
-                                    newUser(newUsername, newEmail),
+                                    newUser,
                                     collection: collection,
                                     authState: $authState,
                                     strategy: .identity(
@@ -99,7 +99,7 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger {
                             Section {
                                 ForEach(authMethods.authProviders) { provider in
                                     SignUpButton<T>(
-                                        newUser(newUsername, newEmail),
+                                        newUser,
                                         collection: collection,
                                         authState: $authState,
                                         strategy: .oauth(provider)
@@ -153,7 +153,7 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger {
             let authMethods = try await collection.listAuthMethods()
             self.authMethods = authMethods
         } catch {
-            
+            Self.logger.log("Failed to load auth methods: \(error)")
         }
     }
 }

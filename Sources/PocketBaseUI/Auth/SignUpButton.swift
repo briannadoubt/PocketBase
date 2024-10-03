@@ -10,13 +10,13 @@ import PocketBase
 import os
 
 public struct SignUpButton<T: AuthRecord>: View, HasLogger {
-    let newRecord: T
+    let newRecord: CreateUser<T>
     let collection: RecordCollection<T>
     @Binding private var authState: AuthState
     private var strategy: RecordCollection<T>.AuthMethod
 
     public init(
-        _ newRecord: T,
+        _ newRecord: @escaping CreateUser<T>,
         collection: RecordCollection<T>,
         authState: Binding<AuthState>,
         strategy: RecordCollection<T>.AuthMethod
@@ -32,6 +32,7 @@ public struct SignUpButton<T: AuthRecord>: View, HasLogger {
             do {
                 switch strategy {
                 case .identity(let identity, let password):
+                    let newRecord = try await newRecord(identity, password)
                     try await collection.create(
                         newRecord,
                         password: password,
@@ -42,7 +43,7 @@ public struct SignUpButton<T: AuthRecord>: View, HasLogger {
                         password: password
                     )
                 case .oauth:
-                    fatalError("OAuth is not implemented yet")
+                    Self.logger.fault("OAuth is not implemented yet")
                 }
                 authState = .signedIn
             } catch {
