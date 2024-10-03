@@ -63,7 +63,7 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
         ) {
             try await start()
         } load: {
-            await load()
+            try await load()
         }
     }
     
@@ -71,7 +71,7 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
     internal func start() async throws {
         self.mostRecentError = nil
         if records.isEmpty {
-            await load()
+            try await load()
         }
         let events = try await collection.events()
         for await event in events {
@@ -87,25 +87,21 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
         }
     }
     
-    func load() async {
-        do {
-            self.mostRecentError = nil
-            let response = try await getRecords()
-            page = response.page
-            if configuration.shouldPage {
-                if response.page < response.totalPages {
-                    nextPage = response.page + 1
-                } else {
-                    nextPage = nil
-                }
+    private func load() async throws {
+        self.mostRecentError = nil
+        let response = try await getRecords()
+        page = response.page
+        if configuration.shouldPage {
+            if response.page < response.totalPages {
+                nextPage = response.page + 1
+            } else {
+                nextPage = nil
             }
-            guard let updatedRecords = records.applying(response.items.difference(from: records)) else {
-                return
-            }
-            records = updatedRecords
-        } catch {
-            self.mostRecentError = error
         }
+        guard let updatedRecords = records.applying(response.items.difference(from: records)) else {
+            return
+        }
+        records = updatedRecords
     }
     
     @State
@@ -188,6 +184,6 @@ extension RealtimeQuery {
     public struct Coordinator: Sendable {
         public var error: (any Error)?
         public var start: @Sendable () async throws -> Void
-        public var load: @Sendable () async -> Void
+        public var load: @Sendable () async throws -> Void
     }
 }
