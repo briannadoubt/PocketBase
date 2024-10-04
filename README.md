@@ -115,7 +115,9 @@ struct CustomLoginScreen: View {
         // All your fancy styling here
     
         SignUpButton(
-            User.self,
+            { username, password in
+                User(username: username, password: password)
+            },
             collection: collection,
             authState: $authState,
             strategy: .identity(
