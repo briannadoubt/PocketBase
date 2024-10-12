@@ -9,14 +9,10 @@ import Foundation
 
 extension Collection {
     func sortParameter<T: Record>() -> String where Self.Element == SortDescriptor<T> {
-        compactMap { sortDescriptor in
+        map { sortDescriptor in
             let orderPrefix = sortDescriptor.order == .reverse ? "-" : ""
-            guard
-                let keyPath = sortDescriptor.keyPath,
-                let keyPathString = "\(keyPath)".components(separatedBy: ".").last
-            else {
-                return nil
-            }
+            let keyPath = sortDescriptor.keyPath!
+            let keyPathString = "\(keyPath)".components(separatedBy: ".").last!
             return "\(orderPrefix)\(keyPathString)"
         }
         .joined(separator: ",")

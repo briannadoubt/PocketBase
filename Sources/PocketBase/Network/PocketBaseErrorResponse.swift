@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct PocketBaseErrorResponse: Decodable, Sendable {
+public struct PocketBaseErrorResponse: Decodable, Sendable, Equatable {
     public var code: Int
     public var message: String
     public var errorDetails: String?

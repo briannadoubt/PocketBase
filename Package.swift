@@ -14,46 +14,18 @@ let package = Package(
         .visionOS(.v1),
     ],
     products: [
-        .library(
-            name: "PocketBase",
-            targets: ["PocketBase"]
-        ),
-        .library(
-            name: "PocketBaseUI",
-            targets: ["PocketBaseUI"]
-        ),
+        .library(name: "PocketBase", targets: ["PocketBase"]),
+        .library(name: "PocketBaseUI", targets: ["PocketBaseUI"]),
         // MARK: WIP
-//        .library(
-//            name: "DataBase",
-//            targets: ["DataBase"]
-//        ),
+//        .library(name: "DataBase", targets: ["DataBase"]),
     ],
     dependencies: [
-//        .package(
-//            path: "../EventSource"
-//            url: "https://github.com/briannadoubt/EventSource.git",
-//            .upToNextMinor(from: "0.1.0")
-//        ),
-        .package(
-            url: "https://github.com/apple/swift-http-types.git",
-            .upToNextMajor(from: "1.0.0")
-        ),
-        .package(
-            url: "https://github.com/kishikawakatsumi/KeychainAccess.git",
-            .upToNextMajor(from: "4.0.0")
-        ),
-        .package(
-            url: "https://github.com/apple/swift-syntax",
-            "509.0.0"..<"601.0.0-prerelease"
-        ),
-        .package(
-            url: "https://github.com/apple/swift-async-algorithms.git",
-            .upToNextMajor(from: "1.0.0")
-        ),
-        .package(
-            url: "https://github.com/apple/swift-collections.git",
-            .upToNextMajor(from: "1.1.2")
-        ),
+//        .package(path: "../EventSource" url: "https://github.com/briannadoubt/EventSource.git", .upToNextMinor(from: "0.1.0")),
+        .package(url: "https://github.com/apple/swift-http-types.git", .upToNextMajor(from: "1.0.0")),
+        .package(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", .upToNextMajor(from: "4.0.0")),
+        .package(url: "https://github.com/apple/swift-syntax", "509.0.0"..<"601.0.0-prerelease"),
+        .package(url: "https://github.com/apple/swift-async-algorithms.git", .upToNextMajor(from: "1.0.0")),
+        .package(url: "https://github.com/apple/swift-collections.git", .upToNextMajor(from: "1.1.2")),
     ],
     targets: [
         .target(

@@ -8,10 +8,4 @@ DerivedData/
 .swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
 .netrc
 /Developer/pb_data
-/pb_data/logs.db
-/pb_data/storage
-pb_data/data.db-wal
-pb_data/logs.db-shm
-pb_data/logs.db-wal
-pb_data/data.db-shm
-pb_data/types.d.ts
+/pb_data

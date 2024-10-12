@@ -53,42 +53,6 @@ extension NetworkInterfacing {
         switch response.statusCode {
         case 200..<300:
             return data
-        case 400:
-            do {
-                let errorResponse = try decoder.decode(PocketBaseErrorResponse.self, from: data)
-                throw NetworkError.invalidFilter(errorResponse)
-            } catch {
-                throw NetworkError.invalidResponse(
-                    reason: .failedToParseInvalidFilterErrorResponse,
-                    statusCode: response.statusCode,
-                    data: data,
-                    response: response
-                )
-            }
-        case 403:
-            do {
-                let errorResponse = try decoder.decode(PocketBaseErrorResponse.self, from: data)
-                throw NetworkError.unauthorized(errorResponse)
-            } catch {
-                throw NetworkError.invalidResponse(
-                    reason: .failedToParseUnauthorizedErrorResponse,
-                    statusCode: response.statusCode,
-                    data: data,
-                    response: response
-                )
-            }
-        case 404:
-            do {
-                let errorResponse = try decoder.decode(PocketBaseErrorResponse.self, from: data)
-                throw NetworkError.notFound(errorResponse)
-            } catch {
-                throw NetworkError.invalidResponse(
-                    reason: .failedToParseNotFoundErrorResponse,
-                    statusCode: response.statusCode,
-                    data: data,
-                    response: response
-                )
-            }
         default:
             throw NetworkError.invalidResponse(
                 reason: .unexpectedStatusCode(response.statusCode),
@@ -100,7 +64,7 @@ extension NetworkInterfacing {
     }
     
     private func debugRequest(request: URLRequest) {
-        Self.logger.log("Requesting: \(request.prettyCURL)")
+        Self.logger.log("Requesting: \(request.cURL)")
     }
     
     private func debugResponse(_ data: Data) {
@@ -109,64 +73,5 @@ extension NetworkInterfacing {
         } else {
             Self.logger.log("Response: cannot parse")
         }
-    }
-}
-
-extension URLRequest {
-    public var cURL: String {
-        cURL()
-    }
-    
-    public var prettyCURL: String {
-        cURL(pretty: true)
-    }
-    
-    private func cURL(pretty: Bool = false) -> String {
-        let newLine: String
-        if pretty {
-            newLine = "\\\n"
-        } else {
-            newLine = ""
-        }
-        var method: String
-        if pretty {
-            method = "--request "
-        } else {
-            method = "-X "
-        }
-        method = method + "\(self.httpMethod ?? "GET") \(newLine)"
-        let urlArgument = pretty ? "--url " : ""
-        let url: String = urlArgument + "\'\(self.url?.absoluteString ?? "")\' \(newLine)"
-        
-        var cURL = "curl "
-        var header = ""
-        var data: String = ""
-        
-        if let httpHeaders = self.allHTTPHeaderFields, httpHeaders.keys.count > 0 {
-            for (key,value) in httpHeaders {
-                var headerFlag: String
-                if pretty {
-                    headerFlag = "--header "
-                } else {
-                    headerFlag = "-H "
-                }
-                header += headerFlag + "\'\(key): \(value)\' \(newLine)"
-            }
-        }
-        
-        if
-            let bodyData = httpBody,
-            let bodyString = String(
-                data: bodyData,
-                encoding: .utf8
-            ),
-            !bodyString.isEmpty
-        {
-            data = "--data '\(bodyString)'"
-        }
-        
-        cURL += method + url + header + data
-        
-        return cURL
     }
 }
