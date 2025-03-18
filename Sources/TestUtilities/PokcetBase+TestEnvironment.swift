@@ -58,28 +58,29 @@ extension PocketBase {
             url: String,
             method: HTTPRequest.Method,
             headers: [String: String] = ["Content-Type": "application/json"],
-            body: T? = nil as Never?
+            body: T? = nil as Never?,
+            sourceLocation: Testing.SourceLocation = #_sourceLocation
         ) throws {
             guard let lastRequest = session.lastRequest else {
-                #expect(session.lastRequest != nil)
+                #expect(session.lastRequest != nil, sourceLocation: sourceLocation)
                 return
             }
             guard let absoluteString = lastRequest.url?.absoluteString else {
-                #expect(lastRequest.url?.absoluteString != nil)
+                #expect(lastRequest.url?.absoluteString != nil, sourceLocation: sourceLocation)
                 return
             }
-            #expect(absoluteString == url)
+            #expect(absoluteString == url, sourceLocation: sourceLocation)
             if let body {
                 guard let requestBody = lastRequest.httpBody else {
-                    #expect(lastRequest.httpBody != nil)
+                    #expect(lastRequest.httpBody != nil, sourceLocation: sourceLocation)
                     return
                 }
                 let decodedBody = try PocketBase.decoder.decode(T.self, from: requestBody)
-                #expect(decodedBody == body)
-                #expect(lastRequest.httpMethod == method.rawValue)
-                #expect(lastRequest.allHTTPHeaderFields == headers)
+                #expect(decodedBody == body, sourceLocation: sourceLocation)
+                #expect(lastRequest.httpMethod == method.rawValue, sourceLocation: sourceLocation)
+                #expect(lastRequest.allHTTPHeaderFields == headers, sourceLocation: sourceLocation)
             } else {
-                #expect(lastRequest.httpBody == nil)
+                #expect(lastRequest.httpBody == nil, sourceLocation: sourceLocation)
             }
         }
     }
