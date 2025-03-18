@@ -15,6 +15,7 @@ let package = Package(
     ],
     products: [
         .library(name: "PocketBase", targets: ["PocketBase"]),
+        .library(name: "PocketBaseAdmin", targets: ["PocketBaseAdmin"]),
         .library(name: "PocketBaseUI", targets: ["PocketBaseUI"]),
         // MARK: WIP
 //        .library(name: "DataBase", targets: ["DataBase"]),
@@ -43,6 +44,10 @@ let package = Package(
                 .product(name: "Collections", package: "swift-collections")
             ]
         ),
+        .target(
+            name: "PocketBaseAdmin",
+            dependencies: ["PocketBase"]
+        ),
         .macro(
             name: "PocketBaseMacros",
             dependencies: [
@@ -57,6 +62,10 @@ let package = Package(
         .target(
             name: "TestUtilities",
             dependencies: ["PocketBase"]
+        ),
+        .testTarget(
+            name: "PocketBaseAdminTests",
+            dependencies: ["PocketBaseAdmin", "TestUtilities"]
         ),
         .testTarget(
             name: "PocketBaseIntegrationTests",
