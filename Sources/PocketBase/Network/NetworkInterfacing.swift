@@ -8,7 +8,7 @@
 import Foundation
 internal import HTTPTypes
 
-protocol NetworkInterfacing: Actor, HasLogger {
+package protocol NetworkInterfacing: Actor, HasLogger {
     var baseURL: URL { get }
     var session: any NetworkSession { get }
     var decoder: JSONDecoder { get }
@@ -17,7 +17,6 @@ protocol NetworkInterfacing: Actor, HasLogger {
 
 extension NetworkInterfacing {
     // MARK: Execution
-    
     @discardableResult
     func execute(
         method: HTTPRequest.Method,

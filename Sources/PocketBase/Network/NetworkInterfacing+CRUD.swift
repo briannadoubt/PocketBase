@@ -6,9 +6,9 @@
 //
 
 import Foundation
-internal import HTTPTypes
+package import HTTPTypes
 
-extension NetworkInterfacing {
+package extension NetworkInterfacing {
     func get<Response: Decodable>(
         path: String,
         query: [URLQueryItem] = [],
@@ -68,14 +68,16 @@ extension NetworkInterfacing {
         headers: HTTPFields,
         body: Body
     ) async throws -> Response where Body.EncodingConfiguration == PocketBase.EncodingConfiguration {
-        let response = try await execute(
-            method: .post,
-            path: path,
-            query: query,
-            headers: headers,
-            body: encoder.encode(body, configuration: .remoteBody)
+        try await decoder.decode(
+            Response.self,
+            from: execute(
+                method: .post,
+                path: path,
+                query: query,
+                headers: headers,
+                body: encoder.encode(body, configuration: .remoteBody)
+            )
         )
-        return try decoder.decode(Response.self, from: response)
     }
     
     func post<Response: Decodable & Sendable>(
@@ -90,6 +92,22 @@ extension NetworkInterfacing {
             query: query,
             headers: headers,
             body: body
+        )
+        return try decoder.decode(Response.self, from: response)
+    }
+    
+    func post<Body: Encodable, Response: Decodable & Sendable>(
+        path: String,
+        query: [URLQueryItem] = [],
+        headers: HTTPFields,
+        body: Body
+    ) async throws -> Response {
+        let response = try await execute(
+            method: .post,
+            path: path,
+            query: query,
+            headers: headers,
+            body: self.encoder.encode(body)
         )
         return try decoder.decode(Response.self, from: response)
     }

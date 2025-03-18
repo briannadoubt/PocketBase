@@ -17,7 +17,7 @@ public struct AuthResponse<T: AuthRecord>: Decodable, EncodableWithConfiguration
     
     public typealias EncodingConfiguration = PocketBase.EncodingConfiguration
     
-    var token: String
-    var record: T
-    var meta: MetaOAuth2Response?
+    package var token: String
+    package var record: T
+    package var meta: MetaOAuth2Response?
 }

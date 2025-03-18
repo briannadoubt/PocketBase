@@ -1,31 +1,31 @@
 //
-//  File.swift
+//  RecordCollection.swift
 //  PocketBase
 //
 //  Created by Brianna Zamora on 8/10/24.
 //
 
 import Foundation
-internal import HTTPTypes
+package import HTTPTypes
 
 public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
-    var baseURL: URL {
+    package var baseURL: URL {
         pocketbase.url
     }
     
-    let pocketbase: PocketBase
+    package let pocketbase: PocketBase
     
-    var session: any NetworkSession {
+    package var session: any NetworkSession {
         pocketbase.session
     }
     
-    let collection: String
+    package let collection: String
     
-    let encoder: JSONEncoder = {
+    package let encoder: JSONEncoder = {
         PocketBase.encoder
     }()
 
-    let decoder: JSONDecoder = {
+    package let decoder: JSONDecoder = {
         PocketBase.decoder
     }()
     
@@ -37,7 +37,7 @@ public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
         self.pocketbase = pocketbase
     }
     
-    var headers: HTTPFields {
+    package var headers: HTTPFields {
         var headers: HTTPFields = [:]
         headers[.contentType] = "application/json"
         if let token = pocketbase.authStore.token {

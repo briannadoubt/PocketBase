@@ -56,11 +56,11 @@ public struct AuthStore: Sendable {
         return record
     }
     
-    func set<T: AuthRecord>(_ response: AuthResponse<T>) throws {
+    package func set<T: AuthRecord>(_ response: AuthResponse<T>) throws {
         try set(token: response.token, record: response.record)
     }
     
-    func set<T: AuthRecord>(token: String, record: T) throws {
+    package func set<T: AuthRecord>(token: String, record: T) throws {
         set(token: token)
         let data = try JSONEncoder().encode(AuthResponse(token: token, record: record), configuration: .none)
         defaults?.setValue(data, forKey: "record")

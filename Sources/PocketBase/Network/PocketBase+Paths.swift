@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension PocketBase {
+package extension PocketBase {
     static func collectionPath(_ collectionIdOrName: String, trailingSlash: Bool = true) -> String {
         "/api/collections/" + collectionIdOrName + (trailingSlash ? "/" : "")
     }
