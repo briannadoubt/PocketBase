@@ -1,0 +1,45 @@
+{
+  "configurations" : [
+    {
+      "id" : "EBE5223B-356A-4717-8FE4-E9B374EEE65A",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "PocketBaseAdminTests",
+        "name" : "PocketBaseAdminTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "PocketBaseIntegrationTests",
+        "name" : "PocketBaseIntegrationTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "PocketBaseMacrosTests",
+        "name" : "PocketBaseMacrosTests"
+      }
+    },
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "PocketBaseTests",
+        "name" : "PocketBaseTests"
+      }
+    }
+  ],
+  "version" : 1
+}
