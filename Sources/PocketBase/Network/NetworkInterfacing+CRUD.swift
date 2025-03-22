@@ -114,6 +114,24 @@ extension NetworkInterfacing {
         )
     }
     
+    func patch<Response: Decodable>(
+        path: String,
+        query: [URLQueryItem] = [],
+        headers: HTTPFields,
+        body: Data
+    ) async throws -> Response {
+        try await decoder.decode(
+            Response.self,
+            from: execute(
+                method: .patch,
+                path: path,
+                query: query,
+                headers: headers,
+                body: body
+            )
+        )
+    }
+    
     // MARK: DELETE
     
     func delete(

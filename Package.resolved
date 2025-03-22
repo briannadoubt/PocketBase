@@ -1,5 +1,5 @@
 {
-  "originHash" : "480d33509b5391ca6de77588feb97da10051dfa44b2b3d3c90d1f92aaa1a6eab",
+  "originHash" : "48d8e0cd4595a0b223fb7119a2321a52622d8b63c9da29daaa0d8c6d3e7f3e6e",
   "pins" : [
     {
       "identity" : "keychainaccess",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "84e546727d66f1adc5439debad16270d0fdd04e7",
         "version" : "4.2.2"
+      }
+    },
+    {
+      "identity" : "multipart-kit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/briannadoubt/multipart-kit.git",
+      "state" : {
+        "branch" : "760ca93",
+        "revision" : "760ca9329c17e4c01166d3cb288554ebd7161982"
       }
     },
     {

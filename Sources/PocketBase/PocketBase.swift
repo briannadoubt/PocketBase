@@ -6,6 +6,7 @@
 //
 
 @_exported import Foundation
+import MultipartKit
 
 /// Interface with PocketBase
 public struct PocketBase: Sendable, HasLogger {
@@ -53,6 +54,11 @@ public struct PocketBase: Sendable, HasLogger {
         encoder.dateEncodingStrategy = .formatted(formatter)
         return encoder
     }()
+    
+    package static let formEncoder: FormDataEncoder = {
+        let encoder = FormDataEncoder()
+        return encoder
+    }()
 
     public static let decoder: JSONDecoder = {
         let encoder = JSONDecoder()
@@ -87,6 +93,8 @@ extension PocketBase {
         case remoteBody
         case none
     }
+    
+    package static let multipartEncodingBoundary = UUID().uuidString
 }
 
 extension URL {

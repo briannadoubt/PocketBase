@@ -45,4 +45,12 @@ public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
         }
         return headers
     }
+    
+    package var multipartHeaders: HTTPFields {
+        {
+            var headers = headers
+            headers[.contentType] = "multipart/form-data; boundary=Boundary-\(PocketBase.multipartEncodingBoundary)"
+            return headers
+        }()
+    }
 }

@@ -26,6 +26,7 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-syntax", "509.0.0"..<"602.0.0"),
         .package(url: "https://github.com/apple/swift-async-algorithms.git", .upToNextMajor(from: "1.0.0")),
         .package(url: "https://github.com/apple/swift-collections.git", .upToNextMajor(from: "1.1.2")),
+        .package(url: "https://github.com/briannadoubt/multipart-kit.git", revision: "760ca93"),
     ],
     targets: [
         .target(
@@ -40,7 +41,8 @@ let package = Package(
                 .product(name: "KeychainAccess", package: "KeychainAccess"),
                 .product(name: "HTTPTypes", package: "swift-http-types"),
                 .product(name: "AsyncAlgorithms", package: "swift-async-algorithms"),
-                .product(name: "Collections", package: "swift-collections")
+                .product(name: "Collections", package: "swift-collections"),
+                .product(name: "MultipartKit", package: "multipart-kit"),
             ]
         ),
         .macro(
