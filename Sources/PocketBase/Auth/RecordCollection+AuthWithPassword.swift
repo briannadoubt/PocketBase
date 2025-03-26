@@ -22,7 +22,7 @@ public extension RecordCollection where T: AuthRecord {
         _ identity: String,
         password: String
     ) async throws -> AuthResponse<T> {
-        let response: AuthResponse<T> = try await post(
+        let response: AuthResponse<T> = try await client.post(
             path: PocketBase.collectionPath(collection) + "auth-with-password",
             query: {
                 var query: [URLQueryItem] = []
@@ -31,7 +31,7 @@ public extension RecordCollection where T: AuthRecord {
                 }
                 return query
             }(),
-            headers: headers,
+            headers: client.headers,
             body: AuthWithPasswordBody(identity: identity, password: password)
         )
         try pocketbase.authStore.set(response)

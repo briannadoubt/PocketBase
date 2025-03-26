@@ -9,9 +9,9 @@ public extension RecordCollection where T: AuthRecord {
     func requestEmailChange(
         newEmail: String
     ) async throws {
-        try await post(
+        try await client.post(
             path: PocketBase.collectionPath(collection) + "request-email-change",
-            headers: headers,
+            headers: client.headers,
             body: ["newEmail": newEmail]
         )
     }
@@ -20,9 +20,9 @@ public extension RecordCollection where T: AuthRecord {
         token: String,
         password: String
     ) async throws {
-        try await post(
+        try await client.post(
             path: PocketBase.collectionPath(collection) + "confirm-email-change",
-            headers: headers,
+            headers: client.headers,
             body: [
                 "token": token,
                 "password": password

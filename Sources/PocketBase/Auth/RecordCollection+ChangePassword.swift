@@ -10,9 +10,9 @@ public extension RecordCollection where T: AuthRecord {
     func requestPasswordReset(
         email: String
     ) async throws {
-        try await post(
+        try await client.post(
             path: PocketBase.collectionPath(collection) + "request-password-reset",
-            headers: headers,
+            headers: client.headers,
             body: ["email": email]
         )
     }
@@ -23,9 +23,9 @@ public extension RecordCollection where T: AuthRecord {
         password: String,
         passwordConfirm: String
     ) async throws {
-        try await post(
+        try await client.post(
             path: PocketBase.collectionPath(collection) + "confirm-password-reset",
-            headers: headers,
+            headers: client.headers,
             body: [
                 "token": token,
                 "password": password,

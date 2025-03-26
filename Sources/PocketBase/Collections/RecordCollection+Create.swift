@@ -19,7 +19,7 @@ public extension RecordCollection where T: BaseRecord {
     func create(
         _ record: T
     ) async throws -> T {
-        try await post(
+        try await client.post(
             path: PocketBase.recordsPath(collection, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
@@ -28,7 +28,7 @@ public extension RecordCollection where T: BaseRecord {
                 }
                 return query
             }(),
-            headers: headers,
+            headers: client.headers,
             body: record
         )
     }
@@ -51,9 +51,9 @@ public extension RecordCollection where T: AuthRecord {
         let body = try record.createBody(
             password: password,
             passwordConfirm: passwordConfirm,
-            encoder: encoder
+            encoder: client.encoder
         )
-        let newAuthRecord: T = try await post(
+        let newAuthRecord: T = try await client.post(
             path: PocketBase.recordsPath(collection, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
@@ -62,7 +62,7 @@ public extension RecordCollection where T: AuthRecord {
                 }
                 return query
             }(),
-            headers: headers,
+            headers: client.headers,
             body: body
         )
         return newAuthRecord

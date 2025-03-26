@@ -38,7 +38,7 @@ extension RecordCollection where T: BaseRecord {
         token fileToken: FileToken? = nil,
         download: Bool = false
     ) async throws -> Data {
-        try await get(
+        try await client.get(
             path: PocketBase.recordPath(collection, recordId, trailingSlash: true) + fileName,
             query: {
                 var query = [URLQueryItem]()
@@ -53,7 +53,7 @@ extension RecordCollection where T: BaseRecord {
                 }
                 return query
             }(),
-            headers: headers
+            headers: client.headers
         )
     }
 }

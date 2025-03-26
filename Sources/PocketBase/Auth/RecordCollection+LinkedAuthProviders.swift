@@ -12,9 +12,9 @@ public extension RecordCollection where T: AuthRecord {
     func listLinkedAuthProviders(
         id recordId: String
     ) async throws -> [LinkedAuthProvider] {
-        try await get(
+        try await client.get(
             path: PocketBase.recordsPath(collection) + "external-auths",
-            headers: headers
+            headers: client.headers
         )
     }
     
@@ -22,9 +22,9 @@ public extension RecordCollection where T: AuthRecord {
         id recordId: String,
         provider: String // TODO: Make semantic provider enum
     ) async throws {
-        try await delete(
+        try await client.delete(
             path: PocketBase.recordsPath(collection) + "external-auths/\(provider)",
-            headers: headers
+            headers: client.headers
         )
     }
 }

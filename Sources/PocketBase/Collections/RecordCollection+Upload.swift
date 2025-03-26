@@ -48,13 +48,13 @@ extension RecordCollection where T: BaseRecord {
         field: String,
         fileName: String
     ) async throws -> Data {
-        try await patch(
+        try await client.patch(
             path: PocketBase.recordPath(
                 collection,
                 recordId,
                 trailingSlash: true
             ) + fileName,
-            headers: multipartHeaders,
+            headers: client.multipartHeaders,
             body: PocketBase.formEncoder.encode(
                 [field: data],
                 boundary: PocketBase.multipartEncodingBoundary

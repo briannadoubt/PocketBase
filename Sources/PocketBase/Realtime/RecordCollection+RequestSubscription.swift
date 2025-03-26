@@ -10,9 +10,9 @@ extension RecordCollection where T: BaseRecord {
         for path: String,
         clientId: String
     ) async throws {
-        try await post(
+        try await client.post(
             path: "/api/realtime",
-            headers: headers,
+            headers: client.headers,
             body: SubscriptionRequest(
                 clientId: clientId,
                 subscriptions: [path]

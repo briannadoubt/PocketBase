@@ -10,9 +10,9 @@ import Foundation
 public extension RecordCollection where T: AuthRecord {
     @Sendable
     func listAuthMethods() async throws -> AuthMethods {
-        try await get(
+        try await client.get(
             path: PocketBase.collectionPath(collection) + "auth-methods",
-            headers: headers
+            headers: client.headers
         )
     }
 }

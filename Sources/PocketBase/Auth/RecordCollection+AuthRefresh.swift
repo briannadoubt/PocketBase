@@ -12,7 +12,7 @@ public extension RecordCollection where T: AuthRecord {
     @discardableResult
     func authRefresh() async throws -> AuthResponse<T> {
         do {
-            let response: AuthResponse<T> = try await post(
+            let response: AuthResponse<T> = try await client.post(
                 path: PocketBase.collectionPath(collection) + "auth-refresh",
                 query: {
                     var query: [URLQueryItem] = []
@@ -21,7 +21,7 @@ public extension RecordCollection where T: AuthRecord {
                     }
                     return query
                 }(),
-                headers: headers
+                headers: client.headers
             )
             try pocketbase.authStore.set(response)
             return response

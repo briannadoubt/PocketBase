@@ -16,9 +16,9 @@ public extension RecordCollection where T: BaseRecord {
     /// - Returns: Returns a single collection record by its ID.
     @Sendable
     func delete(_ record: T) async throws {
-        try await delete(
+        try await client.delete(
             path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
-            headers: headers
+            headers: client.headers
         )
     }
 }
@@ -32,9 +32,9 @@ public extension RecordCollection where T: AuthRecord {
     /// - Returns: Returns a single collection record by its ID.
     @Sendable
     func delete(_ record: T) async throws {
-        try await delete(
+        try await client.delete(
             path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
-            headers: headers
+            headers: client.headers
         )
         pocketbase.authStore.clear()
     }

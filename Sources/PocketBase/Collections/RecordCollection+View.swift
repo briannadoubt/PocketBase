@@ -18,7 +18,7 @@ public extension RecordCollection {
     func view(
         id recordId: String
     ) async throws -> T {
-        try await get(
+        try await client.get(
             path: PocketBase.recordPath(collection, recordId, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
@@ -27,7 +27,7 @@ public extension RecordCollection {
                 }
                 return query
             }(),
-            headers: headers
+            headers: client.headers
         )
     }
 }

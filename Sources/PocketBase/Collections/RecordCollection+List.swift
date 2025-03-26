@@ -47,7 +47,7 @@ public extension RecordCollection {
         sort: [SortDescriptor<T>] = [],
         filter: Filter? = nil
     ) async throws -> ListResponse {
-        try await get(
+        try await client.get(
             path: PocketBase.recordsPath(collection, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
@@ -68,7 +68,7 @@ public extension RecordCollection {
                 }
                 return query
             }(),
-            headers: headers
+            headers: client.headers
         )
     }
     

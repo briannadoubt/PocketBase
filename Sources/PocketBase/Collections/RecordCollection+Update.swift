@@ -26,7 +26,7 @@ public extension RecordCollection {
     @Sendable
     @discardableResult
     func update(_ record: T) async throws -> T {
-        try await patch(
+        try await client.patch(
             path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
             query: {
                 var query: [URLQueryItem] = []
@@ -35,7 +35,7 @@ public extension RecordCollection {
                 }
                 return query
             }(),
-            headers: headers,
+            headers: client.headers,
             body: record
         )
     }
