@@ -7,7 +7,16 @@
 
 import Foundation
 
-extension RecordCollection where T: BaseRecord {
+public struct FileDTO: Encodable, Sendable {
+    public var fileName: String
+    public var data: Data
+    public init(fileName: String, data: Data) {
+        self.fileName = fileName
+        self.data = data
+    }
+}
+
+extension RecordCollection {
     /// Upload a single file to a record field
     /// - Parameters:
     ///   - data: The data to upload
@@ -17,17 +26,22 @@ extension RecordCollection where T: BaseRecord {
     /// - Returns: The updated record
     @Sendable
     @discardableResult
-    func upload(
+    public func upload(
         _ data: Data,
         for recordId: String,
         field: String,
         fileName: String
     ) async throws -> T {
-        try await patch(
-            path: PocketBase.recordPath(collection, recordId, trailingSlash: true) + fileName,
-            headers: multipartHeaders,
+        try await client.patch(
+            path: PocketBase.recordPath(collection, recordId, trailingSlash: true),
+            headers: client.multipartHeaders,
             body: PocketBase.formEncoder.encode(
-                [field: data],
+                [
+                    field: FileDTO(
+                        fileName: fileName,
+                        data: data
+                    )
+                ],
                 boundary: PocketBase.multipartEncodingBoundary
             )
         )
@@ -42,7 +56,7 @@ extension RecordCollection where T: BaseRecord {
     /// - Returns: The updated record
     @Sendable
     @discardableResult
-    func upload(
+    public func upload(
         _ data: [Data],
         for recordId: String,
         field: String,

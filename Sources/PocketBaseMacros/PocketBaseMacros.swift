@@ -16,5 +16,6 @@ struct PocketBaseMacros: CompilerPlugin {
         Filter.self,
         Relation.self,
         BackRelation.self,
+        File.self,
     ]
 }

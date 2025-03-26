@@ -7,8 +7,8 @@
 
 import Foundation
 
-extension RecordCollection where T: BaseRecord {
-    typealias FileToken = String
+extension RecordCollection {
+    public typealias FileToken = String
     
     /// Download a file from a record field
     ///
@@ -31,7 +31,7 @@ extension RecordCollection where T: BaseRecord {
     /// - Returns: The file resource data
     @Sendable
     @discardableResult
-    func downloadFile(
+    public func downloadFile(
         for recordId: String,
         fileName: String,
         thumbnail: ThumbnailParameter? = nil,

@@ -6,16 +6,16 @@
 //
 
 import Foundation
-internal import HTTPTypes
+package import HTTPTypes
 
-protocol NetworkInterfacing: Actor, HasLogger {
+package protocol NetworkInterfacing: Actor, HasLogger {
     var baseURL: URL { get }
     var session: any NetworkSession { get }
     var decoder: JSONDecoder { get }
     var encoder: JSONEncoder { get }
 }
 
-extension NetworkInterfacing {
+package extension NetworkInterfacing {
     // MARK: Execution
     
     @discardableResult

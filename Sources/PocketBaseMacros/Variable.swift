@@ -11,6 +11,7 @@ import SwiftSyntaxMacros
 enum VariableError: Error {
     case missingName
     case missingType
+    case fileShouldBeOptionalURL
 }
 
 struct Variable {
@@ -18,6 +19,7 @@ struct Variable {
     var type: TypeSyntax
     var isArray: Bool
     var isDate: Bool
+    var isFile: Bool
     var relation: RelationType
     var skipExpand: Bool
     var isOptionalRelationship: Bool
@@ -45,6 +47,8 @@ struct Variable {
         }
         self.isArray = type.isOptional(ArrayTypeSyntax.self)
         self.isDate = type.hasTypeIdentifier("Date")
+        let isFile = variable.hasAttribute("File")
+        self.isFile = isFile
         self.relation = try RelationType(type: type, variable)
         self.skipExpand = variable.hasAttributeArgument("skipExpand")
         self.isOptionalRelationship = variable.hasAttributeArgument("optional")

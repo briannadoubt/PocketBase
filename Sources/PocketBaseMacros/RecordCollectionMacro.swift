@@ -205,6 +205,13 @@ extension RecordCollectionMacro {
             parameters.append("emailVisibility: Bool = false")
         }
         for variable in variables {
+            if variable.isFile {
+                // MARK: Don't add files to initializer because we can't upload files async in a syncronous initializer.
+                continue
+            }
+            if variable.name.text == "row" {
+                continue
+            }
             switch variable.relation {
             case .none:
                 parameters.append("\(variable.name): \(variable.type)")
@@ -232,6 +239,13 @@ extension RecordCollectionMacro {
             parameters.append("self.emailVisibility = emailVisibility")
         }
         for variable in variables {
+            if variable.isFile {
+                // MARK: Don't add files to initializer because we can't upload files async in a syncronous initializer.
+                continue
+            }
+            if variable.name.text == "row" {
+                continue
+            }
             switch variable.relation {
             case .none:
                 parameters.append("self.\(variable.name) = \(variable.name)")
@@ -299,7 +313,13 @@ extension RecordCollectionMacro {
                 for variable in variables {
                     switch variable.relation {
                     case .none:
-                        "self.\(variable.name) = try container.decode(\(variable.type).self, forKey: .\(variable.name))"
+                        if variable.name.text != "row" {
+                            if variable.isFile {
+                                "self._\(variable.name)FileName = try container.decodeIfPresent(String.self, forKey: .\(variable.name))"
+                            } else {
+                                "self.\(variable.name) = try container.decode(\(variable.type).self, forKey: .\(variable.name))"
+                            }
+                        }
                     case .single:
                         "self.\(variable.name) = expand?.\(variable.name)"
                         "self._\(variable.name)Id = try container.decode(String.self, forKey: .\(variable.name))"
@@ -408,7 +428,8 @@ extension RecordCollectionMacro {
             "collectionName",
             "collectionId",
             "created",
-            "updated"
+            "updated",
+            "row",
         ]
         if isAuthCollection(node) {
             members.append("try container.encode(username, forKey: .username)")
@@ -417,7 +438,7 @@ extension RecordCollectionMacro {
             members.append("try container.encode(emailVisibility, forKey: .emailVisibility)")
         }
         for variable in variables {
-            if keysToSkipEncoding.contains(variable.name.text) {
+            if keysToSkipEncoding.contains(variable.name.text) || variable.isFile {
                 continue
             }
             switch variable.relation {
