@@ -26,7 +26,7 @@
         named(init(from:)),
         named(encode(to:configuration:)),
         named(Expand),
-        named(EncodingConfiguration)
+        named(EncodingConfiguration),
 )
 @attached(
     extension,

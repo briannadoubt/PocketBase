@@ -100,3 +100,6 @@ extension PocketBase {
 extension URL {
     public static let localhost = URL(string: "http://localhost:8090")!
 }
+
+@available(*, deprecated, renamed: "PocketBase", message: "Requires a capitol 'B'")
+public struct Pocketbase {}
