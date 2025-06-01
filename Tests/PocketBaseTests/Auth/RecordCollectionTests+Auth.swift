@@ -299,7 +299,7 @@ extension RecordCollectionTests {
             let methods = AuthMethods(
                 usernamePassword: true,
                 emailPassword: true,
-                authProviders: []
+                oauth2: Oauth2Methods(providers: [], enabled: false)
             )
             let environment = PocketBase.TestEnvironment(
                 baseURL: baseURL,

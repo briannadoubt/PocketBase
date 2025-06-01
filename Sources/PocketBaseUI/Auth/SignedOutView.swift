@@ -95,9 +95,9 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger {
                                 )
                             }
                         }
-                        if !authMethods.authProviders.isEmpty {
+                        if !authMethods.oauth2.providers.isEmpty {
                             Section {
-                                ForEach(authMethods.authProviders) { provider in
+                                ForEach(authMethods.oauth2.providers) { provider in
                                     SignUpButton<T>(
                                         newUser,
                                         collection: collection,
@@ -123,9 +123,9 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger {
                             }
                         }
                         
-                        if !authMethods.authProviders.isEmpty {
+                        if !authMethods.oauth2.providers.isEmpty {
                             Section {
-                                ForEach(authMethods.authProviders) { provider in
+                                ForEach(authMethods.oauth2.providers) { provider in
                                     LoginButton<T>(
                                         collection: collection,
                                         authState: $authState,

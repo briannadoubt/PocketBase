@@ -8,5 +8,7 @@
 public struct AuthMethods: Codable, Sendable, Equatable {
     public var usernamePassword: Bool
     public var emailPassword: Bool
-    public var authProviders: [OAuthProvider]
+    public var oauth2: Oauth2Methods
 }
+
+

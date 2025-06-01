@@ -16,11 +16,11 @@ struct AuthMethodsTests {
         let methods = AuthMethods(
             usernamePassword: true,
             emailPassword: true,
-            authProviders: []
+            oauth2: Oauth2Methods(providers: [], enabled: false)
         )
         #expect(methods.usernamePassword)
         #expect(methods.emailPassword)
-        #expect(methods.authProviders.isEmpty)
+        #expect(methods.oauth2.providers.isEmpty)
     }
 
 }
