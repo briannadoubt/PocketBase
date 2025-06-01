@@ -116,7 +116,7 @@ extension Realtime: EventHandler {
             }
             let rawEvent = RawRecordEvent(
                 id: messageEvent.lastEventId,
-                value: message
+                record: message
             )
             await subscription.channel.send(rawEvent)
         }

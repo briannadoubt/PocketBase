@@ -71,7 +71,7 @@ public struct RealtimeQuery<T: BaseRecord>: DynamicProperty {
         }
         let events = try await collection.events()
         for await event in events {
-            let record = event.value
+            let record = event.record
             switch event.action {
             case .create:
                 insert(record)
