@@ -20,7 +20,7 @@ extension RecordCollection where T: BaseRecord {
                         Self.logger.error("Event is not raw record event")
                         continue
                     }
-                    for line in rawEvent.value.components(separatedBy: "\n") {
+                    for line in rawEvent.record.components(separatedBy: "\n") {
                         do {
                             let event = try PocketBase.decoder.decode(
                                 RecordEvent<T>.self,

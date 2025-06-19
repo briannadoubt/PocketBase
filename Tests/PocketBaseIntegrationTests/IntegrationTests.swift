@@ -68,6 +68,12 @@ func happyPath() async throws {
         try await users.authRefresh()
     })
     
+    // list authentication methods
+    
+    let methods = try await users.listAuthMethods()
+    
+    #expect(methods.emailPassword)
+    
     // Create a new user
     let password = "Test1234%"
     var user = try await users.create(
