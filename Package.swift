@@ -23,7 +23,7 @@ let package = Package(
 //        .package(path: "../EventSource" url: "https://github.com/briannadoubt/EventSource.git", .upToNextMinor(from: "0.1.0")),
         .package(url: "https://github.com/apple/swift-http-types.git", .upToNextMajor(from: "1.0.0")),
         .package(url: "https://github.com/kishikawakatsumi/KeychainAccess.git", .upToNextMajor(from: "4.0.0")),
-        .package(url: "https://github.com/swiftlang/swift-syntax", "509.0.0"..<"602.0.0"),
+        .package(url: "https://github.com/swiftlang/swift-syntax", "509.0.0"..<"603.0.0"),
         .package(url: "https://github.com/apple/swift-async-algorithms.git", .upToNextMajor(from: "1.0.0")),
         .package(url: "https://github.com/apple/swift-collections.git", .upToNextMajor(from: "1.1.2")),
     ],
