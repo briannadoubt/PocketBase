@@ -54,6 +54,7 @@ extension RecordCollectionMacro {
         members.append(DeclSyntax(try initFromDecoder(modifiers, node, variables)))
         members.append(DeclSyntax(try encodeToEncoderWithConfiguration(modifiers, node, variables)))
         members.append(DeclSyntax(try relations(modifiers, variables)))
+        members.append(DeclSyntax(try fileFields(modifiers, variables)))
         members.append(DeclSyntax(try codingKeysEnum(modifiers, node, variables)))
         if hasRelations(variables) {
             members.append(DeclSyntax(try expandStruct(modifiers, variables)))
@@ -205,6 +206,17 @@ extension RecordCollectionMacro {
             parameters.append("emailVisibility: Bool = false")
         }
         for variable in variables {
+            // Handle file fields specially - they store filenames, not the actual files
+            if variable.isFileField {
+                if variable.isArray {
+                    // Multiple files: [String] = []
+                    parameters.append("\(variable.name): [String] = []")
+                } else {
+                    // Single file: String? = nil
+                    parameters.append("\(variable.name): String? = nil")
+                }
+                continue
+            }
             switch variable.relation {
             case .none:
                 parameters.append("\(variable.name): \(variable.type)")
@@ -297,6 +309,17 @@ extension RecordCollectionMacro {
                     "let expand = try container.decodeIfPresent(Expand.self, forKey: .expand)"
                 }
                 for variable in variables {
+                    // Handle file fields specially - they store filenames as String? or [String]
+                    if variable.isFileField {
+                        if variable.isArray {
+                            // Multiple files: [String]
+                            "self.\(variable.name) = try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []"
+                        } else {
+                            // Single file: String?
+                            "self.\(variable.name) = try container.decodeIfPresent(String.self, forKey: .\(variable.name))"
+                        }
+                        continue
+                    }
                     switch variable.relation {
                     case .none:
                         "self.\(variable.name) = try container.decode(\(variable.type).self, forKey: .\(variable.name))"
@@ -375,7 +398,27 @@ extension RecordCollectionMacro {
             }
         }
     }
-    
+
+    /// Generates a static property listing all file field names.
+    ///
+    /// This is used to identify which fields should be sent via multipart/form-data
+    /// rather than JSON encoding.
+    static func fileFields(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> VariableDeclSyntax {
+        let fileFieldNames = variables.filter { $0.isFileField }.map { $0.name.text }
+        return try VariableDeclSyntax("\(modifiers.modifier)static var fileFields: [String]") {
+            ArrayExprSyntax {
+                for name in fileFieldNames {
+                    ArrayElementSyntax(
+                        expression: StringLiteralExprSyntax(content: name)
+                    )
+                }
+            }
+        }
+    }
+
     static func codingKeysEnum(
         _ modifiers: DeclModifierListSyntax,
         _ node: AttributeSyntax,
@@ -418,6 +461,10 @@ extension RecordCollectionMacro {
         }
         for variable in variables {
             if keysToSkipEncoding.contains(variable.name.text) {
+                continue
+            }
+            // Skip file fields - they are sent via multipart/form-data, not JSON
+            if variable.isFileField {
                 continue
             }
             switch variable.relation {

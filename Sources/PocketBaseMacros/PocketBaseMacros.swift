@@ -13,6 +13,7 @@ struct PocketBaseMacros: CompilerPlugin {
     var providingMacros: [Macro.Type] = [
         AuthCollection.self,
         BaseCollection.self,
+        FileField.self,
         Filter.self,
         Relation.self,
         BackRelation.self,

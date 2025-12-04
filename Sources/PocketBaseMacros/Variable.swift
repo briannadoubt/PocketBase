@@ -21,8 +21,10 @@ struct Variable {
     var relation: RelationType
     var skipExpand: Bool
     var isOptionalRelationship: Bool
+    var isFileField: Bool
+    var isFileFieldRequired: Bool
     var modifiers: DeclModifierListSyntax
-    
+
     init(modifiers: DeclModifierListSyntax, _ variable: VariableDeclSyntax) throws {
         self.modifiers = modifiers
         guard let name = variable.bindings.first?.pattern.as(IdentifierPatternSyntax.self)?.identifier.trimmed else {
@@ -43,11 +45,13 @@ struct Variable {
         } else {
             self.type = type.trimmed
         }
-        self.isArray = type.isOptional(ArrayTypeSyntax.self)
+        self.isArray = type.isOptional(ArrayTypeSyntax.self) || type.is(ArrayTypeSyntax.self)
         self.isDate = type.hasTypeIdentifier("Date")
         self.relation = try RelationType(type: type, variable)
         self.skipExpand = variable.hasAttributeArgument("skipExpand")
         self.isOptionalRelationship = variable.hasAttributeArgument("optional")
+        self.isFileField = variable.hasAttribute("FileField")
+        self.isFileFieldRequired = variable.hasAttributeArgument("required")
     }
 }
 
