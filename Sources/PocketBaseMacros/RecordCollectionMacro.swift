@@ -293,10 +293,17 @@ extension RecordCollectionMacro {
         _ node: AttributeSyntax,
         _ variables: [Variable]
     ) throws -> InitializerDeclSyntax {
+        let hasFileFields = variables.contains { $0.isFileField }
         try InitializerDeclSyntax(
             "\(modifiers.modifier)init(from decoder: Decoder) throws"
         ) {
             "let container = try decoder.container(keyedBy: CodingKeys.self)"
+
+            // Extract base URL for file field hydration
+            if hasFileFields {
+                "let baseURL = (decoder.userInfo[RecordFile.baseURLUserInfoKey] as? URL) ?? .localhost"
+            }
+
             "// Base Collection Fields"
             "let id = try container.decode(String.self, forKey: .id)"
             "self.id = id"
@@ -304,7 +311,7 @@ extension RecordCollectionMacro {
             "collectionId = try container.decode(String.self, forKey: .collectionId)"
             "created = try container.decode(Date.self, forKey: .created)"
             "updated = try container.decode(Date.self, forKey: .updated)"
-            
+
             if isAuthCollection(node) {
                 "// Auth Collection Fields"
                 "username = try container.decode(String.self, forKey: .username)"
@@ -312,22 +319,22 @@ extension RecordCollectionMacro {
                 "verified = try container.decode(Bool.self, forKey: .verified)"
                 "emailVisibility = try container.decode(Bool.self, forKey: .emailVisibility)"
             }
-            
+
             if !variables.isEmpty {
                 if hasRelations(variables) {
                     "let expand = try container.decodeIfPresent(Expand.self, forKey: .expand)"
                 }
                 for variable in variables {
-                    // Handle file fields - decode filenames into backing storage and hydrate RecordFile
+                    // Handle file fields - decode filenames into backing storage and hydrate RecordFile with baseURL
                     if variable.isFileField {
                         if variable.isArray {
                             // Multiple files: decode [String] and hydrate [RecordFile]
                             "self._\(variable.name)Filenames = try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []"
-                            "self.\(variable.name) = self._\(variable.name)Filenames.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id) }"
+                            "self.\(variable.name) = self._\(variable.name)Filenames.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }"
                         } else {
                             // Single file: decode String? and hydrate RecordFile?
                             "self._\(variable.name)Filename = try container.decodeIfPresent(String.self, forKey: .\(variable.name))"
-                            "self.\(variable.name) = self._\(variable.name)Filename.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id) }"
+                            "self.\(variable.name) = self._\(variable.name)Filename.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }"
                         }
                         continue
                     }

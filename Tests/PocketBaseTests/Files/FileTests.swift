@@ -480,54 +480,105 @@ struct FileTests: NetworkResponseTestSuite {
 
     @Suite("RecordFile")
     struct RecordFileTests {
-        @Test("RecordFile stores filename and context")
+        @Test("RecordFile stores filename, context, and baseURL")
         func recordFileProperties() {
+            let baseURL = URL(string: "http://localhost:8090")!
             let file = RecordFile(
                 filename: "avatar_abc123.png",
                 collectionName: "users",
-                recordId: "user123"
+                recordId: "user123",
+                baseURL: baseURL
             )
 
             #expect(file.filename == "avatar_abc123.png")
             #expect(file.collectionName == "users")
             #expect(file.recordId == "user123")
+            #expect(file.baseURL == baseURL)
         }
 
-        @Test("RecordFile generates URL")
-        func recordFileURL() {
-            let pocketbase = PocketBase(url: URL(string: "http://localhost:8090")!)
+        @Test("RecordFile has direct url property")
+        func recordFileDirectURL() {
             let file = RecordFile(
                 filename: "avatar.png",
                 collectionName: "users",
-                recordId: "abc123"
+                recordId: "abc123",
+                baseURL: URL(string: "http://localhost:8090")!
             )
 
-            let url = file.url(from: pocketbase)
-            #expect(url.absoluteString == "http://localhost:8090/api/files/users/abc123/avatar.png")
+            // Direct URL access - no pocketbase instance needed!
+            #expect(file.url.absoluteString == "http://localhost:8090/api/files/users/abc123/avatar.png")
         }
 
         @Test("RecordFile generates URL with thumb")
         func recordFileURLWithThumb() {
-            let pocketbase = PocketBase(url: URL(string: "http://localhost:8090")!)
             let file = RecordFile(
                 filename: "photo.jpg",
                 collectionName: "posts",
-                recordId: "post456"
+                recordId: "post456",
+                baseURL: URL(string: "http://localhost:8090")!
             )
 
-            let url = file.url(from: pocketbase, thumb: .crop(width: 100, height: 100))
+            let url = file.url(thumb: .crop(width: 100, height: 100))
             #expect(url.absoluteString == "http://localhost:8090/api/files/posts/post456/photo.jpg?thumb=100x100")
+        }
+
+        @Test("RecordFile generates URL with token")
+        func recordFileURLWithToken() {
+            let file = RecordFile(
+                filename: "secret.pdf",
+                collectionName: "documents",
+                recordId: "doc123",
+                baseURL: URL(string: "http://localhost:8090")!
+            )
+
+            let url = file.url(token: "file-token-abc")
+            #expect(url.absoluteString == "http://localhost:8090/api/files/documents/doc123/secret.pdf?token=file-token-abc")
+        }
+
+        @Test("RecordFile generates URL with download flag")
+        func recordFileURLWithDownload() {
+            let file = RecordFile(
+                filename: "report.pdf",
+                collectionName: "files",
+                recordId: "file789",
+                baseURL: URL(string: "http://localhost:8090")!
+            )
+
+            let url = file.url(download: true)
+            #expect(url.absoluteString == "http://localhost:8090/api/files/files/file789/report.pdf?download=1")
+        }
+
+        @Test("RecordFile generates URL with multiple options")
+        func recordFileURLWithMultipleOptions() {
+            let file = RecordFile(
+                filename: "image.png",
+                collectionName: "media",
+                recordId: "media123",
+                baseURL: URL(string: "http://localhost:8090")!
+            )
+
+            let url = file.url(thumb: .fit(width: 200, height: 200), token: "tok", download: true)
+            let urlString = url.absoluteString
+            #expect(urlString.contains("thumb=200x200f"))
+            #expect(urlString.contains("token=tok"))
+            #expect(urlString.contains("download=1"))
         }
 
         @Test("RecordFile can be created from string literal")
         func recordFileFromStringLiteral() {
             let file: RecordFile = "test.pdf"
             #expect(file.filename == "test.pdf")
+            #expect(file.baseURL == .localhost)
         }
 
         @Test("RecordFile description")
         func recordFileDescription() {
-            let file = RecordFile(filename: "doc.pdf", collectionName: "files", recordId: "123")
+            let file = RecordFile(
+                filename: "doc.pdf",
+                collectionName: "files",
+                recordId: "123",
+                baseURL: .localhost
+            )
             #expect(file.description == "RecordFile(doc.pdf)")
         }
     }

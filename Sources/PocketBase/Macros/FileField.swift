@@ -8,8 +8,8 @@
 /// Marks a property as a file field with hydrated `RecordFile` objects.
 ///
 /// Similar to `@Relation`, the `@FileField` macro generates backing storage for
-/// filenames while the visible property holds hydrated `RecordFile` objects that
-/// provide convenient URL generation.
+/// filenames while the visible property holds hydrated `RecordFile` objects with
+/// ready-to-use URLs.
 ///
 /// ## Usage
 ///
@@ -27,23 +27,30 @@
 ///
 /// For `@FileField var coverImage: RecordFile?`:
 /// - Generates: `var _coverImageFilename: String?`
-/// - Decodes filename from JSON, hydrates into `RecordFile` with collection/record context
+/// - Decodes filename from JSON, hydrates into `RecordFile` with collection/record/baseURL context
 ///
 /// For `@FileField var attachments: [RecordFile]?`:
 /// - Generates: `var _attachmentsFilenames: [String] = []`
 /// - Decodes filenames from JSON, hydrates into `[RecordFile]` array
 ///
-/// ## Working with Files
+/// ## Accessing Files
 ///
 /// ```swift
-/// // Access the hydrated RecordFile
+/// // Access the hydrated RecordFile with ready-to-use URL
 /// if let cover = post.coverImage {
-///     // Generate URL with optional thumbnail
-///     let url = cover.url(from: pocketbase)
-///     let thumbUrl = cover.url(from: pocketbase, thumb: .crop(width: 100, height: 100))
+///     // Direct URL access - ready to use!
+///     let url = cover.url
+///     // "http://localhost:8090/api/files/posts/abc123/cover_xyz.png"
+///
+///     // With thumbnail
+///     let thumbUrl = cover.url(thumb: .crop(width: 100, height: 100))
 ///
 ///     // Force download
-///     let downloadUrl = cover.url(from: pocketbase, download: true)
+///     let downloadUrl = cover.url(download: true)
+///
+///     // Protected file with token
+///     let token = try await collection.getFileToken()
+///     let protectedUrl = cover.url(token: token.token)
 ///
 ///     // Access raw filename
 ///     print(cover.filename) // "cover_Ab24ZjL.png"
@@ -51,7 +58,7 @@
 ///
 /// // Iterate over multiple files
 /// for attachment in post.attachments ?? [] {
-///     let url = attachment.url(from: pocketbase)
+///     let url = attachment.url  // Ready to use!
 ///     print(attachment.filename)
 /// }
 /// ```
@@ -68,6 +75,11 @@
 ///     Post(title: "My Post"),
 ///     files: ["coverImage": [imageFile]]
 /// )
+///
+/// // The returned post has hydrated RecordFile with URL!
+/// if let url = post.coverImage?.url {
+///     // Use directly in image views, download tasks, etc.
+/// }
 ///
 /// // Update with files
 /// try await collection.update(post, files: ["attachments+": [newDoc]])
