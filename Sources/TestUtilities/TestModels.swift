@@ -47,13 +47,15 @@ public extension Rawr {
 @BaseCollection("posts")
 public struct Post {
     public var title: String = ""
-    @FileField public var coverImage: String?
-    @FileField public var attachments: [String] = []
+    @FileField public var coverImage: RecordFile?
+    @FileField public var attachments: [RecordFile]?
 
     public init(title: String, coverImage: String? = nil, attachments: [String] = []) {
         self.title = title
-        self.coverImage = coverImage
-        self.attachments = attachments
+        // The memberwise init accepts filenames and sets backing storage
+        // The RecordFile properties will be nil until hydrated from decoder
+        self._coverImageFilename = coverImage
+        self._attachmentsFilenames = attachments
         self.created = Self.date
         self.updated = Self.date
         self.collectionName = Self.collection

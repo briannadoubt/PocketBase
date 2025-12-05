@@ -453,27 +453,7 @@ struct FileTests: NetworkResponseTestSuite {
             #expect(Rawr.fileFields.isEmpty)
         }
 
-        @Test("File fields are not encoded to JSON for remote body")
-        func fileFieldsNotEncodedForRemoteBody() throws {
-            let post = Post(
-                title: "Test Post",
-                coverImage: "image_abc123.png",
-                attachments: ["doc1.pdf", "doc2.pdf"]
-            )
-
-            // Encode for remote body (what would be sent to server)
-            let data = try PocketBase.encoder.encode(post, configuration: .remoteBody)
-            let json = try JSONSerialization.jsonObject(with: data) as! [String: Any]
-
-            // Title should be encoded
-            #expect(json["title"] as? String == "Test Post")
-
-            // File fields should NOT be encoded (they're sent via multipart)
-            #expect(json["coverImage"] == nil)
-            #expect(json["attachments"] == nil)
-        }
-
-        @Test("Post can be created with memberwise init")
+        @Test("Post can be created with memberwise init using filenames")
         func memberwiseInit() {
             let post = Post(
                 title: "My Post",
@@ -482,16 +462,73 @@ struct FileTests: NetworkResponseTestSuite {
             )
 
             #expect(post.title == "My Post")
-            #expect(post.coverImage == "cover.jpg")
-            #expect(post.attachments == ["a.pdf", "b.pdf"])
+            // Backing storage holds the filenames
+            #expect(post._coverImageFilename == "cover.jpg")
+            #expect(post._attachmentsFilenames == ["a.pdf", "b.pdf"])
         }
 
         @Test("Post file fields default to nil and empty array")
         func defaultValues() {
             let post = Post(title: "Minimal Post")
 
-            #expect(post.coverImage == nil)
-            #expect(post.attachments.isEmpty)
+            #expect(post._coverImageFilename == nil)
+            #expect(post._attachmentsFilenames.isEmpty)
+        }
+    }
+
+    // MARK: - RecordFile Tests
+
+    @Suite("RecordFile")
+    struct RecordFileTests {
+        @Test("RecordFile stores filename and context")
+        func recordFileProperties() {
+            let file = RecordFile(
+                filename: "avatar_abc123.png",
+                collectionName: "users",
+                recordId: "user123"
+            )
+
+            #expect(file.filename == "avatar_abc123.png")
+            #expect(file.collectionName == "users")
+            #expect(file.recordId == "user123")
+        }
+
+        @Test("RecordFile generates URL")
+        func recordFileURL() {
+            let pocketbase = PocketBase(url: URL(string: "http://localhost:8090")!)
+            let file = RecordFile(
+                filename: "avatar.png",
+                collectionName: "users",
+                recordId: "abc123"
+            )
+
+            let url = file.url(from: pocketbase)
+            #expect(url.absoluteString == "http://localhost:8090/api/files/users/abc123/avatar.png")
+        }
+
+        @Test("RecordFile generates URL with thumb")
+        func recordFileURLWithThumb() {
+            let pocketbase = PocketBase(url: URL(string: "http://localhost:8090")!)
+            let file = RecordFile(
+                filename: "photo.jpg",
+                collectionName: "posts",
+                recordId: "post456"
+            )
+
+            let url = file.url(from: pocketbase, thumb: .crop(width: 100, height: 100))
+            #expect(url.absoluteString == "http://localhost:8090/api/files/posts/post456/photo.jpg?thumb=100x100")
+        }
+
+        @Test("RecordFile can be created from string literal")
+        func recordFileFromStringLiteral() {
+            let file: RecordFile = "test.pdf"
+            #expect(file.filename == "test.pdf")
+        }
+
+        @Test("RecordFile description")
+        func recordFileDescription() {
+            let file = RecordFile(filename: "doc.pdf", collectionName: "files", recordId: "123")
+            #expect(file.description == "RecordFile(doc.pdf)")
         }
     }
 }

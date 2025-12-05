@@ -5,11 +5,11 @@
 //  Created by Brianna Zamora on 12/4/24.
 //
 
-/// Marks a property as a file field that will be uploaded via multipart/form-data.
+/// Marks a property as a file field with hydrated `RecordFile` objects.
 ///
-/// File fields are automatically excluded from JSON encoding and tracked for
-/// file upload operations. The macro generates helper code to build file upload
-/// payloads from your record's file properties.
+/// Similar to `@Relation`, the `@FileField` macro generates backing storage for
+/// filenames while the visible property holds hydrated `RecordFile` objects that
+/// provide convenient URL generation.
 ///
 /// ## Usage
 ///
@@ -18,52 +18,72 @@
 /// public struct Post {
 ///     var title: String = ""
 ///
-///     @FileField var coverImage: String?           // Single file (stores filename)
-///     @FileField var attachments: [String] = []    // Multiple files (stores filenames)
+///     @FileField var coverImage: RecordFile?       // Single file
+///     @FileField var attachments: [RecordFile]?    // Multiple files
 /// }
 /// ```
 ///
-/// ## How File Fields Work
+/// ## Generated Code
 ///
-/// In PocketBase, file fields store only the filename(s) in the database. The actual
-/// files are stored in the filesystem or S3. When you read a record, you get the
-/// filename(s) which you can use to construct file URLs.
+/// For `@FileField var coverImage: RecordFile?`:
+/// - Generates: `var _coverImageFilename: String?`
+/// - Decodes filename from JSON, hydrates into `RecordFile` with collection/record context
 ///
-/// When creating or updating records with files, you need to use multipart/form-data
-/// encoding. The `@FileField` macro helps by:
+/// For `@FileField var attachments: [RecordFile]?`:
+/// - Generates: `var _attachmentsFilenames: [String] = []`
+/// - Decodes filenames from JSON, hydrates into `[RecordFile]` array
 ///
-/// 1. **Excluding from JSON encoding** - File fields are skipped when encoding the
-///    record for create/update operations, since files must be sent separately.
+/// ## Working with Files
 ///
-/// 2. **Generating `fileFields`** - A static property listing all file field names,
-///    useful for validation and documentation.
+/// ```swift
+/// // Access the hydrated RecordFile
+/// if let cover = post.coverImage {
+///     // Generate URL with optional thumbnail
+///     let url = cover.url(from: pocketbase)
+///     let thumbUrl = cover.url(from: pocketbase, thumb: .crop(width: 100, height: 100))
+///
+///     // Force download
+///     let downloadUrl = cover.url(from: pocketbase, download: true)
+///
+///     // Access raw filename
+///     print(cover.filename) // "cover_Ab24ZjL.png"
+/// }
+///
+/// // Iterate over multiple files
+/// for attachment in post.attachments ?? [] {
+///     let url = attachment.url(from: pocketbase)
+///     print(attachment.filename)
+/// }
+/// ```
+///
+/// ## Uploading Files
+///
+/// When creating or updating records with files, use multipart/form-data:
+///
+/// ```swift
+/// let imageFile = UploadFile(filename: "cover.png", data: imageData, mimeType: "image/png")
+///
+/// // Create with files
+/// let post = try await collection.create(
+///     Post(title: "My Post"),
+///     files: ["coverImage": [imageFile]]
+/// )
+///
+/// // Update with files
+/// try await collection.update(post, files: ["attachments+": [newDoc]])
+///
+/// // Delete specific files
+/// try await collection.deleteFiles(
+///     from: post,
+///     files: FileDeletePayload(["attachments": ["old.pdf"]])
+/// )
+/// ```
 ///
 /// ## Field Modifiers for Updates
-///
-/// When updating records, you can use field name modifiers:
 ///
 /// - `fieldName+` - Append new files to existing ones
 /// - `+fieldName` - Prepend new files to existing ones
 /// - `fieldName-` - Delete specific files by name
-///
-/// ```swift
-/// // Append a new attachment
-/// try await collection.update(post, files: ["attachments+": [newFile]])
-///
-/// // Delete a specific attachment
-/// try await collection.deleteFiles(from: post, files: .init(["attachments": ["old.pdf"]]))
-/// ```
-///
-/// ## Getting File URLs
-///
-/// Use `pocketbase.fileURL(record:filename:)` to get the URL for a file:
-///
-/// ```swift
-/// if let filename = post.coverImage {
-///     let url = pocketbase.fileURL(record: post, filename: filename)
-///     // Use url to display or download the file
-/// }
-/// ```
 @attached(peer, names: arbitrary)
 public macro FileField(
     _ options: FileFieldOption...

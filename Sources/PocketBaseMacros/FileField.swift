@@ -16,6 +16,7 @@ enum FileFieldError {
     case mustBeVariable
     case missingIdentifierPattern
     case mustDefineTypeAnnotation
+    case mustBeMarkedAsOptional
     case invalidType
 
     var errorDescription: String {
@@ -23,24 +24,27 @@ enum FileFieldError {
         case .mustBeVariable:
             "`@FileField` must be applied to a variable declaration."
         case .missingIdentifierPattern:
-            "Invalid pattern. Must be an identifier pattern. Example: `@FileField var avatar: String?`."
+            "Invalid pattern. Must be an identifier pattern. Example: `@FileField var avatar: RecordFile?`."
         case .mustDefineTypeAnnotation:
-            "Missing type annotation. Example: `@FileField var avatar: String?` or `@FileField var documents: [String]`."
+            "Missing type annotation. Example: `@FileField var avatar: RecordFile?` or `@FileField var documents: [RecordFile]?`."
+        case .mustBeMarkedAsOptional:
+            "`@FileField` variables must be marked as optional. Example: `@FileField var avatar: RecordFile?` or `@FileField var documents: [RecordFile]?`."
         case .invalidType:
-            "File fields must be `String?` (single file) or `[String]` (multiple files)."
+            "File fields must be `RecordFile?` (single file) or `[RecordFile]?` (multiple files)."
         }
     }
 }
 
-/// The `@FileField` macro marks a property as a file field.
+/// The `@FileField` macro marks a property as a file field and generates backing storage.
 ///
-/// File fields are tracked separately from regular fields and are excluded from
-/// JSON encoding during create/update operations (since files are sent via multipart).
+/// Similar to `@Relation`, this macro generates a hidden property to store the raw
+/// filename(s) while the visible property holds hydrated `RecordFile` objects.
 ///
-/// The macro itself is a peer macro that doesn't generate any additional declarations,
-/// but its presence is detected by the RecordCollectionMacro to:
-/// - Skip the field during JSON encoding
-/// - Include it in the generated `fileFields` static property
+/// For `@FileField var avatar: RecordFile?`:
+/// - Generates: `var _avatarFilename: String?`
+///
+/// For `@FileField var documents: [RecordFile]?`:
+/// - Generates: `var _documentsFilenames: [String] = []`
 public struct FileField: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
@@ -54,7 +58,7 @@ public struct FileField: PeerMacro {
         }
 
         // Validate pattern
-        guard binding.pattern.as(IdentifierPatternSyntax.self) != nil else {
+        guard let pattern = binding.pattern.as(IdentifierPatternSyntax.self) else {
             throw MacroExpansionErrorMessage(FileFieldError.missingIdentifierPattern.errorDescription)
         }
 
@@ -63,45 +67,46 @@ public struct FileField: PeerMacro {
             throw MacroExpansionErrorMessage(FileFieldError.mustDefineTypeAnnotation.errorDescription)
         }
 
-        // Validate type is String?, [String], or [String]?
-        let type = typeAnnotation.type
-        let isValidType = isValidFileFieldType(type)
+        // Must be optional
+        guard let optional = typeAnnotation.type.as(OptionalTypeSyntax.self) else {
+            throw MacroExpansionErrorMessage(FileFieldError.mustBeMarkedAsOptional.errorDescription)
+        }
 
+        // Validate type is RecordFile? or [RecordFile]?
+        let isValidType = isValidFileFieldType(optional.wrappedType)
         guard isValidType else {
             throw MacroExpansionErrorMessage(FileFieldError.invalidType.errorDescription)
         }
 
-        // FileField is a marker macro - it doesn't generate peer declarations
-        // Its presence is detected by RecordCollectionMacro to handle encoding
-        return []
+        let name = pattern.identifier
+        let isArray = optional.wrappedType.is(ArrayTypeSyntax.self)
+
+        // Generate backing storage property
+        if isArray {
+            // For [RecordFile]? generate var _<name>Filenames: [String] = []
+            return ["var _\(name)Filenames: [String] = []"]
+        } else {
+            // For RecordFile? generate var _<name>Filename: String?
+            return ["var _\(name)Filename: String?"]
+        }
     }
 
     /// Checks if the type is valid for a file field.
     ///
     /// Valid types are:
-    /// - `String?` (single optional file)
-    /// - `[String]` (multiple files, non-optional array)
-    /// - `[String]?` (multiple files, optional array)
+    /// - `RecordFile` (for RecordFile?)
+    /// - `[RecordFile]` (for [RecordFile]?)
     private static func isValidFileFieldType(_ type: TypeSyntax) -> Bool {
-        // Check for String?
-        if let optional = type.as(OptionalTypeSyntax.self) {
-            // String?
-            if let identifier = optional.wrappedType.as(IdentifierTypeSyntax.self),
-               identifier.name.text == "String" {
-                return true
-            }
-            // [String]?
-            if let array = optional.wrappedType.as(ArrayTypeSyntax.self),
-               let element = array.element.as(IdentifierTypeSyntax.self),
-               element.name.text == "String" {
-                return true
-            }
+        // Check for RecordFile
+        if let identifier = type.as(IdentifierTypeSyntax.self),
+           identifier.name.text == "RecordFile" {
+            return true
         }
 
-        // Check for [String]
+        // Check for [RecordFile]
         if let array = type.as(ArrayTypeSyntax.self),
            let element = array.element.as(IdentifierTypeSyntax.self),
-           element.name.text == "String" {
+           element.name.text == "RecordFile" {
             return true
         }
 

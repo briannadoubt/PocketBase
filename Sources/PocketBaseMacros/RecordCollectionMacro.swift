@@ -244,6 +244,15 @@ extension RecordCollectionMacro {
             parameters.append("self.emailVisibility = emailVisibility")
         }
         for variable in variables {
+            // Handle file fields - set backing storage like relations
+            if variable.isFileField {
+                if variable.isArray {
+                    parameters.append("self._\(variable.name)Filenames = \(variable.name)")
+                } else {
+                    parameters.append("self._\(variable.name)Filename = \(variable.name)")
+                }
+                continue
+            }
             switch variable.relation {
             case .none:
                 parameters.append("self.\(variable.name) = \(variable.name)")
@@ -309,14 +318,16 @@ extension RecordCollectionMacro {
                     "let expand = try container.decodeIfPresent(Expand.self, forKey: .expand)"
                 }
                 for variable in variables {
-                    // Handle file fields specially - they store filenames as String? or [String]
+                    // Handle file fields - decode filenames into backing storage and hydrate RecordFile
                     if variable.isFileField {
                         if variable.isArray {
-                            // Multiple files: [String]
-                            "self.\(variable.name) = try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []"
+                            // Multiple files: decode [String] and hydrate [RecordFile]
+                            "self._\(variable.name)Filenames = try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []"
+                            "self.\(variable.name) = self._\(variable.name)Filenames.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id) }"
                         } else {
-                            // Single file: String?
-                            "self.\(variable.name) = try container.decodeIfPresent(String.self, forKey: .\(variable.name))"
+                            // Single file: decode String? and hydrate RecordFile?
+                            "self._\(variable.name)Filename = try container.decodeIfPresent(String.self, forKey: .\(variable.name))"
+                            "self.\(variable.name) = self._\(variable.name)Filename.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id) }"
                         }
                         continue
                     }
@@ -463,8 +474,13 @@ extension RecordCollectionMacro {
             if keysToSkipEncoding.contains(variable.name.text) {
                 continue
             }
-            // Skip file fields - they are sent via multipart/form-data, not JSON
+            // File fields - encode backing storage (filenames), skip for remote body
             if variable.isFileField {
+                if variable.isArray {
+                    members.append("try container.encode(_\(variable.name)Filenames, forKey: .\(variable.name))")
+                } else {
+                    members.append("try container.encode(_\(variable.name)Filename, forKey: .\(variable.name))")
+                }
                 continue
             }
             switch variable.relation {
