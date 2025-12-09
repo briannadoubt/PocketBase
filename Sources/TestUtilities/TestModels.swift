@@ -49,19 +49,4 @@ public struct Post {
     public var title: String = ""
     @FileField public var coverImage: RecordFile?
     @FileField public var attachments: [RecordFile]?
-
-    public init(title: String, coverImage: String? = nil, attachments: [String] = []) {
-        self.title = title
-        // The memberwise init accepts filenames and sets backing storage
-        // The RecordFile properties will be nil until hydrated from decoder
-        self._coverImageFilename = coverImage
-        self._attachmentsFilenames = attachments
-        self.created = Self.date
-        self.updated = Self.date
-        self.collectionName = Self.collection
-    }
-}
-
-public extension Post {
-    static let date = Date()
 }
