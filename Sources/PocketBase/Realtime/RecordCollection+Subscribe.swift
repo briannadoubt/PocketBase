@@ -13,6 +13,8 @@ extension RecordCollection where T: BaseRecord {
             T.collection
         }
         let subscription = try await pocketbase.realtime.subscribe(self, at: path)
+        // Capture the decoder configured with baseURL for file field hydration
+        let decoder = self.decoder
         return AsyncStream { continuation in
             Task {
                 for await event in subscription {
@@ -22,7 +24,7 @@ extension RecordCollection where T: BaseRecord {
                     }
                     for line in rawEvent.record.components(separatedBy: "\n") {
                         do {
-                            let event = try PocketBase.decoder.decode(
+                            let event = try decoder.decode(
                                 RecordEvent<T>.self,
                                 from: Data(line.utf8)
                             )
