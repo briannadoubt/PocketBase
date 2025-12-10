@@ -49,14 +49,24 @@ struct NetworkInterfacingTests {
             [
                 (
                     data: try! JSONEncoder().encode(Cat()),
-                    response: HTTPURLResponse(),
+                    response: HTTPURLResponse(
+                        url: URL.localhost,
+                        statusCode: 200,
+                        httpVersion: nil,
+                        headerFields: nil
+                    )!,
                     shouldThrow: false,
                     error: nil as Error?
                 ),
                 (
                     data: try! JSONEncoder().encode(Cat()),
-                    response: URLResponse(),
-                    shouldThrow: false,
+                    response: URLResponse(
+                        url: URL.localhost,
+                        mimeType: nil,
+                        expectedContentLength: 0,
+                        textEncodingName: nil
+                    ),
+                    shouldThrow: true,
                     error: nil as Error?
                 ),
                 (
@@ -111,7 +121,8 @@ struct NetworkInterfacingTests {
             #expect(cat == Cat())
         } catch {
             let networkError = try #require(error as? NetworkError)
-            if response.response == URLResponse() {
+            // Check if it's a non-HTTP URLResponse (should throw unknownResponse)
+            if !(response.response is HTTPURLResponse) {
                 #expect(networkError == .unknownResponse(response.response))
             }
         }
