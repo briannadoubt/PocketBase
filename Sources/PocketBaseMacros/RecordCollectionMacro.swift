@@ -247,15 +247,13 @@ extension RecordCollectionMacro {
             // Handle file fields - set backing storage like relations
             // File properties are set to nil since we don't have the context (baseURL, collectionName, recordId)
             // needed to hydrate RecordFile objects in the memberwise init
-            // File fields: set backing storage and explicitly nil the property
-            // The property defaults to nil, but we set it explicitly to ensure initialization
+            // File fields: only set backing storage, let optional property use implicit nil default
+            // This matches how @Relation handles properties - only backing storage is set
             if variable.isFileField {
                 if variable.isArray {
                     parameters.append("self._\(variable.name)Filenames = \(variable.name)")
-                    parameters.append("self.\(variable.name) = Optional<[\(variable.type)]>.none")
                 } else {
                     parameters.append("self._\(variable.name)Filename = \(variable.name)")
-                    parameters.append("self.\(variable.name) = Optional.none")
                 }
                 continue
             }
