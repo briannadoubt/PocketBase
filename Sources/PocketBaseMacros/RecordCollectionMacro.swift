@@ -252,7 +252,7 @@ extension RecordCollectionMacro {
             if variable.isFileField {
                 if variable.isArray {
                     parameters.append("self._\(variable.name)Filenames = \(variable.name)")
-                    parameters.append("self.\(variable.name) = Optional.none")
+                    parameters.append("self.\(variable.name) = Optional<[\(variable.type)]>.none")
                 } else {
                     parameters.append("self._\(variable.name)Filename = \(variable.name)")
                     parameters.append("self.\(variable.name) = Optional.none")
