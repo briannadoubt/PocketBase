@@ -22,6 +22,7 @@
         named(email),
         named(CodingKeys),
         named(relations),
+        named(fileFields),
         named(init),
         named(init(from:)),
         named(encode(to:configuration:)),

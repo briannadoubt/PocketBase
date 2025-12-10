@@ -20,6 +20,7 @@
         named(init),
         named(encode),
         named(relations),
+        named(fileFields),
         named(Expand),
         named(init(from:)),
         named(encode(to:configuration:)),
