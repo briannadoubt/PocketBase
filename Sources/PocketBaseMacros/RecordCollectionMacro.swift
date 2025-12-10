@@ -512,13 +512,8 @@ extension RecordCollectionMacro {
             if keysToSkipEncoding.contains(variable.name.text) {
                 continue
             }
-            // File fields - encode backing storage (filenames), skip for remote body
+            // File fields are handled separately with configuration check
             if variable.isFileField {
-                if variable.isArray {
-                    members.append("try container.encode(_\(variable.name)Filenames, forKey: .\(variable.name))")
-                } else {
-                    members.append("try container.encode(_\(variable.name)Filename, forKey: .\(variable.name))")
-                }
                 continue
             }
             switch variable.relation {
@@ -545,16 +540,25 @@ extension RecordCollectionMacro {
         ) {
             "var container = encoder.container(keyedBy: CodingKeys.self)"
         
-            "// BaseRecord fields"
+            "// BaseRecord fields and file fields (skip for remote body)"
             try IfExprSyntax("if configuration == .none") {
                 "try container.encode(id, forKey: .id)"
                 "try container.encode(collectionName, forKey: .collectionName)"
                 "try container.encode(collectionId, forKey: .collectionId)"
                 "try container.encode(created, forKey: .created)"
                 "try container.encode(updated, forKey: .updated)"
+
+                // File fields - encode backing storage (filenames)
+                for variable in variables where variable.isFileField {
+                    if variable.isArray {
+                        "try container.encode(_\(variable.name)Filenames, forKey: .\(variable.name))"
+                    } else {
+                        "try container.encode(_\(variable.name)Filename, forKey: .\(variable.name))"
+                    }
+                }
             }
-        
-            "// Declared fields"
+
+            "// Declared fields (non-file)"
             for member in encodeToEncoderMembers(node, variables) {
                 member
             }
