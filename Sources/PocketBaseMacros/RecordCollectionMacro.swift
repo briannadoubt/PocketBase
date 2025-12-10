@@ -331,11 +331,13 @@ extension RecordCollectionMacro {
                 if variable.isFileField {
                     if variable.isArray {
                         // Multiple files: decode [String] and hydrate [RecordFile]
-                        body.append("self._\(variable.name)Filenames = try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []")
-                        body.append("self.\(variable.name) = self._\(variable.name)Filenames.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
+                        // Filter out empty strings as PocketBase sends "" for missing files
+                        body.append("self._\(variable.name)Filenames = (try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []).filter { !$0.isEmpty }")
+                        body.append("self.\(variable.name) = self._\(variable.name)Filenames.isEmpty ? nil : self._\(variable.name)Filenames.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
                     } else {
                         // Single file: decode String? and hydrate RecordFile?
-                        body.append("self._\(variable.name)Filename = try container.decodeIfPresent(String.self, forKey: .\(variable.name))")
+                        // Treat empty string as nil since PocketBase sends "" for missing files
+                        body.append("self._\(variable.name)Filename = try container.decodeIfPresent(String.self, forKey: .\(variable.name)).flatMap { $0.isEmpty ? nil : $0 }")
                         body.append("self.\(variable.name) = self._\(variable.name)Filename.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
                     }
                     continue

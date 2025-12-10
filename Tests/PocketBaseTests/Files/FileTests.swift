@@ -467,7 +467,7 @@ struct FileTests: NetworkResponseTestSuite {
             // The memberwise init stores filenames in backing storage
             // but the RecordFile properties remain nil without decoding context
             #expect(post.coverImage == nil)
-            #expect(post.attachments == [])
+            #expect(post.attachments == nil)
         }
 
         @Test("Post file fields default to nil")
@@ -475,7 +475,7 @@ struct FileTests: NetworkResponseTestSuite {
             let post = Post(title: "Minimal Post")
 
             #expect(post.coverImage == nil)
-            #expect(post.attachments == [])
+            #expect(post.attachments == nil)
         }
     }
 
