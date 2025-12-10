@@ -47,6 +47,6 @@ public extension Rawr {
 @BaseCollection("posts")
 public struct Post {
     public var title: String = ""
-    @FileField public var coverImage: RecordFile?
-    @FileField public var attachments: [RecordFile]?
+    @FileField public var coverImage: RecordFile? = nil
+    @FileField public var attachments: [RecordFile]? = nil
 }
