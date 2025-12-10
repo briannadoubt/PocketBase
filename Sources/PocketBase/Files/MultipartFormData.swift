@@ -50,8 +50,12 @@ struct MultipartFormData: Sendable {
     ///   - name: The field name.
     ///   - file: The file to upload.
     mutating func append(name: String, file: UploadFile) {
+        // Escape quotes and backslashes in filename per RFC 2231
+        let escapedFilename = file.filename
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
         data.append("--\(boundary)\r\n".data(using: .utf8)!)
-        data.append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(file.filename)\"\r\n".data(using: .utf8)!)
+        data.append("Content-Disposition: form-data; name=\"\(name)\"; filename=\"\(escapedFilename)\"\r\n".data(using: .utf8)!)
         data.append("Content-Type: \(file.mimeType)\r\n\r\n".data(using: .utf8)!)
         data.append(file.data)
         data.append("\r\n".data(using: .utf8)!)
@@ -90,10 +94,11 @@ struct MultipartFormData: Sendable {
         switch value {
         case let string as String:
             append(name: name, value: string)
-        case let number as NSNumber:
-            append(name: name, value: "\(number)")
+        // Bool must be checked before NSNumber because Swift's Bool bridges to NSNumber
         case let bool as Bool:
             append(name: name, value: bool ? "true" : "false")
+        case let number as NSNumber:
+            append(name: name, value: "\(number)")
         case let array as [Any]:
             for (index, item) in array.enumerated() {
                 appendValue(item, name: "\(name)[\(index)]")

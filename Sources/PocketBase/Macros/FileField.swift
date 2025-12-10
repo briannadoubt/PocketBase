@@ -96,6 +96,26 @@
 /// - `fieldName+` - Append new files to existing ones
 /// - `+fieldName` - Prepend new files to existing ones
 /// - `fieldName-` - Delete specific files by name
+///
+/// ## Important: Memberwise Init Behavior
+///
+/// File field properties are only hydrated when decoding records from the server.
+/// When using the memberwise initializer, file properties remain `nil` even if
+/// filenames are passed - this is because `RecordFile` requires server context
+/// (record ID, collection name, base URL) that isn't available at creation time.
+///
+/// ```swift
+/// // When creating a new record locally:
+/// let post = Post(title: "My Post", coverImage: "cover.png")
+/// post.coverImage  // nil - not hydrated
+/// post._coverImageFilename  // "cover.png" - backing storage is set
+///
+/// // After saving to server and getting response:
+/// let savedPost = try await collection.create(post, files: [...])
+/// savedPost.coverImage?.url  // Fully hydrated with URL
+/// ```
+///
+/// This matches the behavior of `@Relation` which also only hydrates from server responses.
 @attached(peer, names: arbitrary)
 public macro FileField(
     _ options: FileFieldOption...
