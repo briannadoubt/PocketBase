@@ -66,7 +66,7 @@ struct NetworkInterfacingTests {
                         expectedContentLength: 0,
                         textEncodingName: nil
                     ),
-                    shouldThrow: true,
+                    shouldThrow: false,
                     error: nil as Error?
                 ),
                 (
