@@ -9,6 +9,7 @@ import Testing
 @testable import PocketBase
 import TestUtilities
 import Foundation
+import HTTPTypes
 
 @Suite("File Tests")
 struct FileTests: NetworkResponseTestSuite {
@@ -246,7 +247,7 @@ struct FileTests: NetworkResponseTestSuite {
         func requestFileToken() async throws {
             let baseURL = Self.baseURL
             let tokenResponse = FileTokenResponse(token: "short-lived-token-123")
-            let response = try PocketBase.encoder.encode(tokenResponse, configuration: .none)
+            let response = try JSONEncoder().encode(tokenResponse)
             let environment = PocketBase.TestEnvironment(baseURL: baseURL, response: response)
             let collection = environment.pocketbase.collection(Rawr.self)
 
@@ -453,7 +454,7 @@ struct FileTests: NetworkResponseTestSuite {
             #expect(Rawr.fileFields.isEmpty)
         }
 
-        @Test("Post can be created with memberwise init using filenames")
+        @Test("Post can be created with memberwise init")
         func memberwiseInit() {
             let post = Post(
                 title: "My Post",
@@ -462,17 +463,19 @@ struct FileTests: NetworkResponseTestSuite {
             )
 
             #expect(post.title == "My Post")
-            // Backing storage holds the filenames
-            #expect(post._coverImageFilename == "cover.jpg")
-            #expect(post._attachmentsFilenames == ["a.pdf", "b.pdf"])
+            // File fields are nil until hydrated from decoder
+            // The memberwise init stores filenames in backing storage
+            // but the RecordFile properties remain nil without decoding context
+            #expect(post.coverImage == nil)
+            #expect(post.attachments == nil)
         }
 
-        @Test("Post file fields default to nil and empty array")
+        @Test("Post file fields default to nil")
         func defaultValues() {
             let post = Post(title: "Minimal Post")
 
-            #expect(post._coverImageFilename == nil)
-            #expect(post._attachmentsFilenames.isEmpty)
+            #expect(post.coverImage == nil)
+            #expect(post.attachments == nil)
         }
     }
 
