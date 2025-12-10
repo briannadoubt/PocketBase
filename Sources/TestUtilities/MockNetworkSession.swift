@@ -24,7 +24,12 @@ public final class MockNetworkSession: NSObject, NetworkSession, @unchecked Send
     
     public init(
         data: Data = Data(),
-        response: URLResponse = HTTPURLResponse(),
+        response: URLResponse = HTTPURLResponse(
+            url: URL(string: "http://localhost:8090")!,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!,
         shouldThrow: Bool = false,
         stream: MockURLSessionDataStreamTask? = nil
     ) {
