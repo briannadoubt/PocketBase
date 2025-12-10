@@ -123,7 +123,13 @@ struct NetworkInterfacingTests {
             let networkError = try #require(error as? NetworkError)
             // Check if it's a non-HTTP URLResponse (should throw unknownResponse)
             if !(response.response is HTTPURLResponse) {
-                #expect(networkError == .unknownResponse(response.response))
+                // Verify it's an unknownResponse error without comparing the URLResponse directly
+                // to avoid Swift Testing crash when displaying URLResponse with nil URL
+                if case .unknownResponse = networkError {
+                    // Expected error type
+                } else {
+                    Issue.record("Expected unknownResponse error, got \(networkError)")
+                }
             }
         }
         
