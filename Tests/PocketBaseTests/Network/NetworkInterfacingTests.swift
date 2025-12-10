@@ -17,6 +17,42 @@ struct Cat: Codable, Equatable, Sendable {
 
 @Suite("Network Interface")
 struct NetworkInterfacingTests {
+
+    /// Response type enum to avoid storing URLResponse directly in test parameters
+    /// (URLResponse can cause Swift Testing crashes due to NSURL bridging issues)
+    enum ResponseType: Sendable, CustomStringConvertible {
+        case httpResponse(statusCode: Int, headers: [String: String]?)
+        case plainResponse
+
+        var description: String {
+            switch self {
+            case .httpResponse(let statusCode, _):
+                return "HTTPURLResponse(statusCode: \(statusCode))"
+            case .plainResponse:
+                return "URLResponse"
+            }
+        }
+
+        func makeResponse() -> URLResponse {
+            switch self {
+            case .httpResponse(let statusCode, let headers):
+                return HTTPURLResponse(
+                    url: URL.localhost,
+                    statusCode: statusCode,
+                    httpVersion: nil,
+                    headerFields: headers
+                )!
+            case .plainResponse:
+                return URLResponse(
+                    url: URL.localhost,
+                    mimeType: nil,
+                    expectedContentLength: 0,
+                    textEncodingName: nil
+                )
+            }
+        }
+    }
+
     @Test(
         "Network Request Execution",
         arguments: zip(
@@ -49,34 +85,19 @@ struct NetworkInterfacingTests {
             [
                 (
                     data: try! JSONEncoder().encode(Cat()),
-                    response: HTTPURLResponse(
-                        url: URL.localhost,
-                        statusCode: 200,
-                        httpVersion: nil,
-                        headerFields: nil
-                    )!,
+                    responseType: ResponseType.httpResponse(statusCode: 200, headers: nil),
                     shouldThrow: false,
                     error: nil as Error?
                 ),
                 (
                     data: try! JSONEncoder().encode(Cat()),
-                    response: URLResponse(
-                        url: URL.localhost,
-                        mimeType: nil,
-                        expectedContentLength: 0,
-                        textEncodingName: nil
-                    ),
+                    responseType: ResponseType.plainResponse,
                     shouldThrow: false,
                     error: nil as Error?
                 ),
                 (
                     data: try! JSONEncoder().encode(Cat()),
-                    response: HTTPURLResponse(
-                        url: URL.localhost,
-                        statusCode: 500,
-                        httpVersion: "2",
-                        headerFields: ["Accept": "application/json"]
-                    )!,
+                    responseType: ResponseType.httpResponse(statusCode: 500, headers: ["Accept": "application/json"]),
                     shouldThrow: false,
                     error: nil as Error?
                 ),
@@ -90,39 +111,40 @@ struct NetworkInterfacingTests {
             path: String,
             query: [URLQueryItem],
             headers: HTTPFields,
-            response: Data?
+            body: Data?
         ),
         response: (
             data: Data,
-            response: URLResponse,
+            responseType: ResponseType,
             shouldThrow: Bool,
             error: Error?
         )
     ) async throws {
+        let urlResponse = response.responseType.makeResponse()
         let session = MockNetworkSession(
-            data: response.0,
-            response: response.1,
-            shouldThrow: response.2
+            data: response.data,
+            response: urlResponse,
+            shouldThrow: response.shouldThrow
         )
         let interface = MockNetworkInterface(
-            baseURL: request.0,
+            baseURL: request.url,
             session: session
         )
         do {
             let responseData = try await interface.execute(
-                method: request.1,
-                path: request.2,
-                query: request.3,
-                headers: request.4,
-                body: request.5
+                method: request.method,
+                path: request.path,
+                query: request.query,
+                headers: request.headers,
+                body: request.body
             )
-        
+
             let cat = try JSONDecoder().decode(Cat.self, from: responseData)
             #expect(cat == Cat())
         } catch {
             let networkError = try #require(error as? NetworkError)
             // Check if it's a non-HTTP URLResponse (should throw unknownResponse)
-            if !(response.response is HTTPURLResponse) {
+            if case .plainResponse = response.responseType {
                 // Verify it's an unknownResponse error without comparing the URLResponse directly
                 // to avoid Swift Testing crash when displaying URLResponse with nil URL
                 if case .unknownResponse = networkError {
@@ -132,22 +154,22 @@ struct NetworkInterfacingTests {
                 }
             }
         }
-        
+
         let lastRequest = try #require(session.lastRequest)
-        
+
         // URL
         #expect(lastRequest.url == {
-            var url = request.0
-            url = url.appending(path: request.2)
-            if !request.3.isEmpty {
-                url = url.appending(queryItems: request.3)
+            var url = request.url
+            url = url.appending(path: request.path)
+            if !request.query.isEmpty {
+                url = url.appending(queryItems: request.query)
             }
             return url
         }())
-        
+
         // Method
-        #expect(lastRequest.httpMethod == request.1.rawValue)
-        
+        #expect(lastRequest.httpMethod == request.method.rawValue)
+
         // Headers
         let allHTTPHeaderFields = try #require(lastRequest.allHTTPHeaderFields)
         var headers = HTTPFields()
@@ -156,9 +178,9 @@ struct NetworkInterfacingTests {
                 headers[headerKey] = value
             }
         }
-        #expect(headers == request.4)
-        
-        #expect(lastRequest.httpBody == request.5)
+        #expect(headers == request.headers)
+
+        #expect(lastRequest.httpBody == request.body)
     }
 
 }
