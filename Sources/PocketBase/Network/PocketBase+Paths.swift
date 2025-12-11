@@ -19,4 +19,16 @@ extension PocketBase {
     static func recordPath(_ collectionIdOrName: String, _ recordId: String, trailingSlash: Bool = true) -> String {
         recordsPath(collectionIdOrName, trailingSlash: false) + "/" + recordId + (trailingSlash ? "/" : "")
     }
+
+    // MARK: - Files
+
+    /// Path for file operations: `/api/files/{collectionIdOrName}/{recordId}/{filename}`
+    static func filePath(_ collectionIdOrName: String, _ recordId: String, _ filename: String) -> String {
+        "/api/files/\(collectionIdOrName)/\(recordId)/\(filename)"
+    }
+
+    /// Path for requesting file tokens: `/api/files/token`
+    static var fileTokenPath: String {
+        "/api/files/token"
+    }
 }

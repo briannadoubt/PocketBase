@@ -46,6 +46,7 @@ extension Testing.Tag {
     "Happy path through PocketBase",
     .tags(.integration, .localhostRequired)
 )
+@MainActor
 func happyPath() async throws {
     // Initialize pocketbase
     let pb = PocketBase(

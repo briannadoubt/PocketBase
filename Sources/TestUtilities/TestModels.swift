@@ -29,7 +29,7 @@ public extension Tester {
 public struct Rawr {
     public var field: String = ""
     @BackRelation(\Tester.rawrs) public var testers: [Tester] = []
-    
+
     public init(id: String, field: String) {
         self.id = id
         self.field = field
@@ -41,4 +41,13 @@ public struct Rawr {
 
 public extension Rawr {
     static let date = Date()
+}
+
+/// A test model that includes file fields for testing file upload functionality.
+/// Uses the unified `FileValue` type for auto-detection of pending uploads.
+@BaseCollection("posts")
+public struct Post {
+    public var title: String = ""
+    @File public var coverImage: FileValue? = nil
+    @File public var attachments: [FileValue]? = nil
 }

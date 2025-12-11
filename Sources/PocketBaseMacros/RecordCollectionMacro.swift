@@ -54,6 +54,9 @@ extension RecordCollectionMacro {
         members.append(DeclSyntax(try initFromDecoder(modifiers, node, variables)))
         members.append(DeclSyntax(try encodeToEncoderWithConfiguration(modifiers, node, variables)))
         members.append(DeclSyntax(try relations(modifiers, variables)))
+        members.append(DeclSyntax(try fileFields(modifiers, variables)))
+        members.append(DeclSyntax(try pendingFileUploads(modifiers, variables)))
+        members.append(DeclSyntax(try fileFieldValues(modifiers, variables)))
         members.append(DeclSyntax(try codingKeysEnum(modifiers, node, variables)))
         if hasRelations(variables) {
             members.append(DeclSyntax(try expandStruct(modifiers, variables)))
@@ -205,6 +208,17 @@ extension RecordCollectionMacro {
             parameters.append("emailVisibility: Bool = false")
         }
         for variable in variables {
+            // Handle file fields specially - they store filenames, not the actual files
+            if variable.isFileField {
+                if variable.isArray {
+                    // Multiple files: [String] = []
+                    parameters.append("\(variable.name): [String] = []")
+                } else {
+                    // Single file: String? = nil
+                    parameters.append("\(variable.name): String? = nil")
+                }
+                continue
+            }
             switch variable.relation {
             case .none:
                 parameters.append("\(variable.name): \(variable.type)")
@@ -232,6 +246,19 @@ extension RecordCollectionMacro {
             parameters.append("self.emailVisibility = emailVisibility")
         }
         for variable in variables {
+            // Handle file fields - set backing storage like relations
+            // File properties are set to nil since we don't have the context (baseURL, collectionName, recordId)
+            // needed to hydrate RecordFile objects in the memberwise init
+            // File fields: only set backing storage, let optional property use implicit nil default
+            // This matches how @Relation handles properties - only backing storage is set
+            if variable.isFileField {
+                if variable.isArray {
+                    parameters.append("self._\(variable.name)Filenames = \(variable.name)")
+                } else {
+                    parameters.append("self._\(variable.name)Filename = \(variable.name)")
+                }
+                continue
+            }
             switch variable.relation {
             case .none:
                 parameters.append("self.\(variable.name) = \(variable.name)")
@@ -267,49 +294,96 @@ extension RecordCollectionMacro {
         }
     }
     
+    static func initFromDecoderBody(
+        _ node: AttributeSyntax,
+        _ variables: [Variable]
+    ) -> [CodeBlockItemSyntax] {
+        var body: [CodeBlockItemSyntax] = []
+        let hasFileFields = variables.contains { $0.isFileField }
+
+        body.append("let container = try decoder.container(keyedBy: CodingKeys.self)")
+
+        // Extract base URL for file field hydration
+        if hasFileFields {
+            body.append("let baseURL = (decoder.userInfo[RecordFile.baseURLUserInfoKey] as? URL) ?? .localhost")
+        }
+
+        body.append("// Base Collection Fields")
+        body.append("let id = try container.decode(String.self, forKey: .id)")
+        body.append("self.id = id")
+        body.append("collectionName = try container.decode(String.self, forKey: .collectionName)")
+        body.append("collectionId = try container.decode(String.self, forKey: .collectionId)")
+        body.append("created = try container.decode(Date.self, forKey: .created)")
+        body.append("updated = try container.decode(Date.self, forKey: .updated)")
+
+        if isAuthCollection(node) {
+            body.append("// Auth Collection Fields")
+            body.append("username = try container.decode(String.self, forKey: .username)")
+            body.append("email = try container.decodeIfPresent(String.self, forKey: .email)")
+            body.append("verified = try container.decode(Bool.self, forKey: .verified)")
+            body.append("emailVisibility = try container.decode(Bool.self, forKey: .emailVisibility)")
+        }
+
+        if !variables.isEmpty {
+            if hasRelations(variables) {
+                body.append("let expand = try container.decodeIfPresent(Expand.self, forKey: .expand)")
+            }
+            for variable in variables {
+                // Handle file fields - decode filenames into backing storage and hydrate FileValue with baseURL
+                if variable.isFileField {
+                    if variable.isArray {
+                        // Multiple files: decode [String] and hydrate [FileValue]
+                        // Filter out empty strings as PocketBase sends "" for missing files
+                        body.append("self._\(variable.name)Filenames = (try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []).filter { !$0.isEmpty }")
+                        body.append("self.\(variable.name) = self._\(variable.name)Filenames.isEmpty ? nil : self._\(variable.name)Filenames.map { .existing(RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL)) }")
+                    } else {
+                        // Single file: decode String? and hydrate FileValue?
+                        // Treat empty string as nil since PocketBase sends "" for missing files
+                        body.append("self._\(variable.name)Filename = try container.decodeIfPresent(String.self, forKey: .\(variable.name)).flatMap { $0.isEmpty ? nil : $0 }")
+                        body.append("self.\(variable.name) = self._\(variable.name)Filename.map { .existing(RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL)) }")
+                    }
+                    continue
+                }
+                switch variable.relation {
+                case .none:
+                    body.append("self.\(variable.name) = try container.decode(\(variable.type).self, forKey: .\(variable.name))")
+                case .single:
+                    body.append("self.\(variable.name) = expand?.\(variable.name)")
+                    body.append("self._\(variable.name)Id = try container.decode(String.self, forKey: .\(variable.name))")
+                case .multiple:
+                    body.append("self.\(variable.name) = expand?.\(variable.name)")
+                    body.append("self._\(variable.name)Ids = try container.decode([String].self, forKey: .\(variable.name))")
+                case .backwards:
+                    body.append("self.\(variable.name) = expand?.\(variable.name) ?? []")
+                }
+            }
+        }
+
+        return body
+    }
+
     static func initFromDecoder(
         _ modifiers: DeclModifierListSyntax,
         _ node: AttributeSyntax,
         _ variables: [Variable]
     ) throws -> InitializerDeclSyntax {
-        try InitializerDeclSyntax(
-            "\(modifiers.modifier)init(from decoder: Decoder) throws"
-        ) {
-            "let container = try decoder.container(keyedBy: CodingKeys.self)"
-            "// Base Collection Fields"
-            "let id = try container.decode(String.self, forKey: .id)"
-            "self.id = id"
-            "collectionName = try container.decode(String.self, forKey: .collectionName)"
-            "collectionId = try container.decode(String.self, forKey: .collectionId)"
-            "created = try container.decode(Date.self, forKey: .created)"
-            "updated = try container.decode(Date.self, forKey: .updated)"
-            
-            if isAuthCollection(node) {
-                "// Auth Collection Fields"
-                "username = try container.decode(String.self, forKey: .username)"
-                "email = try container.decodeIfPresent(String.self, forKey: .email)"
-                "verified = try container.decode(Bool.self, forKey: .verified)"
-                "emailVisibility = try container.decode(Bool.self, forKey: .emailVisibility)"
-            }
-            
-            if !variables.isEmpty {
-                if hasRelations(variables) {
-                    "let expand = try container.decodeIfPresent(Expand.self, forKey: .expand)"
-                }
-                for variable in variables {
-                    switch variable.relation {
-                    case .none:
-                        "self.\(variable.name) = try container.decode(\(variable.type).self, forKey: .\(variable.name))"
-                    case .single:
-                        "self.\(variable.name) = expand?.\(variable.name)"
-                        "self._\(variable.name)Id = try container.decode(String.self, forKey: .\(variable.name))"
-                    case .multiple:
-                        "self.\(variable.name) = expand?.\(variable.name)"
-                        "self._\(variable.name)Ids = try container.decode([String].self, forKey: .\(variable.name))"
-                    case .backwards:
-                        "self.\(variable.name) = expand?.\(variable.name) ?? []"
+        InitializerDeclSyntax(
+            modifiers: .init {
+                DeclModifierSyntax(name: modifiers.modifier)
+            },
+            signature: FunctionSignatureSyntax(
+                parameterClause: FunctionParameterClauseSyntax(
+                    parametersBuilder: {
+                        FunctionParameterSyntax("from decoder: Decoder")
                     }
-                }
+                ),
+                effectSpecifiers: FunctionEffectSpecifiersSyntax(
+                    throwsClause: ThrowsClauseSyntax(throwsSpecifier: .keyword(.throws))
+                )
+            )
+        ) {
+            for statement in initFromDecoderBody(node, variables) {
+                statement
             }
         }
     }
@@ -375,7 +449,135 @@ extension RecordCollectionMacro {
             }
         }
     }
-    
+
+    /// Generates a static property listing all file field names.
+    ///
+    /// This is used to identify which fields should be sent via multipart/form-data
+    /// rather than JSON encoding.
+    static func fileFields(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> VariableDeclSyntax {
+        let fileFieldNames = variables.filter { $0.isFileField }.map { $0.name.text }
+        return try VariableDeclSyntax("\(modifiers.modifier)static var fileFields: [String]") {
+            ArrayExprSyntax {
+                for name in fileFieldNames {
+                    ArrayElementSyntax(
+                        expression: StringLiteralExprSyntax(content: name)
+                    )
+                }
+            }
+        }
+    }
+
+    /// Generates a method to extract pending file uploads from FileValue properties.
+    ///
+    /// This method inspects all `@FileField` properties that use `FileValue` type
+    /// and returns a `FileUploadPayload` containing any pending uploads.
+    static func pendingFileUploads(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> FunctionDeclSyntax {
+        let fileFields = variables.filter { $0.isFileField }
+
+        // If no file fields, return empty dictionary directly to avoid 'var never mutated' warning
+        if fileFields.isEmpty {
+            return try FunctionDeclSyntax(
+                "\(modifiers.modifier)func pendingFileUploads() -> FileUploadPayload"
+            ) {
+                "[:]"
+            }
+        }
+
+        return try FunctionDeclSyntax(
+            "\(modifiers.modifier)func pendingFileUploads() -> FileUploadPayload"
+        ) {
+            "var files: FileUploadPayload = [:]"
+
+            for variable in fileFields {
+                if variable.isArray {
+                    // Array: extract all .pending cases
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
+                        "let pending = \(variable.name).compactMap { $0.pendingUpload }"
+                        try IfExprSyntax("if !pending.isEmpty") {
+                            "files[\"\(variable.name)\"] = pending"
+                        }
+                    }
+                } else {
+                    // Single: extract if .pending
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name), case .pending(let upload) = \(variable.name)") {
+                        "files[\"\(variable.name)\", default: []].append(upload)"
+                    }
+                }
+            }
+
+            "return files"
+        }
+    }
+
+    /// Generates a method to extract file field values preserving order.
+    ///
+    /// This method inspects all `@FileField` properties and returns a dictionary
+    /// mapping field names to arrays of FileFieldEntry values. The order of
+    /// existing and pending files is preserved, which is critical for updates.
+    static func fileFieldValues(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> FunctionDeclSyntax {
+        let fileFields = variables.filter { $0.isFileField }
+
+        // If no file fields, return empty dictionary directly
+        if fileFields.isEmpty {
+            return try FunctionDeclSyntax(
+                "\(modifiers.modifier)func fileFieldValues() -> [String: [FileFieldEntry]]"
+            ) {
+                "[:]"
+            }
+        }
+
+        return try FunctionDeclSyntax(
+            "\(modifiers.modifier)func fileFieldValues() -> [String: [FileFieldEntry]]"
+        ) {
+            "var values: [String: [FileFieldEntry]] = [:]"
+
+            for variable in fileFields {
+                if variable.isArray {
+                    // Array: iterate and build entries preserving order
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
+                        "var entries: [FileFieldEntry] = []"
+                        try ForStmtSyntax("for fileValue in \(variable.name)") {
+                            try SwitchExprSyntax("switch fileValue") {
+                                SwitchCaseSyntax("case .existing(let file):") {
+                                    "entries.append(.existing(file.filename))"
+                                }
+                                SwitchCaseSyntax("case .pending(let upload):") {
+                                    "entries.append(.pending(upload))"
+                                }
+                            }
+                        }
+                        try IfExprSyntax("if !entries.isEmpty") {
+                            "values[\"\(variable.name)\"] = entries"
+                        }
+                    }
+                } else {
+                    // Single: convert to single-element array
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
+                        try SwitchExprSyntax("switch \(variable.name)") {
+                            SwitchCaseSyntax("case .existing(let file):") {
+                                "values[\"\(variable.name)\"] = [.existing(file.filename)]"
+                            }
+                            SwitchCaseSyntax("case .pending(let upload):") {
+                                "values[\"\(variable.name)\"] = [.pending(upload)]"
+                            }
+                        }
+                    }
+                }
+            }
+
+            "return values"
+        }
+    }
+
     static func codingKeysEnum(
         _ modifiers: DeclModifierListSyntax,
         _ node: AttributeSyntax,
@@ -420,6 +622,10 @@ extension RecordCollectionMacro {
             if keysToSkipEncoding.contains(variable.name.text) {
                 continue
             }
+            // File fields are handled separately with configuration check
+            if variable.isFileField {
+                continue
+            }
             switch variable.relation {
             case .none:
                 members.append("try container.encode(\(variable.name), forKey: .\(variable.name))")
@@ -444,16 +650,25 @@ extension RecordCollectionMacro {
         ) {
             "var container = encoder.container(keyedBy: CodingKeys.self)"
         
-            "// BaseRecord fields"
+            "// BaseRecord fields and file fields (skip for remote body)"
             try IfExprSyntax("if configuration == .none") {
                 "try container.encode(id, forKey: .id)"
                 "try container.encode(collectionName, forKey: .collectionName)"
                 "try container.encode(collectionId, forKey: .collectionId)"
                 "try container.encode(created, forKey: .created)"
                 "try container.encode(updated, forKey: .updated)"
+
+                // File fields - encode backing storage (filenames)
+                for variable in variables where variable.isFileField {
+                    if variable.isArray {
+                        "try container.encode(_\(variable.name)Filenames, forKey: .\(variable.name))"
+                    } else {
+                        "try container.encode(_\(variable.name)Filename, forKey: .\(variable.name))"
+                    }
+                }
             }
-        
-            "// Declared fields"
+
+            "// Declared fields (non-file)"
             for member in encodeToEncoderMembers(node, variables) {
                 member
             }
@@ -534,23 +749,45 @@ extension RecordCollectionMacro {
         }
     }
     
+    static func expandInitFromDecoderBody(
+        _ variables: [Variable]
+    ) -> [CodeBlockItemSyntax] {
+        var body: [CodeBlockItemSyntax] = []
+        body.append("let container = try decoder.container(keyedBy: CodingKeys.self)")
+        for variable in variables where variable.relation != .none {
+            switch variable.relation {
+            case .none:
+                break
+            case .single:
+                body.append("self.\(variable.name) = try container.decodeIfPresent(\(variable.type).self, forKey: .\(variable.name))")
+            case .multiple, .backwards:
+                body.append("self.\(variable.name) = try container.decodeIfPresent([\(variable.type)].self, forKey: .\(variable.name)) ?? []")
+            }
+        }
+        return body
+    }
+
     static func expandInitFromDecoder(
         _ modifiers: DeclModifierListSyntax,
         _ variables: [Variable]
     ) throws -> InitializerDeclSyntax {
-        try InitializerDeclSyntax(
-            "\(modifiers.modifier)init(from decoder: Decoder) throws"
+        InitializerDeclSyntax(
+            modifiers: .init {
+                DeclModifierSyntax(name: modifiers.modifier)
+            },
+            signature: FunctionSignatureSyntax(
+                parameterClause: FunctionParameterClauseSyntax(
+                    parametersBuilder: {
+                        FunctionParameterSyntax("from decoder: Decoder")
+                    }
+                ),
+                effectSpecifiers: FunctionEffectSpecifiersSyntax(
+                    throwsClause: ThrowsClauseSyntax(throwsSpecifier: .keyword(.throws))
+                )
+            )
         ) {
-            "let container = try decoder.container(keyedBy: CodingKeys.self)"
-            for variable in variables where variable.relation != .none {
-                switch variable.relation {
-                case .none:
-                    ""
-                case .single:
-                    "self.\(variable.name) = try container.decodeIfPresent(\(variable.type).self, forKey: .\(variable.name))"
-                case .multiple, .backwards:
-                    "self.\(variable.name) = try container.decodeIfPresent([\(variable.type)].self, forKey: .\(variable.name)) ?? []"
-                }
+            for statement in expandInitFromDecoderBody(variables) {
+                statement
             }
         }
     }
