@@ -56,7 +56,7 @@ extension RecordCollectionMacro {
         members.append(DeclSyntax(try relations(modifiers, variables)))
         members.append(DeclSyntax(try fileFields(modifiers, variables)))
         members.append(DeclSyntax(try pendingFileUploads(modifiers, variables)))
-        members.append(DeclSyntax(try existingFilenames(modifiers, variables)))
+        members.append(DeclSyntax(try fileFieldValues(modifiers, variables)))
         members.append(DeclSyntax(try codingKeysEnum(modifiers, node, variables)))
         if hasRelations(variables) {
             members.append(DeclSyntax(try expandStruct(modifiers, variables)))
@@ -515,12 +515,12 @@ extension RecordCollectionMacro {
         }
     }
 
-    /// Generates a method to extract existing filenames from FileValue properties.
+    /// Generates a method to extract file field values preserving order.
     ///
     /// This method inspects all `@FileField` properties and returns a dictionary
-    /// mapping field names to arrays of existing filenames. Used to preserve
-    /// existing files when updating records with new uploads.
-    static func existingFilenames(
+    /// mapping field names to arrays of FileFieldEntry values. The order of
+    /// existing and pending files is preserved, which is critical for updates.
+    static func fileFieldValues(
         _ modifiers: DeclModifierListSyntax,
         _ variables: [Variable]
     ) throws -> FunctionDeclSyntax {
@@ -529,35 +529,51 @@ extension RecordCollectionMacro {
         // If no file fields, return empty dictionary directly
         if fileFields.isEmpty {
             return try FunctionDeclSyntax(
-                "\(modifiers.modifier)func existingFilenames() -> [String: [String]]"
+                "\(modifiers.modifier)func fileFieldValues() -> [String: [FileFieldEntry]]"
             ) {
                 "[:]"
             }
         }
 
         return try FunctionDeclSyntax(
-            "\(modifiers.modifier)func existingFilenames() -> [String: [String]]"
+            "\(modifiers.modifier)func fileFieldValues() -> [String: [FileFieldEntry]]"
         ) {
-            "var filenames: [String: [String]] = [:]"
+            "var values: [String: [FileFieldEntry]] = [:]"
 
             for variable in fileFields {
                 if variable.isArray {
-                    // Array: extract all .existing filenames
+                    // Array: map each FileValue to FileFieldEntry preserving order
                     try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
-                        "let existing = \(variable.name).compactMap { $0.existingFilename }"
-                        try IfExprSyntax("if !existing.isEmpty") {
-                            "filenames[\"\(variable.name)\"] = existing"
+                        """
+                        let entries: [FileFieldEntry] = \(variable.name).map { fileValue in
+                            switch fileValue {
+                            case .existing(let file):
+                                return .existing(file.filename)
+                            case .pending(let upload):
+                                return .pending(upload)
+                            }
+                        }
+                        """
+                        try IfExprSyntax("if !entries.isEmpty") {
+                            "values[\"\(variable.name)\"] = entries"
                         }
                     }
                 } else {
-                    // Single: extract if .existing
-                    try IfExprSyntax("if let \(variable.name) = \(variable.name), let filename = \(variable.name).existingFilename") {
-                        "filenames[\"\(variable.name)\"] = [filename]"
+                    // Single: convert to single-element array
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
+                        """
+                        switch \(variable.name) {
+                        case .existing(let file):
+                            values[\"\(variable.name)\"] = [.existing(file.filename)]
+                        case .pending(let upload):
+                            values[\"\(variable.name)\"] = [.pending(upload)]
+                        }
+                        """
                     }
                 }
             }
 
-            "return filenames"
+            "return values"
         }
     }
 

@@ -141,20 +141,23 @@ extension RecordCollection {
 
     /// Builds a multipart/form-data body for updating a record with mixed existing and pending files.
     ///
-    /// This method properly handles preserving existing files while adding new uploads.
-    /// For fields with existing files, it sends:
-    /// - The existing filenames as the field value (to preserve them)
-    /// - New files with the `fieldName+` modifier (to append them)
+    /// This method properly handles preserving existing files while adding new uploads,
+    /// maintaining the original array order for mixed existing/pending file arrays.
+    ///
+    /// For each file field, entries are processed in order:
+    /// - Existing files: sent as `fieldName` with the filename value
+    /// - Pending files: sent as `fieldName` with the file data
+    ///
+    /// This preserves the array order so `[.existing(A), .pending(B), .existing(C)]`
+    /// results in the order `[A, B, C]` on the server.
     ///
     /// - Parameters:
     ///   - record: The record being updated.
-    ///   - pendingFiles: Files to upload, keyed by field name.
-    ///   - existingFilenames: Existing filenames to preserve, keyed by field name.
+    ///   - fileFieldValues: File field entries preserving order, keyed by field name.
     /// - Returns: A MultipartFormData body ready to send.
     func buildMultipartBodyForUpdate<R: Record>(
         record: R,
-        pendingFiles: FileUploadPayload,
-        existingFilenames: [String: [String]]
+        fileFieldValues: [String: [FileFieldEntry]]
     ) throws -> MultipartFormData where R.EncodingConfiguration == PocketBase.EncodingConfiguration {
         var multipart = MultipartFormData()
 
@@ -162,19 +165,17 @@ extension RecordCollection {
         let jsonData = try encoder.encode(record, configuration: .remoteBody)
         try multipart.appendJSON(jsonData)
 
-        // For each field with pending uploads, decide how to send them
-        for (fieldName, fieldFiles) in pendingFiles {
-            if let existing = existingFilenames[fieldName], !existing.isEmpty {
-                // Has existing files to preserve - send existing filenames first,
-                // then append new files using the fieldName+ modifier
-                for filename in existing {
+        // Process each file field in order to preserve array ordering
+        for (fieldName, entries) in fileFieldValues {
+            for entry in entries {
+                switch entry {
+                case .existing(let filename):
+                    // Send existing filename to preserve this file
                     multipart.append(name: fieldName, value: filename)
+                case .pending(let upload):
+                    // Send pending file data
+                    multipart.append(name: fieldName, file: upload)
                 }
-                // Append new files using the + modifier
-                multipart.append(name: "\(fieldName)+", files: fieldFiles)
-            } else {
-                // No existing files - just send the new files directly
-                multipart.append(name: fieldName, files: fieldFiles)
             }
         }
 
