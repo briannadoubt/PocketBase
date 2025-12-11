@@ -542,9 +542,19 @@ extension RecordCollectionMacro {
 
             for variable in fileFields {
                 if variable.isArray {
-                    // Array: map each FileValue to FileFieldEntry preserving order
+                    // Array: iterate and build entries preserving order
                     try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
-                        "let entries: [FileFieldEntry] = \(variable.name).map { fileValue in switch fileValue { case .existing(let file): return .existing(file.filename); case .pending(let upload): return .pending(upload) } }"
+                        "var entries: [FileFieldEntry] = []"
+                        try ForStmtSyntax("for fileValue in \(variable.name)") {
+                            try SwitchExprSyntax("switch fileValue") {
+                                SwitchCaseSyntax("case .existing(let file):") {
+                                    "entries.append(.existing(file.filename))"
+                                }
+                                SwitchCaseSyntax("case .pending(let upload):") {
+                                    "entries.append(.pending(upload))"
+                                }
+                            }
+                        }
                         try IfExprSyntax("if !entries.isEmpty") {
                             "values[\"\(variable.name)\"] = entries"
                         }
