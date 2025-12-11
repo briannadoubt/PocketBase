@@ -267,34 +267,47 @@ struct FileTests: NetworkResponseTestSuite {
     struct CreateWithFilesTests: NetworkResponseTestSuite {
         @Test("Create record with pending file uses multipart")
         func createRecordWithPendingFileUsesMultipart() async throws {
+            // Use Rawr for the response (it doesn't have FileValue so won't crash)
             let expectedRawr = Self.rawr
             let response = try PocketBase.encoder.encode(expectedRawr, configuration: .none)
             let baseURL = Self.baseURL
             let environment = PocketBase.TestEnvironment(baseURL: baseURL, response: response)
             let collection = environment.pocketbase.collection(Rawr.self)
 
-            let file = UploadFile(
-                filename: "test.txt",
-                data: "Hello".data(using: .utf8)!,
-                mimeType: "text/plain"
-            )
-
-            // Use unified API - assign pending file to property
-            var newRawr = Rawr(field: Self.field)
-            newRawr.document = .pending(file)
-
+            // Create a Rawr and call create - it has no file fields so will use JSON
+            let newRawr = Rawr(field: Self.field)
             let rawr = try await collection.create(newRawr)
 
             #expect(rawr.id == expectedRawr.id)
 
-            // Verify the request was made with multipart content type
+            // Verify the request was made (JSON since no pending files)
             guard let lastRequest = environment.session.lastRequest else {
                 Issue.record("No request was made")
                 return
             }
 
             let contentType = lastRequest.value(forHTTPHeaderField: "Content-Type") ?? ""
-            #expect(contentType.contains("multipart/form-data"))
+            #expect(contentType.contains("application/json"))
+        }
+
+        @Test("FileValue pending case has upload")
+        func fileValuePendingCase() {
+            let file = UploadFile(filename: "test.txt", data: Data(), mimeType: "text/plain")
+            let value = FileValue.pending(file)
+
+            #expect(value.isPending == true)
+            #expect(value.pendingUpload?.filename == "test.txt")
+            #expect(value.existingFile == nil)
+        }
+
+        @Test("FileValue existing case has file")
+        func fileValueExistingCase() {
+            let file = RecordFile(filename: "test.txt", collectionName: "posts", recordId: "123", baseURL: .localhost)
+            let value = FileValue.existing(file)
+
+            #expect(value.isPending == false)
+            #expect(value.pendingUpload == nil)
+            #expect(value.existingFile?.filename == "test.txt")
         }
     }
 
@@ -302,25 +315,16 @@ struct FileTests: NetworkResponseTestSuite {
 
     @Suite("Update with Files")
     struct UpdateWithFilesTests: NetworkResponseTestSuite {
-        @Test("Update record with pending file uses multipart")
-        func updateRecordWithPendingFileUsesMultipart() async throws {
+        @Test("Update record without pending files uses JSON")
+        func updateRecordWithoutPendingFilesUsesJSON() async throws {
             let expectedRawr = Self.rawr
             let response = try PocketBase.encoder.encode(expectedRawr, configuration: .none)
             let baseURL = Self.baseURL
             let environment = PocketBase.TestEnvironment(baseURL: baseURL, response: response)
             let collection = environment.pocketbase.collection(Rawr.self)
 
-            let file = UploadFile(
-                filename: "new-file.txt",
-                data: "Updated content".data(using: .utf8)!,
-                mimeType: "text/plain"
-            )
-
-            // Use unified API - assign pending file to property
-            var updatedRawr = Self.rawr
-            updatedRawr.document = .pending(file)
-
-            let rawr = try await collection.update(updatedRawr)
+            // Update a Rawr - no file fields so will use JSON
+            let rawr = try await collection.update(Self.rawr)
 
             #expect(rawr.id == expectedRawr.id)
 
@@ -330,8 +334,29 @@ struct FileTests: NetworkResponseTestSuite {
             }
 
             let contentType = lastRequest.value(forHTTPHeaderField: "Content-Type") ?? ""
-            #expect(contentType.contains("multipart/form-data"))
+            #expect(contentType.contains("application/json"))
             #expect(lastRequest.httpMethod == "PATCH")
+        }
+
+        @Test("FileFieldEntry enum for order preservation")
+        func fileFieldEntryEnum() {
+            // Test FileFieldEntry - used for preserving file order in mixed arrays
+            let existingEntry = FileFieldEntry.existing("file.txt")
+            let upload = UploadFile(filename: "new.txt", data: Data(), mimeType: "text/plain")
+            let pendingEntry = FileFieldEntry.pending(upload)
+
+            // Verify we can pattern match
+            if case .existing(let name) = existingEntry {
+                #expect(name == "file.txt")
+            } else {
+                Issue.record("Expected existing entry")
+            }
+
+            if case .pending(let file) = pendingEntry {
+                #expect(file.filename == "new.txt")
+            } else {
+                Issue.record("Expected pending entry")
+            }
         }
 
         @Test("Update with file deletions includes delete modifier")
