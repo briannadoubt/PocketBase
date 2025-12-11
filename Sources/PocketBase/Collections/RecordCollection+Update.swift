@@ -10,7 +10,7 @@ import Foundation
 public extension RecordCollection {
     /// Update a given record by passing in an updated record.
     ///
-    /// This method automatically detects pending file uploads in `@FileField` properties
+    /// This method automatically detects pending file uploads in `@File` properties
     /// that use `FileValue` type. If any pending uploads are found, it uses multipart/form-data
     /// encoding; otherwise, it uses JSON encoding.
     ///
