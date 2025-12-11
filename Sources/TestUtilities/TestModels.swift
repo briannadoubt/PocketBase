@@ -44,9 +44,10 @@ public extension Rawr {
 }
 
 /// A test model that includes file fields for testing file upload functionality.
+/// Uses the unified `FileValue` type for auto-detection of pending uploads.
 @BaseCollection("posts")
 public struct Post {
     public var title: String = ""
-    @FileField public var coverImage: RecordFile? = nil
-    @FileField public var attachments: [RecordFile]? = nil
+    @FileField public var coverImage: FileValue? = nil
+    @FileField public var attachments: [FileValue]? = nil
 }

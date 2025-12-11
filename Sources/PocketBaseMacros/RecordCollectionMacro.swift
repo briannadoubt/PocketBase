@@ -55,6 +55,7 @@ extension RecordCollectionMacro {
         members.append(DeclSyntax(try encodeToEncoderWithConfiguration(modifiers, node, variables)))
         members.append(DeclSyntax(try relations(modifiers, variables)))
         members.append(DeclSyntax(try fileFields(modifiers, variables)))
+        members.append(DeclSyntax(try pendingFileUploads(modifiers, variables)))
         members.append(DeclSyntax(try codingKeysEnum(modifiers, node, variables)))
         if hasRelations(variables) {
             members.append(DeclSyntax(try expandStruct(modifiers, variables)))
@@ -327,18 +328,26 @@ extension RecordCollectionMacro {
                 body.append("let expand = try container.decodeIfPresent(Expand.self, forKey: .expand)")
             }
             for variable in variables {
-                // Handle file fields - decode filenames into backing storage and hydrate RecordFile with baseURL
+                // Handle file fields - decode filenames into backing storage and hydrate RecordFile/FileValue with baseURL
                 if variable.isFileField {
                     if variable.isArray {
-                        // Multiple files: decode [String] and hydrate [RecordFile]
+                        // Multiple files: decode [String] and hydrate [RecordFile] or [FileValue]
                         // Filter out empty strings as PocketBase sends "" for missing files
                         body.append("self._\(variable.name)Filenames = (try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []).filter { !$0.isEmpty }")
-                        body.append("self.\(variable.name) = self._\(variable.name)Filenames.isEmpty ? nil : self._\(variable.name)Filenames.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
+                        if variable.usesFileValue {
+                            body.append("self.\(variable.name) = self._\(variable.name)Filenames.isEmpty ? nil : self._\(variable.name)Filenames.map { .existing(RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL)) }")
+                        } else {
+                            body.append("self.\(variable.name) = self._\(variable.name)Filenames.isEmpty ? nil : self._\(variable.name)Filenames.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
+                        }
                     } else {
-                        // Single file: decode String? and hydrate RecordFile?
+                        // Single file: decode String? and hydrate RecordFile? or FileValue?
                         // Treat empty string as nil since PocketBase sends "" for missing files
                         body.append("self._\(variable.name)Filename = try container.decodeIfPresent(String.self, forKey: .\(variable.name)).flatMap { $0.isEmpty ? nil : $0 }")
-                        body.append("self.\(variable.name) = self._\(variable.name)Filename.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
+                        if variable.usesFileValue {
+                            body.append("self.\(variable.name) = self._\(variable.name)Filename.map { .existing(RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL)) }")
+                        } else {
+                            body.append("self.\(variable.name) = self._\(variable.name)Filename.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
+                        }
                     }
                     continue
                 }
@@ -465,6 +474,51 @@ extension RecordCollectionMacro {
                     )
                 }
             }
+        }
+    }
+
+    /// Generates a method to extract pending file uploads from FileValue properties.
+    ///
+    /// This method inspects all `@FileField` properties that use `FileValue` type
+    /// and returns a `FileUploadPayload` containing any pending uploads.
+    static func pendingFileUploads(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> FunctionDeclSyntax {
+        let fileValueFields = variables.filter { $0.isFileField && $0.usesFileValue }
+
+        // If no FileValue fields, return empty dictionary directly to avoid 'var never mutated' warning
+        if fileValueFields.isEmpty {
+            return try FunctionDeclSyntax(
+                "\(modifiers.modifier)func pendingFileUploads() -> FileUploadPayload"
+            ) {
+                "[:]"
+            }
+        }
+
+        return try FunctionDeclSyntax(
+            "\(modifiers.modifier)func pendingFileUploads() -> FileUploadPayload"
+        ) {
+            "var files: FileUploadPayload = [:]"
+
+            for variable in fileValueFields {
+                if variable.isArray {
+                    // Array: extract all .pending cases
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
+                        "let pending = \(variable.name).compactMap { $0.pendingUpload }"
+                        try IfExprSyntax("if !pending.isEmpty") {
+                            "files[\"\(variable.name)\"] = pending"
+                        }
+                    }
+                } else {
+                    // Single: extract if .pending
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name), case .pending(let upload) = \(variable.name)") {
+                        "files[\"\(variable.name)\", default: []].append(upload)"
+                    }
+                }
+            }
+
+            "return files"
         }
     }
 

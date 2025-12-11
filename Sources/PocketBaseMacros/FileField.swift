@@ -30,7 +30,7 @@ enum FileFieldError {
         case .mustBeMarkedAsOptional:
             "`@FileField` variables must be marked as optional. Example: `@FileField var avatar: RecordFile?` or `@FileField var documents: [RecordFile]?`."
         case .invalidType:
-            "File fields must be `RecordFile?` (single file) or `[RecordFile]?` (multiple files)."
+            "File fields must be `RecordFile?`, `FileValue?` (single file) or `[RecordFile]?`, `[FileValue]?` (multiple files)."
         }
     }
 }
@@ -95,19 +95,25 @@ public struct FileField: PeerMacro {
     ///
     /// Valid types are:
     /// - `RecordFile` (for RecordFile?)
+    /// - `FileValue` (for FileValue?)
     /// - `[RecordFile]` (for [RecordFile]?)
+    /// - `[FileValue]` (for [FileValue]?)
     private static func isValidFileFieldType(_ type: TypeSyntax) -> Bool {
-        // Check for RecordFile
-        if let identifier = type.as(IdentifierTypeSyntax.self),
-           identifier.name.text == "RecordFile" {
-            return true
+        // Check for RecordFile or FileValue
+        if let identifier = type.as(IdentifierTypeSyntax.self) {
+            let name = identifier.name.text
+            if name == "RecordFile" || name == "FileValue" {
+                return true
+            }
         }
 
-        // Check for [RecordFile]
+        // Check for [RecordFile] or [FileValue]
         if let array = type.as(ArrayTypeSyntax.self),
-           let element = array.element.as(IdentifierTypeSyntax.self),
-           element.name.text == "RecordFile" {
-            return true
+           let element = array.element.as(IdentifierTypeSyntax.self) {
+            let name = element.name.text
+            if name == "RecordFile" || name == "FileValue" {
+                return true
+            }
         }
 
         return false

@@ -15,7 +15,7 @@ extension TypeSyntax {
     }
     
     func hasTypeIdentifier(_ identifier: TokenSyntax) -> Bool {
-        self.as(IdentifierTypeSyntax.self)?.name == identifier
-        || self.as(OptionalTypeSyntax.self)?.wrappedType.as(IdentifierTypeSyntax.self)?.name == identifier
+        self.as(IdentifierTypeSyntax.self)?.name.text == identifier.text
+        || self.as(OptionalTypeSyntax.self)?.wrappedType.as(IdentifierTypeSyntax.self)?.name.text == identifier.text
     }
 }
