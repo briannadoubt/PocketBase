@@ -56,7 +56,13 @@ public extension RecordCollection {
             )
         } else {
             // Has pending uploads - use multipart encoding
-            let body = try buildMultipartBody(record: record, files: pendingFiles)
+            // Get existing filenames to preserve them alongside new uploads
+            let existingFilenames = record.existingFilenames()
+            let body = try buildMultipartBodyForUpdate(
+                record: record,
+                pendingFiles: pendingFiles,
+                existingFilenames: existingFilenames
+            )
             return try await patchMultipart(
                 path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
                 query: {

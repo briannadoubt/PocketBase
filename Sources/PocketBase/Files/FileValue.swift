@@ -72,6 +72,14 @@ public enum FileValue: Sendable, Hashable {
         return nil
     }
 
+    /// Returns the filename if this is an existing file, `nil` otherwise.
+    ///
+    /// This is used internally to extract existing filenames for preserving
+    /// files during updates.
+    public var existingFilename: String? {
+        existingFile?.filename
+    }
+
     /// Returns `true` if this is a pending upload.
     public var isPending: Bool {
         if case .pending = self {

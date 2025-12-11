@@ -56,6 +56,7 @@ extension RecordCollectionMacro {
         members.append(DeclSyntax(try relations(modifiers, variables)))
         members.append(DeclSyntax(try fileFields(modifiers, variables)))
         members.append(DeclSyntax(try pendingFileUploads(modifiers, variables)))
+        members.append(DeclSyntax(try existingFilenames(modifiers, variables)))
         members.append(DeclSyntax(try codingKeysEnum(modifiers, node, variables)))
         if hasRelations(variables) {
             members.append(DeclSyntax(try expandStruct(modifiers, variables)))
@@ -511,6 +512,52 @@ extension RecordCollectionMacro {
             }
 
             "return files"
+        }
+    }
+
+    /// Generates a method to extract existing filenames from FileValue properties.
+    ///
+    /// This method inspects all `@FileField` properties and returns a dictionary
+    /// mapping field names to arrays of existing filenames. Used to preserve
+    /// existing files when updating records with new uploads.
+    static func existingFilenames(
+        _ modifiers: DeclModifierListSyntax,
+        _ variables: [Variable]
+    ) throws -> FunctionDeclSyntax {
+        let fileFields = variables.filter { $0.isFileField }
+
+        // If no file fields, return empty dictionary directly
+        if fileFields.isEmpty {
+            return try FunctionDeclSyntax(
+                "\(modifiers.modifier)func existingFilenames() -> [String: [String]]"
+            ) {
+                "[:]"
+            }
+        }
+
+        return try FunctionDeclSyntax(
+            "\(modifiers.modifier)func existingFilenames() -> [String: [String]]"
+        ) {
+            "var filenames: [String: [String]] = [:]"
+
+            for variable in fileFields {
+                if variable.isArray {
+                    // Array: extract all .existing filenames
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
+                        "let existing = \(variable.name).compactMap { $0.existingFilename }"
+                        try IfExprSyntax("if !existing.isEmpty") {
+                            "filenames[\"\(variable.name)\"] = existing"
+                        }
+                    }
+                } else {
+                    // Single: extract if .existing
+                    try IfExprSyntax("if let \(variable.name) = \(variable.name), let filename = \(variable.name).existingFilename") {
+                        "filenames[\"\(variable.name)\"] = [filename]"
+                    }
+                }
+            }
+
+            "return filenames"
         }
     }
 
