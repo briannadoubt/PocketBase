@@ -265,8 +265,8 @@ struct FileTests: NetworkResponseTestSuite {
 
     @Suite("Create with Files")
     struct CreateWithFilesTests: NetworkResponseTestSuite {
-        @Test("Create record with files uses multipart")
-        func createRecordWithFilesUsesMultipart() async throws {
+        @Test("Create record with pending file uses multipart")
+        func createRecordWithPendingFileUsesMultipart() async throws {
             let expectedRawr = Self.rawr
             let response = try PocketBase.encoder.encode(expectedRawr, configuration: .none)
             let baseURL = Self.baseURL
@@ -279,10 +279,11 @@ struct FileTests: NetworkResponseTestSuite {
                 mimeType: "text/plain"
             )
 
-            let rawr = try await collection.create(
-                Rawr(field: Self.field),
-                files: ["document": [file]]
-            )
+            // Use unified API - assign pending file to property
+            var newRawr = Rawr(field: Self.field)
+            newRawr.document = .pending(file)
+
+            let rawr = try await collection.create(newRawr)
 
             #expect(rawr.id == expectedRawr.id)
 
@@ -301,8 +302,8 @@ struct FileTests: NetworkResponseTestSuite {
 
     @Suite("Update with Files")
     struct UpdateWithFilesTests: NetworkResponseTestSuite {
-        @Test("Update record with files uses multipart")
-        func updateRecordWithFilesUsesMultipart() async throws {
+        @Test("Update record with pending file uses multipart")
+        func updateRecordWithPendingFileUsesMultipart() async throws {
             let expectedRawr = Self.rawr
             let response = try PocketBase.encoder.encode(expectedRawr, configuration: .none)
             let baseURL = Self.baseURL
@@ -315,10 +316,11 @@ struct FileTests: NetworkResponseTestSuite {
                 mimeType: "text/plain"
             )
 
-            let rawr = try await collection.update(
-                Self.rawr,
-                files: ["document": [file]]
-            )
+            // Use unified API - assign pending file to property
+            var updatedRawr = Self.rawr
+            updatedRawr.document = .pending(file)
+
+            let rawr = try await collection.update(updatedRawr)
 
             #expect(rawr.id == expectedRawr.id)
 
@@ -342,7 +344,6 @@ struct FileTests: NetworkResponseTestSuite {
 
             let rawr = try await collection.update(
                 Self.rawr,
-                files: [:],
                 deleteFiles: FileDeletePayload(["documents": ["old_file.pdf"]])
             )
 
@@ -450,8 +451,8 @@ struct FileTests: NetworkResponseTestSuite {
 
         @Test("Record without file fields has empty fileFields")
         func noFileFields() {
-            // Rawr has no file fields
-            #expect(Rawr.fileFields.isEmpty)
+            // Tester has no file fields
+            #expect(Tester.fileFields.isEmpty)
         }
 
         // FIXME: This test is disabled due to a Swift Testing crash when displaying

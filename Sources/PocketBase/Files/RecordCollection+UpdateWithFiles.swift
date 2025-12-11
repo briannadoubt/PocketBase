@@ -9,86 +9,24 @@ import Foundation
 internal import HTTPTypes
 
 public extension RecordCollection {
-    /// Updates a record with file uploads.
+    /// Updates a record while deleting specific files.
     ///
-    /// This method uses multipart/form-data encoding to upload new files
-    /// alongside the record data updates.
-    ///
-    /// ## Usage
-    ///
-    /// ```swift
-    /// let newAvatar = UploadFile(
-    ///     filename: "new-avatar.png",
-    ///     data: imageData,
-    ///     mimeType: "image/png"
-    /// )
-    ///
-    /// let updated = try await collection.update(
-    ///     myRecord,
-    ///     files: ["avatar": [newAvatar]]
-    /// )
-    /// ```
-    ///
-    /// ## File Field Modifiers
-    ///
-    /// When updating records with multi-file fields, you can use special
-    /// field name modifiers:
-    ///
-    /// - `fieldName+` - Append files to existing ones
-    /// - `+fieldName` - Prepend files to existing ones
-    ///
-    /// ```swift
-    /// // Append a new document to existing documents
-    /// let updated = try await collection.update(
-    ///     myRecord,
-    ///     files: ["documents+": [newDocument]]
-    /// )
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - record: The record to update.
-    ///   - files: A dictionary mapping field names to arrays of files to upload.
-    /// - Returns: The updated record with new file names.
-    /// - Throws: An error if the request fails.
-    @Sendable
-    @discardableResult
-    func update(
-        _ record: T,
-        files: FileUploadPayload
-    ) async throws -> T {
-        let body = try buildMultipartBody(record: record, files: files)
-        return try await patchMultipart(
-            path: PocketBase.recordPath(collection, record.id, trailingSlash: false),
-            query: {
-                var query: [URLQueryItem] = []
-                if !T.relations.isEmpty {
-                    query.append(URLQueryItem(name: "expand", value: T.relations.keys.joined(separator: ",")))
-                }
-                return query
-            }(),
-            body: body
-        )
-    }
-
-    /// Updates a record with file uploads and file deletions.
-    ///
-    /// This method uses multipart/form-data encoding to upload new files
-    /// and delete existing files from the record.
+    /// Use this method when you need to delete specific files from a record's file fields.
+    /// For uploading new files, use the unified API by assigning `.pending(UploadFile(...))`
+    /// to `@FileField` properties and calling `update(record)`.
     ///
     /// ## Usage
     ///
     /// ```swift
-    /// // Upload new files and delete old ones
+    /// // Delete specific files from a record
     /// let updated = try await collection.update(
     ///     myRecord,
-    ///     files: ["documents+": [newDocument]],
     ///     deleteFiles: FileDeletePayload(["documents": ["old_file_abc123.pdf"]])
     /// )
     /// ```
     ///
     /// - Parameters:
     ///   - record: The record to update.
-    ///   - files: A dictionary mapping field names to arrays of files to upload.
     ///   - deleteFiles: A payload specifying which files to delete from which fields.
     /// - Returns: The updated record.
     /// - Throws: An error if the request fails.
@@ -96,10 +34,13 @@ public extension RecordCollection {
     @discardableResult
     func update(
         _ record: T,
-        files: FileUploadPayload = [:],
         deleteFiles: FileDeletePayload
     ) async throws -> T {
-        var multipart = try buildMultipartBody(record: record, files: files)
+        var multipart = MultipartFormData()
+
+        // Encode the record as JSON and add fields to multipart
+        let jsonData = try encoder.encode(record, configuration: .remoteBody)
+        try multipart.appendJSON(jsonData)
 
         // Add file deletions using the fieldName- modifier
         for (fieldName, filenames) in deleteFiles.deletions {
@@ -121,7 +62,7 @@ public extension RecordCollection {
         )
     }
 
-    /// Deletes files from a record without uploading new ones.
+    /// Deletes files from a record.
     ///
     /// This is a convenience method for removing files from a record's file fields.
     ///
@@ -148,7 +89,7 @@ public extension RecordCollection {
         from record: T,
         files: FileDeletePayload
     ) async throws -> T {
-        try await update(record, files: [:], deleteFiles: files)
+        try await update(record, deleteFiles: files)
     }
 
     /// Clears all files from a specific field on a record.

@@ -28,6 +28,7 @@ public extension Tester {
 @BaseCollection("rawrs")
 public struct Rawr {
     public var field: String = ""
+    @FileField public var document: FileValue? = nil
     @BackRelation(\Tester.rawrs) public var testers: [Tester] = []
 
     public init(id: String, field: String) {
