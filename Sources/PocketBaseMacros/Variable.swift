@@ -23,8 +23,6 @@ struct Variable {
     var isOptionalRelationship: Bool
     var isFileField: Bool
     var isFileFieldRequired: Bool
-    /// True if the file field uses FileValue type (unified API), false if it uses RecordFile (legacy)
-    var usesFileValue: Bool
     var modifiers: DeclModifierListSyntax
 
     init(modifiers: DeclModifierListSyntax, _ variable: VariableDeclSyntax) throws {
@@ -54,8 +52,6 @@ struct Variable {
         self.isOptionalRelationship = variable.hasAttributeArgument("optional")
         self.isFileField = variable.hasAttribute("FileField")
         self.isFileFieldRequired = variable.hasAttributeArgument("required")
-        // Use unwrapped type (self.type) since hasTypeIdentifier doesn't handle arrays
-        self.usesFileValue = self.type.hasTypeIdentifier("FileValue")
     }
 }
 

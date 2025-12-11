@@ -328,26 +328,18 @@ extension RecordCollectionMacro {
                 body.append("let expand = try container.decodeIfPresent(Expand.self, forKey: .expand)")
             }
             for variable in variables {
-                // Handle file fields - decode filenames into backing storage and hydrate RecordFile/FileValue with baseURL
+                // Handle file fields - decode filenames into backing storage and hydrate FileValue with baseURL
                 if variable.isFileField {
                     if variable.isArray {
-                        // Multiple files: decode [String] and hydrate [RecordFile] or [FileValue]
+                        // Multiple files: decode [String] and hydrate [FileValue]
                         // Filter out empty strings as PocketBase sends "" for missing files
                         body.append("self._\(variable.name)Filenames = (try container.decodeIfPresent([String].self, forKey: .\(variable.name)) ?? []).filter { !$0.isEmpty }")
-                        if variable.usesFileValue {
-                            body.append("self.\(variable.name) = self._\(variable.name)Filenames.isEmpty ? nil : self._\(variable.name)Filenames.map { .existing(RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL)) }")
-                        } else {
-                            body.append("self.\(variable.name) = self._\(variable.name)Filenames.isEmpty ? nil : self._\(variable.name)Filenames.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
-                        }
+                        body.append("self.\(variable.name) = self._\(variable.name)Filenames.isEmpty ? nil : self._\(variable.name)Filenames.map { .existing(RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL)) }")
                     } else {
-                        // Single file: decode String? and hydrate RecordFile? or FileValue?
+                        // Single file: decode String? and hydrate FileValue?
                         // Treat empty string as nil since PocketBase sends "" for missing files
                         body.append("self._\(variable.name)Filename = try container.decodeIfPresent(String.self, forKey: .\(variable.name)).flatMap { $0.isEmpty ? nil : $0 }")
-                        if variable.usesFileValue {
-                            body.append("self.\(variable.name) = self._\(variable.name)Filename.map { .existing(RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL)) }")
-                        } else {
-                            body.append("self.\(variable.name) = self._\(variable.name)Filename.map { RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL) }")
-                        }
+                        body.append("self.\(variable.name) = self._\(variable.name)Filename.map { .existing(RecordFile(filename: $0, collectionName: collectionName, recordId: id, baseURL: baseURL)) }")
                     }
                     continue
                 }
@@ -485,10 +477,10 @@ extension RecordCollectionMacro {
         _ modifiers: DeclModifierListSyntax,
         _ variables: [Variable]
     ) throws -> FunctionDeclSyntax {
-        let fileValueFields = variables.filter { $0.isFileField && $0.usesFileValue }
+        let fileFields = variables.filter { $0.isFileField }
 
-        // If no FileValue fields, return empty dictionary directly to avoid 'var never mutated' warning
-        if fileValueFields.isEmpty {
+        // If no file fields, return empty dictionary directly to avoid 'var never mutated' warning
+        if fileFields.isEmpty {
             return try FunctionDeclSyntax(
                 "\(modifiers.modifier)func pendingFileUploads() -> FileUploadPayload"
             ) {
@@ -501,7 +493,7 @@ extension RecordCollectionMacro {
         ) {
             "var files: FileUploadPayload = [:]"
 
-            for variable in fileValueFields {
+            for variable in fileFields {
                 if variable.isArray {
                     // Array: extract all .pending cases
                     try IfExprSyntax("if let \(variable.name) = \(variable.name)") {

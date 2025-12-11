@@ -24,13 +24,13 @@ enum FileFieldError {
         case .mustBeVariable:
             "`@FileField` must be applied to a variable declaration."
         case .missingIdentifierPattern:
-            "Invalid pattern. Must be an identifier pattern. Example: `@FileField var avatar: RecordFile?`."
+            "Invalid pattern. Must be an identifier pattern. Example: `@FileField var avatar: FileValue?`."
         case .mustDefineTypeAnnotation:
-            "Missing type annotation. Example: `@FileField var avatar: RecordFile?` or `@FileField var documents: [RecordFile]?`."
+            "Missing type annotation. Example: `@FileField var avatar: FileValue?` or `@FileField var documents: [FileValue]?`."
         case .mustBeMarkedAsOptional:
-            "`@FileField` variables must be marked as optional. Example: `@FileField var avatar: RecordFile?` or `@FileField var documents: [RecordFile]?`."
+            "`@FileField` variables must be marked as optional. Example: `@FileField var avatar: FileValue?` or `@FileField var documents: [FileValue]?`."
         case .invalidType:
-            "File fields must be `RecordFile?`, `FileValue?` (single file) or `[RecordFile]?`, `[FileValue]?` (multiple files)."
+            "File fields must be `FileValue?` (single file) or `[FileValue]?` (multiple files)."
         }
     }
 }
@@ -38,12 +38,12 @@ enum FileFieldError {
 /// The `@FileField` macro marks a property as a file field and generates backing storage.
 ///
 /// Similar to `@Relation`, this macro generates a hidden property to store the raw
-/// filename(s) while the visible property holds hydrated `RecordFile` objects.
+/// filename(s) while the visible property holds hydrated `FileValue` objects.
 ///
-/// For `@FileField var avatar: RecordFile?`:
+/// For `@FileField var avatar: FileValue?`:
 /// - Generates: `var _avatarFilename: String?`
 ///
-/// For `@FileField var documents: [RecordFile]?`:
+/// For `@FileField var documents: [FileValue]?`:
 /// - Generates: `var _documentsFilenames: [String] = []`
 public struct FileField: PeerMacro {
     public static func expansion(
@@ -72,7 +72,7 @@ public struct FileField: PeerMacro {
             throw MacroExpansionErrorMessage(FileFieldError.mustBeMarkedAsOptional.errorDescription)
         }
 
-        // Validate type is RecordFile? or [RecordFile]?
+        // Validate type is FileValue? or [FileValue]?
         let isValidType = isValidFileFieldType(optional.wrappedType)
         guard isValidType else {
             throw MacroExpansionErrorMessage(FileFieldError.invalidType.errorDescription)
@@ -83,10 +83,10 @@ public struct FileField: PeerMacro {
 
         // Generate backing storage property
         if isArray {
-            // For [RecordFile]? generate var _<name>Filenames: [String] = []
+            // For [FileValue]? generate var _<name>Filenames: [String] = []
             return ["var _\(name)Filenames: [String] = []"]
         } else {
-            // For RecordFile? generate var _<name>Filename: String?
+            // For FileValue? generate var _<name>Filename: String?
             return ["var _\(name)Filename: String?"]
         }
     }
@@ -94,26 +94,18 @@ public struct FileField: PeerMacro {
     /// Checks if the type is valid for a file field.
     ///
     /// Valid types are:
-    /// - `RecordFile` (for RecordFile?)
     /// - `FileValue` (for FileValue?)
-    /// - `[RecordFile]` (for [RecordFile]?)
     /// - `[FileValue]` (for [FileValue]?)
     private static func isValidFileFieldType(_ type: TypeSyntax) -> Bool {
-        // Check for RecordFile or FileValue
+        // Check for FileValue
         if let identifier = type.as(IdentifierTypeSyntax.self) {
-            let name = identifier.name.text
-            if name == "RecordFile" || name == "FileValue" {
-                return true
-            }
+            return identifier.name.text == "FileValue"
         }
 
-        // Check for [RecordFile] or [FileValue]
+        // Check for [FileValue]
         if let array = type.as(ArrayTypeSyntax.self),
            let element = array.element.as(IdentifierTypeSyntax.self) {
-            let name = element.name.text
-            if name == "RecordFile" || name == "FileValue" {
-                return true
-            }
+            return element.name.text == "FileValue"
         }
 
         return false
