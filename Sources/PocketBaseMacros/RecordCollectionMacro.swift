@@ -544,16 +544,7 @@ extension RecordCollectionMacro {
                 if variable.isArray {
                     // Array: map each FileValue to FileFieldEntry preserving order
                     try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
-                        """
-                        let entries: [FileFieldEntry] = \(variable.name).map { fileValue in
-                            switch fileValue {
-                            case .existing(let file):
-                                return .existing(file.filename)
-                            case .pending(let upload):
-                                return .pending(upload)
-                            }
-                        }
-                        """
+                        "let entries: [FileFieldEntry] = \(variable.name).map { fileValue in switch fileValue { case .existing(let file): return .existing(file.filename); case .pending(let upload): return .pending(upload) } }"
                         try IfExprSyntax("if !entries.isEmpty") {
                             "values[\"\(variable.name)\"] = entries"
                         }
@@ -561,14 +552,14 @@ extension RecordCollectionMacro {
                 } else {
                     // Single: convert to single-element array
                     try IfExprSyntax("if let \(variable.name) = \(variable.name)") {
-                        """
-                        switch \(variable.name) {
-                        case .existing(let file):
-                            values[\"\(variable.name)\"] = [.existing(file.filename)]
-                        case .pending(let upload):
-                            values[\"\(variable.name)\"] = [.pending(upload)]
+                        try SwitchExprSyntax("switch \(variable.name)") {
+                            SwitchCaseSyntax("case .existing(let file):") {
+                                "values[\"\(variable.name)\"] = [.existing(file.filename)]"
+                            }
+                            SwitchCaseSyntax("case .pending(let upload):") {
+                                "values[\"\(variable.name)\"] = [.pending(upload)]"
+                            }
                         }
-                        """
                     }
                 }
             }
