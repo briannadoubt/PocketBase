@@ -11,8 +11,8 @@ import SwiftSyntaxMacros
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacroExpansion
 
-/// Errors that can occur during FileField macro expansion.
-enum FileFieldError {
+/// Errors that can occur during File macro expansion.
+enum FileError {
     case mustBeVariable
     case missingIdentifierPattern
     case mustDefineTypeAnnotation
@@ -22,30 +22,30 @@ enum FileFieldError {
     var errorDescription: String {
         switch self {
         case .mustBeVariable:
-            "`@FileField` must be applied to a variable declaration."
+            "`@File` must be applied to a variable declaration."
         case .missingIdentifierPattern:
-            "Invalid pattern. Must be an identifier pattern. Example: `@FileField var avatar: FileValue?`."
+            "Invalid pattern. Must be an identifier pattern. Example: `@File var avatar: FileValue?`."
         case .mustDefineTypeAnnotation:
-            "Missing type annotation. Example: `@FileField var avatar: FileValue?` or `@FileField var documents: [FileValue]?`."
+            "Missing type annotation. Example: `@File var avatar: FileValue?` or `@File var documents: [FileValue]?`."
         case .mustBeMarkedAsOptional:
-            "`@FileField` variables must be marked as optional. Example: `@FileField var avatar: FileValue?` or `@FileField var documents: [FileValue]?`."
+            "`@File` variables must be marked as optional. Example: `@File var avatar: FileValue?` or `@File var documents: [FileValue]?`."
         case .invalidType:
             "File fields must be `FileValue?` (single file) or `[FileValue]?` (multiple files)."
         }
     }
 }
 
-/// The `@FileField` macro marks a property as a file field and generates backing storage.
+/// The `@File` macro marks a property as a file field and generates backing storage.
 ///
 /// Similar to `@Relation`, this macro generates a hidden property to store the raw
 /// filename(s) while the visible property holds hydrated `FileValue` objects.
 ///
-/// For `@FileField var avatar: FileValue?`:
+/// For `@File var avatar: FileValue?`:
 /// - Generates: `var _avatarFilename: String?`
 ///
-/// For `@FileField var documents: [FileValue]?`:
+/// For `@File var documents: [FileValue]?`:
 /// - Generates: `var _documentsFilenames: [String] = []`
-public struct FileField: PeerMacro {
+public struct File: PeerMacro {
     public static func expansion(
         of node: AttributeSyntax,
         providingPeersOf declaration: some DeclSyntaxProtocol,
@@ -54,28 +54,28 @@ public struct FileField: PeerMacro {
         // Validate that this is applied to a variable
         guard let variableDecl = declaration.as(VariableDeclSyntax.self),
               let binding = variableDecl.bindings.first else {
-            throw MacroExpansionErrorMessage(FileFieldError.mustBeVariable.errorDescription)
+            throw MacroExpansionErrorMessage(FileError.mustBeVariable.errorDescription)
         }
 
         // Validate pattern
         guard let pattern = binding.pattern.as(IdentifierPatternSyntax.self) else {
-            throw MacroExpansionErrorMessage(FileFieldError.missingIdentifierPattern.errorDescription)
+            throw MacroExpansionErrorMessage(FileError.missingIdentifierPattern.errorDescription)
         }
 
         // Validate type annotation exists
         guard let typeAnnotation = binding.typeAnnotation else {
-            throw MacroExpansionErrorMessage(FileFieldError.mustDefineTypeAnnotation.errorDescription)
+            throw MacroExpansionErrorMessage(FileError.mustDefineTypeAnnotation.errorDescription)
         }
 
         // Must be optional
         guard let optional = typeAnnotation.type.as(OptionalTypeSyntax.self) else {
-            throw MacroExpansionErrorMessage(FileFieldError.mustBeMarkedAsOptional.errorDescription)
+            throw MacroExpansionErrorMessage(FileError.mustBeMarkedAsOptional.errorDescription)
         }
 
         // Validate type is FileValue? or [FileValue]?
         let isValidType = isValidFileFieldType(optional.wrappedType)
         guard isValidType else {
-            throw MacroExpansionErrorMessage(FileFieldError.invalidType.errorDescription)
+            throw MacroExpansionErrorMessage(FileError.invalidType.errorDescription)
         }
 
         let name = pattern.identifier

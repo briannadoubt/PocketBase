@@ -462,10 +462,10 @@ struct FileTests: NetworkResponseTestSuite {
         }
     }
 
-    // MARK: - @FileField Macro Tests
+    // MARK: - @File Macro Tests
 
-    @Suite("FileField Macro")
-    struct FileFieldMacroTests {
+    @Suite("File Macro")
+    struct FileMacroTests {
         @Test("fileFields static property lists all file fields")
         func fileFieldsProperty() {
             // Post has two file fields: coverImage and attachments

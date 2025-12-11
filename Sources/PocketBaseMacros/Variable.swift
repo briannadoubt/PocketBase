@@ -50,7 +50,7 @@ struct Variable {
         self.relation = try RelationType(type: type, variable)
         self.skipExpand = variable.hasAttributeArgument("skipExpand")
         self.isOptionalRelationship = variable.hasAttributeArgument("optional")
-        self.isFileField = variable.hasAttribute("FileField")
+        self.isFileField = variable.hasAttribute("File")
         self.isFileFieldRequired = variable.hasAttributeArgument("required")
     }
 }
