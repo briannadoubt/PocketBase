@@ -265,8 +265,8 @@ struct FileTests: NetworkResponseTestSuite {
 
     @Suite("Create with Files")
     struct CreateWithFilesTests: NetworkResponseTestSuite {
-        @Test("Create record with pending file uses multipart")
-        func createRecordWithPendingFileUsesMultipart() async throws {
+        @Test("Create record without pending files uses JSON")
+        func createRecordWithoutPendingFilesUsesJSON() async throws {
             // Use Rawr for the response (it doesn't have FileValue so won't crash)
             let expectedRawr = Self.rawr
             let response = try PocketBase.encoder.encode(expectedRawr, configuration: .none)
@@ -280,7 +280,7 @@ struct FileTests: NetworkResponseTestSuite {
 
             #expect(rawr.id == expectedRawr.id)
 
-            // Verify the request was made (JSON since no pending files)
+            // Verify the request was made with JSON (no pending files)
             guard let lastRequest = environment.session.lastRequest else {
                 Issue.record("No request was made")
                 return

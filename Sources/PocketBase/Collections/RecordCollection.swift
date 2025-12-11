@@ -28,14 +28,8 @@ public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
     /// Decoder configured with the PocketBase base URL in userInfo.
     ///
     /// This allows RecordFile hydration to include the base URL for direct URL access.
-    var decoder: JSONDecoder {
-        let decoder = JSONDecoder()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
-        decoder.dateDecodingStrategy = .formatted(formatter)
-        decoder.userInfo[RecordFile.baseURLUserInfoKey] = pocketbase.url
-        return decoder
-    }
+    /// Cached as a stored property to avoid expensive DateFormatter instantiation on every access.
+    let decoder: JSONDecoder
 
     public init(
         _ collection: String,
@@ -43,6 +37,14 @@ public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
     ) {
         self.collection = collection
         self.pocketbase = pocketbase
+
+        // Initialize decoder with base URL for file hydration
+        let decoder = JSONDecoder()
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+        decoder.dateDecodingStrategy = .formatted(formatter)
+        decoder.userInfo[RecordFile.baseURLUserInfoKey] = pocketbase.url
+        self.decoder = decoder
     }
 
     var headers: HTTPFields {
