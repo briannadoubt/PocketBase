@@ -8,10 +8,13 @@
 import Foundation
 import AsyncAlgorithms
 
+/// A subscription to a PocketBase realtime topic.
+///
+/// Subscriptions manage the async channel that receives raw events
+/// from the SSE connection.
 public struct Subscription: Sendable {
-    public let type: any BaseRecord.Type
-    public let channel = AsyncChannel<any Event>()
-    init(_ type: any BaseRecord.Type) {
-        self.type = type
-    }
+    /// The async channel that receives raw record events.
+    public let channel = AsyncChannel<RawRecordEvent>()
+
+    public init() {}
 }
