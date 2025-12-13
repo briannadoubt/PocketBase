@@ -193,7 +193,7 @@ Relations are automatically expanded when fetching records.
 Defines a back-relation from another collection:
 
 ```swift
-@BaseCollection("users")
+@AuthCollection("users")
 struct User {
     var name: String = ""
 
