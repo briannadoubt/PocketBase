@@ -13,4 +13,5 @@ struct User {}
 @BaseCollection("rawrs")
 struct Rawr {
     var field: String
+    @File var image: FileValue?
 }
