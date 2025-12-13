@@ -50,13 +50,56 @@ struct CatApp: App {
             ContentView()
         }
         #if DEBUG
-        .pocketbase(.localhost) // <~ optional
+        .pocketbase(.localhost) // <~ For local development on the same machine
         #else
         .pocketbase(url: URL(string: "https://production.myFancyApp.com/")!)
         #endif
     }
 }
 ```
+
+### Local Network Access
+
+For testing on physical devices (like your iPhone) while your PocketBase server runs on your Mac, you can use the local network configuration:
+
+#### Option 1: Direct IP Configuration
+```swift
+@main
+struct CatApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        #if DEBUG
+        .pocketbase(.localNetwork(ip: "10.0.0.185")) // <~ Replace with your Mac's IP address
+        #else
+        .pocketbase(url: URL(string: "https://production.myFancyApp.com/")!)
+        #endif
+    }
+}
+```
+
+#### Option 2: Configured IP via UserDefaults
+```swift
+// Set your Mac's IP address (do this once, update when IP changes)
+UserDefaults.standard.set("10.0.0.185", forKey: "io.pocketbase.local_ip")
+
+@main
+struct CatApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+        }
+        #if DEBUG
+        .pocketbase(.configuredLocalNetwork) // <~ Uses IP from UserDefaults, falls back to localhost
+        #else
+        .pocketbase(url: URL(string: "https://production.myFancyApp.com/")!)
+        #endif
+    }
+}
+```
+
+**Note:** To find your Mac's local IP address, run `ifconfig en0 | grep "inet " | awk '{print $2}'` in Terminal. Make sure your Docker container is configured to bind to all interfaces with `"0.0.0.0:8090:8090"` in your `docker-compose.yml`.
 
 Then, if you want to support authentication, you'll need to create an `AuthCollection`. This object should match the field schema shape of your authentication collection defined in your PocketBase admin console:
 
