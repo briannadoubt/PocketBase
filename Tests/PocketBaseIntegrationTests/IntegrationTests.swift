@@ -59,19 +59,24 @@ struct PocketBaseIntegrationTests {
     /// Start the shared container before any tests run
     init() async throws {
         #if os(macOS)
-        do {
-            try await PocketBaseServerLauncher.shared.start(
-                port: 8090,
-                dataPath: "./pb_data_test",
-                verbose: true,
-                clear: true  // Start with a clean database
-            )
-            containerAvailable = true
-        } catch {
-            // Container failed to start (likely missing entitlements when running via `swift test`)
-            // Tests will be skipped
-            print("[PocketBaseIntegrationTests] Container failed to start: \(error.localizedDescription)")
-            print("[PocketBaseIntegrationTests] Integration tests will be skipped. Run from Xcode to execute integration tests.")
+        if #available(macOS 26.0, *) {
+            do {
+                try await PocketBaseServerLauncher.shared.start(
+                    port: 8090,
+                    dataPath: "./pb_data_test",
+                    verbose: true,
+                    clear: true  // Start with a clean database
+                )
+                containerAvailable = true
+            } catch {
+                // Container failed to start (likely missing entitlements when running via `swift test`)
+                // Tests will be skipped
+                print("[PocketBaseIntegrationTests] Container failed to start: \(error.localizedDescription)")
+                print("[PocketBaseIntegrationTests] Integration tests will be skipped. Run from Xcode to execute integration tests.")
+                containerAvailable = false
+            }
+        } else {
+            print("[PocketBaseIntegrationTests] macOS 26.0+ required for containerization. Tests will be skipped.")
             containerAvailable = false
         }
         #endif
