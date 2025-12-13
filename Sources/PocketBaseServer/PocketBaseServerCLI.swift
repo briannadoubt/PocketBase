@@ -11,6 +11,7 @@ import ArgumentParser
 import Foundation
 import PocketBaseServerLib
 
+@available(macOS 26.0, *)
 @main
 struct PocketBaseServerCLI: AsyncParsableCommand {
     static let configuration = CommandConfiguration(

@@ -11,6 +11,7 @@ import Foundation
 import Network
 
 /// A simple TCP port forwarder that listens on localhost and forwards to a remote address
+@available(macOS 26.0, *)
 public actor PortForwarder {
     private let localPort: UInt16
     private let remoteHost: String

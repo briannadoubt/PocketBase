@@ -14,6 +14,7 @@ import Foundation
 
 /// A Writer that prints container output to the console
 /// Used to capture PocketBase's stdout/stderr including the installer URL
+@available(macOS 26.0, *)
 final class ConsoleWriter: Writer, @unchecked Sendable {
     private let prefix: String
     private let urlHandler: ((String) -> Void)?
@@ -41,6 +42,7 @@ final class ConsoleWriter: Writer, @unchecked Sendable {
 }
 
 /// Configuration for the PocketBase container
+@available(macOS 26.0, *)
 public struct PocketBaseContainerConfiguration: Sendable {
     /// The port to expose PocketBase on (default: 8090)
     public var port: Int
@@ -78,6 +80,7 @@ public struct PocketBaseContainerConfiguration: Sendable {
 }
 
 /// Manages a PocketBase container using Apple's Containerization framework
+@available(macOS 26.0, *)
 public actor PocketBaseContainer {
     /// The container image reference
     public static let imageReference = "docker.io/adrianmusante/pocketbase:latest"
@@ -321,6 +324,7 @@ public actor PocketBaseContainer {
 }
 
 /// Errors that can occur when managing the PocketBase container
+@available(macOS 26.0, *)
 public enum PocketBaseContainerError: Error, LocalizedError {
     case notRunning
     case kernelNotFound
