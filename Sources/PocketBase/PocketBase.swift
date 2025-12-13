@@ -6,6 +6,7 @@
 //
 
 @_exported import Foundation
+import MultipartKit
 
 /// Interface with PocketBase
 public struct PocketBase: Sendable, HasLogger {
@@ -53,6 +54,11 @@ public struct PocketBase: Sendable, HasLogger {
         encoder.dateEncodingStrategy = .formatted(formatter)
         return encoder
     }()
+    
+    package static let formEncoder: FormDataEncoder = {
+        let encoder = FormDataEncoder()
+        return encoder
+    }()
 
     public static let decoder: JSONDecoder = {
         let encoder = JSONDecoder()
@@ -73,6 +79,18 @@ extension PocketBase {
         url: URL.localhost
     )
     
+    /// Create a PocketBase instance for local network access
+    /// - Parameter ip: The IP address of your Mac running PocketBase
+    public static func localNetwork(ip: String) -> PocketBase {
+        PocketBase(url: URL.localNetwork(ip: ip))
+    }
+    
+    /// Create a PocketBase instance using configured local IP from UserDefaults
+    /// Set the IP with: UserDefaults.standard.set("10.0.0.185", forKey: "io.pocketbase.local_ip")
+    public static var configuredLocalNetwork: PocketBase {
+        PocketBase(url: URL.configuredLocalNetwork ?? URL.localhost)
+    }
+    
     public static func set(url: URL, defaults: UserDefaults? = UserDefaults.pocketbase) {
         Self.logger.trace(#function)
         defaults?.set(url, forKey: Self.urlKey)
@@ -87,8 +105,28 @@ extension PocketBase {
         case remoteBody
         case none
     }
+    
+    package static let multipartEncodingBoundary = UUID().uuidString
 }
 
 extension URL {
     public static let localhost = URL(string: "http://localhost:8090")!
+    
+    /// Create a URL for a specific IP address on port 8090
+    /// Use this when you know your server's local IP address
+    public static func localNetwork(ip: String) -> URL {
+        return URL(string: "http://\(ip):8090")!
+    }
+    
+    /// Convenience for common development scenarios
+    /// You can set this to your Mac's current IP via UserDefaults
+    public static var configuredLocalNetwork: URL? {
+        guard let ip = UserDefaults.standard.string(forKey: "io.pocketbase.local_ip") else {
+            return nil
+        }
+        return URL(string: "http://\(ip):8090")
+    }
 }
+
+@available(*, deprecated, renamed: "PocketBase", message: "Requires a capitol 'B'")
+public struct Pocketbase {}
