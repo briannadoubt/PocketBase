@@ -33,7 +33,9 @@ public struct LoginButton<T: AuthRecord>: View, HasLogger {
                             identity,
                             password: password
                         )
-                        authState = .signedIn
+                        await MainActor.run {
+                            authState = .signedIn
+                        }
                     case .oauth:
                         fatalError("Not implemented")
                     }

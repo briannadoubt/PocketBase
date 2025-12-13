@@ -88,10 +88,9 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger {
                                     newUser,
                                     collection: collection,
                                     authState: $authState,
-                                    strategy: .identity(
-                                        authMethods.emailPassword ? newEmail : newUsername,
-                                        password: password
-                                    )
+                                    email: newEmail,
+                                    username: newUsername,
+                                    password: password
                                 )
                             }
                         }
@@ -102,7 +101,7 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger {
                                         newUser,
                                         collection: collection,
                                         authState: $authState,
-                                        strategy: .oauth(provider)
+                                        provider: provider
                                     )
                                 }
                             }
@@ -111,7 +110,13 @@ public struct SignedOutView<T: AuthRecord>: View, HasLogger {
                         if authMethods.emailPassword || authMethods.usernamePassword {
                             Section("Identity") {
                                 TextField(identityLabel, text: $loginIdentity)
+                                    .textContentType(.username)
+                                    .autocorrectionDisabled()
+                                    #if os(iOS)
+                                    .textInputAutocapitalization(.never)
+                                    #endif
                                 SecureField("Password", text: $password)
+                                    .textContentType(.password)
                             }
                             Section {
                                 LoginButton<T>(
