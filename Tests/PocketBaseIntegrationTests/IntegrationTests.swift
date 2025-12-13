@@ -11,6 +11,10 @@ import SwiftData
 import Foundation
 import TestUtilities
 
+#if os(macOS)
+import PocketBaseServerLib
+#endif
+
 @AuthCollection("users")
 struct User {
     @BackRelation(\Post.owner) var posts: [Post] = []
@@ -42,9 +46,42 @@ extension Testing.Tag {
     @Tag static var localhostRequired: Self
 }
 
+// MARK: - Shared Container Setup
+
+/// Tracks whether the container started successfully
+/// Integration tests will be skipped if this is false
+nonisolated(unsafe) var containerAvailable = false
+
+/// Suite that manages the shared PocketBase container for all integration tests
+@Suite("PocketBase Integration Tests", .serialized)
+struct PocketBaseIntegrationTests {
+
+    /// Start the shared container before any tests run
+    init() async throws {
+        #if os(macOS)
+        do {
+            try await PocketBaseServerLauncher.shared.start(
+                port: 8090,
+                dataPath: "./pb_data_test",
+                verbose: true,
+                clear: true  // Start with a clean database
+            )
+            containerAvailable = true
+        } catch {
+            // Container failed to start (likely missing entitlements when running via `swift test`)
+            // Tests will be skipped
+            print("[PocketBaseIntegrationTests] Container failed to start: \(error.localizedDescription)")
+            print("[PocketBaseIntegrationTests] Integration tests will be skipped. Run from Xcode to execute integration tests.")
+            containerAvailable = false
+        }
+        #endif
+    }
+}
+
 @Test(
     "Happy path through PocketBase",
-    .tags(.integration, .localhostRequired)
+    .tags(.integration, .localhostRequired),
+    .enabled(if: containerAvailable, "PocketBase container not available. Run from Xcode to execute integration tests.")
 )
 @MainActor
 func happyPath() async throws {
