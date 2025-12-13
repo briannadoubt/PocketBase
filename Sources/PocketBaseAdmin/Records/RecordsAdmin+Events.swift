@@ -1,32 +1,36 @@
 //
-//  RecordCollection+Subscribe.swift
+//  RecordsAdmin+Events.swift
 //  PocketBase
 //
-//  Created by Brianna Zamora on 8/18/24.
+//  Created by Claude Code on behalf of Brianna Zamora
 //
 
-extension RecordCollection where T: BaseRecord {
-    /// Subscribes to realtime events for this collection.
+import Foundation
+import PocketBase
+
+extension RecordsAdmin {
+    /// Subscribes to realtime record events for this collection.
     ///
-    /// Returns an async stream of typed record events (create, update, delete).
+    /// Returns an async stream of record events (create, update, delete)
+    /// with `RecordModel` for dynamic field access.
     ///
     /// - Parameter recordId: Specific record ID to subscribe to, or "*" for all records. Defaults to "*".
     /// - Returns: An async stream of record events.
     ///
     /// ```swift
-    /// for await event in try await pocketbase.collection(Post.self).events() {
+    /// for await event in try await pocketbase.admin.records("posts").events() {
     ///     switch event.action {
-    ///     case .create: print("Created: \(event.record.title)")
-    ///     case .update: print("Updated: \(event.record.title)")
+    ///     case .create: print("Created: \(event.record.id)")
+    ///     case .update: print("Updated: \(event.record.id)")
     ///     case .delete: print("Deleted: \(event.record.id)")
     ///     }
     /// }
     /// ```
-    public func events(_ recordId: String? = "*") async throws -> AsyncStream<RecordEvent<T>> {
-        let topic = if let recordId, recordId != "*" {
-            "\(T.collection)/\(recordId)"
+    public func events(_ recordId: String = "*") async throws -> AsyncStream<RecordEvent<RecordModel>> {
+        let topic = if recordId != "*" {
+            "\(collection)/\(recordId)"
         } else {
-            T.collection
+            collection
         }
 
         // Set the auth token on realtime before subscribing
@@ -35,22 +39,19 @@ extension RecordCollection where T: BaseRecord {
         // Subscribe to the raw event stream
         let rawStream = try await pocketbase.realtime.subscribe(topic: topic)
 
-        // Capture the decoder configured with baseURL for file field hydration
-        let decoder = self.decoder
-
-        // Transform raw events to typed events
+        // Transform raw events to RecordModel events
         return AsyncStream { continuation in
             Task {
                 for await rawEvent in rawStream {
                     for line in rawEvent.record.components(separatedBy: "\n") {
                         do {
-                            let event = try decoder.decode(
-                                RecordEvent<T>.self,
+                            let event = try PocketBase.decoder.decode(
+                                RecordEvent<RecordModel>.self,
                                 from: Data(line.utf8)
                             )
                             continuation.yield(event)
                         } catch {
-                            Self.logger.error("Failed to decode event with error: \(error)")
+                            Self.logger.error("Failed to decode admin record event: \(error)")
                         }
                     }
                 }

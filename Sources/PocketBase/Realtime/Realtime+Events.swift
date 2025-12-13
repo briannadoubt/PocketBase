@@ -7,27 +7,30 @@
 
 import Foundation
 
-public protocol Event: Sendable, Equatable {
-    associatedtype Value = Decodable
-    var id: String? { get }
-    var record: Value { get }
-}
-
-public struct RawRecordEvent: Event {
+/// A raw record event containing unparsed JSON data.
+public struct RawRecordEvent: Sendable, Equatable {
     public var id: String?
     public var record: String
+
+    public init(id: String? = nil, record: String) {
+        self.id = id
+        self.record = record
+    }
 }
 
-public protocol DecodableEvent: Event, Decodable {}
-
-public struct RecordEvent<Record: BaseRecord>: DecodableEvent {
+/// A typed record event from realtime subscriptions.
+///
+/// Contains the action (create, update, delete) and the affected record.
+public struct RecordEvent<Record: Decodable & Sendable>: Decodable, Sendable {
     public var id: String?
     public var action: Action
     public var record: Record
-    
+
     public enum Action: String, Decodable, Sendable {
         case create
         case update
         case delete
     }
 }
+
+extension RecordEvent: Equatable where Record: Equatable {}

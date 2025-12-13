@@ -15,6 +15,7 @@ let package = Package(
     ],
     products: [
         .library(name: "PocketBase", targets: ["PocketBase"]),
+        .library(name: "PocketBaseAdmin", targets: ["PocketBaseAdmin"]),
         .library(name: "PocketBaseUI", targets: ["PocketBaseUI"]),
         .library(name: "PocketBaseServerLib", targets: ["PocketBaseServerLib"]),
         .executable(name: "PocketBaseServer", targets: ["PocketBaseServer"]),
@@ -55,6 +56,10 @@ let package = Package(
                 .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
                 .product(name: "SwiftCompilerPlugin", package: "swift-syntax")
             ]
+        ),
+        .target(
+            name: "PocketBaseAdmin",
+            dependencies: ["PocketBase"]
         ),
         .target(
             name: "PocketBaseUI",
