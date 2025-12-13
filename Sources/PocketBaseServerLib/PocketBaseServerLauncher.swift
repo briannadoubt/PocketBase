@@ -12,6 +12,7 @@ import PocketBase
 
 /// A singleton launcher for the PocketBase server container.
 /// Used by integration tests to ensure a shared container instance.
+@available(macOS 26.0, *)
 public actor PocketBaseServerLauncher {
     /// Shared singleton instance
     public static let shared = PocketBaseServerLauncher()
@@ -204,6 +205,7 @@ public actor PocketBaseServerLauncher {
 }
 
 /// Errors from the server launcher
+@available(macOS 26.0, *)
 public enum PocketBaseServerLauncherError: Error, LocalizedError {
     case healthCheckTimeout(Error?)
     case notRunning

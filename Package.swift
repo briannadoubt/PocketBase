@@ -6,12 +6,12 @@ import CompilerPluginSupport
 let package = Package(
     name: "PocketBase",
     platforms: [
-        .macOS(.v26),
-        .iOS(.v17),
-        .tvOS(.v17),
-        .watchOS(.v10),
-        .macCatalyst(.v17),
-        .visionOS(.v1),
+        .macOS(.v15),
+        .iOS(.v18),
+        .tvOS(.v18),
+        .watchOS(.v11),
+        .macCatalyst(.v18),
+        .visionOS(.v2),
     ],
     products: [
         .library(name: "PocketBase", targets: ["PocketBase"]),

@@ -469,9 +469,9 @@ try await collection.deleteFiles(
 
 ## Requirements
 
-- iOS 17.0+ / macOS 14.0+
+- iOS 18.0+ / macOS 15.0+
 - Swift 6.0+
 - Xcode 16.0+
 
-For native containerization:
-- macOS 26.0+ (Tahoe)
+**Native Containerization (PocketBaseServer):**
+- macOS 26.0+ (Tahoe) required for running containers
