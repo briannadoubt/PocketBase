@@ -25,6 +25,9 @@ extension RecordCollectionMacro {
     ) throws -> [ExtensionDeclSyntax] {
         [
             ExtensionDeclSyntax(
+                modifiers: DeclModifierListSyntax {
+                    DeclModifierSyntax(name: .keyword(.nonisolated))
+                },
                 extendedType: type,
                 inheritanceClause: InheritanceClauseSyntax {
                     for type in protocols {
@@ -318,10 +321,10 @@ extension RecordCollectionMacro {
 
         if isAuthCollection(node) {
             body.append("// Auth Collection Fields")
-            body.append("username = try container.decode(String.self, forKey: .username)")
+            body.append("username = try container.decodeIfPresent(String.self, forKey: .username) ?? \"\"")
             body.append("email = try container.decodeIfPresent(String.self, forKey: .email)")
-            body.append("verified = try container.decode(Bool.self, forKey: .verified)")
-            body.append("emailVisibility = try container.decode(Bool.self, forKey: .emailVisibility)")
+            body.append("verified = try container.decodeIfPresent(Bool.self, forKey: .verified) ?? false")
+            body.append("emailVisibility = try container.decodeIfPresent(Bool.self, forKey: .emailVisibility) ?? false")
         }
 
         if !variables.isEmpty {
@@ -378,7 +381,7 @@ extension RecordCollectionMacro {
                     }
                 ),
                 effectSpecifiers: FunctionEffectSpecifiersSyntax(
-                    throwsClause: ThrowsClauseSyntax(throwsSpecifier: .keyword(.throws))
+                    throwsSpecifier: .keyword(.throws)
                 )
             )
         ) {
@@ -782,7 +785,7 @@ extension RecordCollectionMacro {
                     }
                 ),
                 effectSpecifiers: FunctionEffectSpecifiersSyntax(
-                    throwsClause: ThrowsClauseSyntax(throwsSpecifier: .keyword(.throws))
+                    throwsSpecifier: .keyword(.throws)
                 )
             )
         ) {
