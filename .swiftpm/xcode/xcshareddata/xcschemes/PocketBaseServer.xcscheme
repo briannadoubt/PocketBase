@@ -6,33 +6,6 @@
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES"
       buildArchitectures = "Automatic">
-      <PreActions>
-         <ExecutionAction
-            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
-            <ActionContent
-               title = "Kill PocketBase Container"
-               scriptText = "# Kill any running PocketBaseServer process&#10;pkill -f &quot;PocketBaseServer&quot; 2&gt;/dev/null || true&#10;# Clean up stale container directory&#10;rm -rf &quot;$HOME/Library/Application Support/com.apple.containerization/containers/pocketbase-server&quot; 2&gt;/dev/null || true&#10;">
-            </ActionContent>
-         </ExecutionAction>
-      </PreActions>
-      <PostActions>
-         <ExecutionAction
-            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
-            <ActionContent
-               title = "Run Script"
-               scriptText = "PACKAGE_DIR=&quot;$(dirname &quot;$(dirname &quot;$(dirname &quot;$WORKSPACE_PATH&quot;)&quot;)&quot;)&quot;&#10;codesign --force --sign - --entitlements &quot;$PACKAGE_DIR/Sources/PocketBaseServer/PocketBaseServer.entitlements&quot; &quot;${BUILT_PRODUCTS_DIR}/PocketBaseServer&quot;&#10;">
-               <EnvironmentBuildable>
-                  <BuildableReference
-                     BuildableIdentifier = "primary"
-                     BlueprintIdentifier = "PocketBaseServer"
-                     BuildableName = "PocketBaseServer"
-                     BlueprintName = "PocketBaseServer"
-                     ReferencedContainer = "container:">
-                  </BuildableReference>
-               </EnvironmentBuildable>
-            </ActionContent>
-         </ExecutionAction>
-      </PostActions>
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -77,6 +50,12 @@
             ReferencedContainer = "container:">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+         <CommandLineArgument
+            argument = "--data-path ~/.pocketbase-dev/pb_data"
+            isEnabled = "YES">
+         </CommandLineArgument>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

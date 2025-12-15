@@ -7,43 +7,16 @@
 
 #if os(macOS)
 
-import Containerization
-import ContainerizationOCI
-import ContainerizationOS
 import Foundation
-
-/// A Writer that prints container output to the console
-/// Used to capture PocketBase's stdout/stderr including the installer URL
-@available(macOS 26.0, *)
-final class ConsoleWriter: Writer, @unchecked Sendable {
-    private let prefix: String
-    private let urlHandler: ((String) -> Void)?
-
-    init(prefix: String = "", urlHandler: ((String) -> Void)? = nil) {
-        self.prefix = prefix
-        self.urlHandler = urlHandler
-    }
-
-    func write(_ data: Data) throws {
-        guard let string = String(data: data, encoding: .utf8) else { return }
-
-        // Print with prefix
-        for line in string.components(separatedBy: "\n") where !line.isEmpty {
-            print("\(prefix)\(line)")
-
-            // Check for installer URL (PocketBase 0.23+)
-            if line.contains("/#/pbinstal/") || line.contains("/_/#/pbinstal/") {
-                urlHandler?(line)
-            }
-        }
-    }
-
-    func close() throws {}
-}
 
 /// Configuration for the PocketBase container
 @available(macOS 26.0, *)
 public struct PocketBaseContainerConfiguration: Sendable {
+    /// The host/interface to bind to (default: 0.0.0.0 for all interfaces)
+    /// Use "localhost" or "127.0.0.1" to only allow local connections
+    /// Use "0.0.0.0" to allow connections from any interface (including network)
+    public var host: String
+
     /// The port to expose PocketBase on (default: 8090)
     public var port: Int
 
@@ -56,45 +29,38 @@ public struct PocketBaseContainerConfiguration: Sendable {
     /// Memory in bytes to allocate to the container
     public var memoryInBytes: UInt64
 
-    /// Size of the root filesystem in bytes
-    public var rootfsSizeInBytes: UInt64
-
     /// Enable verbose logging
     public var verbose: Bool
 
     public init(
+        host: String = "0.0.0.0",
         port: Int = 8090,
         dataPath: String = "./pb_data",
         cpus: Int = 2,
         memoryInBytes: UInt64 = 512 * 1024 * 1024, // 512 MiB
-        rootfsSizeInBytes: UInt64 = 2 * 1024 * 1024 * 1024, // 2 GiB
         verbose: Bool = false
     ) {
+        self.host = host
         self.port = port
         self.dataPath = dataPath
         self.cpus = cpus
         self.memoryInBytes = memoryInBytes
-        self.rootfsSizeInBytes = rootfsSizeInBytes
         self.verbose = verbose
     }
 }
 
-/// Manages a PocketBase container using Apple's Containerization framework
+/// Manages a PocketBase container using Apple's container CLI
 @available(macOS 26.0, *)
 public actor PocketBaseContainer {
     /// The container image reference
-    public static let imageReference = "docker.io/adrianmusante/pocketbase:latest"
+    public static let imageReference = "ghcr.io/muchobien/pocketbase:latest"
 
-    /// The init filesystem image reference
-    public static let initfsReference = "ghcr.io/apple/containerization/vminit:0.13.0"
+    /// Container name
+    public static let containerName = "pocketbase-server"
 
-    /// Container ID
-    public static let containerId = "pocketbase-server"
-
-    private var manager: ContainerManager?
-    private var container: LinuxContainer?
     private let configuration: PocketBaseContainerConfiguration
     private var portForwarder: PortForwarder?
+    private var logStreamProcess: Process?
 
     /// Current state of the container
     public private(set) var state: ContainerState = .stopped
@@ -115,45 +81,94 @@ public actor PocketBaseContainer {
         self.configuration = configuration
     }
 
-    /// Get the kernel path - checks ./vmlinux first, then falls back to the system kernel location
-    private func getKernelPath() throws -> URL {
-        // First try ./vmlinux in current directory (like ctr-example)
-        let localKernel = URL(fileURLWithPath: "./vmlinux")
-        if FileManager.default.fileExists(atPath: localKernel.path) {
-            return localKernel
-        }
-
-        // Fall back to the system kernel location
-        let systemKernel = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/com.apple.container/kernels/default.kernel-arm64")
-        if FileManager.default.fileExists(atPath: systemKernel.path) {
-            return systemKernel
-        }
-
-        throw PocketBaseContainerError.kernelNotFound
+    /// Find the container CLI path
+    private func findContainerCLI() -> String? {
+        let paths = [
+            "/opt/homebrew/bin/container",
+            "/usr/local/bin/container",
+            "/usr/bin/container"
+        ]
+        return paths.first { FileManager.default.fileExists(atPath: $0) }
     }
 
-    /// Clean up stale container from previous runs
-    private func cleanupStaleContainer() throws {
-        let containerPath = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/com.apple.containerization/containers")
-            .appendingPathComponent(Self.containerId)
+    /// Run a container CLI command and return the output
+    private func runContainerCommand(_ arguments: [String], silent: Bool = false) throws -> String {
+        guard let cliPath = findContainerCLI() else {
+            throw PocketBaseContainerError.containerCLINotFound
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: cliPath)
+        process.arguments = arguments
+
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = silent ? FileHandle.nullDevice : pipe
+
+        try process.run()
+        process.waitUntilExit()
+
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        return String(data: data, encoding: .utf8) ?? ""
+    }
+
+    /// Start streaming container logs to stdout
+    private func startLogStreaming() throws {
+        guard let cliPath = findContainerCLI() else {
+            throw PocketBaseContainerError.containerCLINotFound
+        }
+
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: cliPath)
+        process.arguments = ["logs", "--follow", Self.containerName]
+
+        // Stream stdout directly to our stdout
+        process.standardOutput = FileHandle.standardOutput
+        process.standardError = FileHandle.standardError
+
+        try process.run()
+        logStreamProcess = process
 
         if configuration.verbose {
-            print("[PocketBaseContainer] Checking for stale container at: \(containerPath.path)")
+            print("[PocketBaseContainer] Log streaming started")
+        }
+    }
+
+    /// Stop log streaming
+    private func stopLogStreaming() {
+        logStreamProcess?.terminate()
+        logStreamProcess = nil
+    }
+
+    /// Stop and remove any existing container with the same name
+    private func cleanupExistingContainer() {
+        if configuration.verbose {
+            print("[PocketBaseContainer] Cleaning up any existing container...")
         }
 
-        if FileManager.default.fileExists(atPath: containerPath.path) {
-            if configuration.verbose {
-                print("[PocketBaseContainer] Cleaning up stale container...")
+        // Try to stop and remove existing container (ignore errors)
+        _ = try? runContainerCommand(["stop", Self.containerName], silent: true)
+        _ = try? runContainerCommand(["rm", Self.containerName], silent: true)
+    }
+
+    /// Get the IP address of a running container
+    private func getContainerIP() throws -> String? {
+        let output = try runContainerCommand(["ls"])
+
+        // Parse the output to find our container's IP
+        // Format: ID  IMAGE  OS  ARCH  STATE  ADDR  CPUS  MEMORY
+        for line in output.components(separatedBy: "\n") {
+            if line.contains(Self.containerName) {
+                let parts = line.split(separator: " ").map(String.init)
+                // Find the IP address (looks like 192.168.x.x)
+                for part in parts {
+                    if part.contains("192.168.") || part.contains("10.") || part.contains("172.") {
+                        return part
+                    }
+                }
             }
-            try FileManager.default.removeItem(at: containerPath)
-            if configuration.verbose {
-                print("[PocketBaseContainer] Stale container removed successfully")
-            }
-        } else if configuration.verbose {
-            print("[PocketBaseContainer] No stale container found")
         }
+        return nil
     }
 
     /// Start the PocketBase container
@@ -168,101 +183,91 @@ public actor PocketBaseContainer {
         state = .starting
 
         do {
-            // Clean up any stale container from previous runs
-            try cleanupStaleContainer()
+            // Ensure the container runtime is running
+            let runtime = ContainerRuntime()
+            try runtime.ensureRunning(verbose: configuration.verbose)
 
-            let kernelPath = try getKernelPath()
+            guard findContainerCLI() != nil else {
+                throw PocketBaseContainerError.containerCLINotFound
+            }
+
+            // Clean up any existing container
+            cleanupExistingContainer()
 
             if configuration.verbose {
-                print("[PocketBaseContainer] Using kernel at: \(kernelPath.path)")
-                print("[PocketBaseContainer] Creating container manager...")
+                print("[PocketBaseContainer] Starting container from \(Self.imageReference)...")
+            }
+
+            // Run the container in detached mode
+            let memoryMB = configuration.memoryInBytes / (1024 * 1024)
+
+            // Resolve and create the data directory for persistence
+            let dataURL: URL
+            if configuration.dataPath.hasPrefix("/") {
+                dataURL = URL(fileURLWithPath: configuration.dataPath)
+            } else {
+                dataURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+                    .appendingPathComponent(configuration.dataPath)
             }
 
             // Create data directory if it doesn't exist
-            let dataURL = URL(fileURLWithPath: configuration.dataPath).absoluteURL
-            try FileManager.default.createDirectory(at: dataURL, withIntermediateDirectories: true)
+            if !FileManager.default.fileExists(atPath: dataURL.path) {
+                try FileManager.default.createDirectory(at: dataURL, withIntermediateDirectories: true)
+                if configuration.verbose {
+                    print("[PocketBaseContainer] Created data directory: \(dataURL.path)")
+                }
+            }
 
-            // Create the container manager with vmnet networking (like ctr-example)
-            var manager = try await ContainerManager(
-                kernel: Kernel(path: kernelPath, platform: .linuxArm),
-                initfsReference: Self.initfsReference,
-                network: try ContainerManager.VmnetNetwork()
+            let output = try runContainerCommand([
+                "run",
+                "-d",
+                "--name", Self.containerName,
+                "-c", String(configuration.cpus),
+                "-m", "\(memoryMB)M",
+                "-v", "\(dataURL.path):/pb_data",
+                Self.imageReference
+            ])
+
+            if configuration.verbose {
+                print("[PocketBaseContainer] Container started: \(output.trimmingCharacters(in: .whitespacesAndNewlines))")
+            }
+
+            // Wait a moment for the container to get an IP
+            try await Task.sleep(nanoseconds: 2_000_000_000) // 2 seconds
+
+            // Get the container IP
+            guard let ip = try getContainerIP() else {
+                throw PocketBaseContainerError.containerCreationFailed("Could not get container IP address")
+            }
+
+            self.containerIP = ip
+
+            if configuration.verbose {
+                print("[PocketBaseContainer] Container IP: \(ip)")
+                print("[PocketBaseContainer] Setting up port forwarding...")
+            }
+
+            // Start port forwarder
+            let forwarder = PortForwarder(
+                localHost: configuration.host,
+                localPort: UInt16(configuration.port),
+                remoteHost: ip,
+                remotePort: UInt16(configuration.port),
+                verbose: configuration.verbose
             )
-
-            if configuration.verbose {
-                print("[PocketBaseContainer] Creating container from \(Self.imageReference)...")
-            }
-
-            // Create the container
-            let container = try await manager.create(
-                Self.containerId,
-                reference: Self.imageReference,
-                rootfsSizeInBytes: configuration.rootfsSizeInBytes
-            ) { @Sendable [configuration] config in
-                config.cpus = configuration.cpus
-                config.memoryInBytes = configuration.memoryInBytes
-
-                // Set environment variables
-                config.process.environmentVariables = [
-                    "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/pocketbase",
-                    "HOME=/tmp"
-                ]
-
-                // Run pocketbase directly
-                config.process.arguments = [
-                    "pocketbase",
-                    "serve",
-                    "--http=0.0.0.0:\(configuration.port)",
-                    "--dir=/tmp/pb_data"
-                ]
-                config.process.workingDirectory = "/pocketbase"
-
-                // Capture stdout/stderr to see installer URL (PocketBase 0.23+)
-                let outputWriter = ConsoleWriter(prefix: "[PocketBase] ")
-                config.process.stdout = outputWriter
-                config.process.stderr = outputWriter
-            }
-
-            self.manager = manager
-            self.container = container
-
-            if configuration.verbose {
-                print("[PocketBaseContainer] Starting container...")
-            }
-
-            // Start the container
-            try await container.create()
-            try await container.start()
+            self.portForwarder = forwarder
+            try await forwarder.start()
 
             state = .running
 
-            // Get the container's IP address and start port forwarding
-            if let interface = container.interfaces.first {
-                let ip = String(interface.address.split(separator: "/").first ?? Substring(interface.address))
-                self.containerIP = ip
-
-                if configuration.verbose {
-                    print("[PocketBaseContainer] Container started successfully")
-                    print("[PocketBaseContainer] Container IP: \(ip)")
-                }
-
-                // Start port forwarder to make container accessible on localhost
-                let forwarder = PortForwarder(
-                    localPort: UInt16(configuration.port),
-                    remoteHost: ip,
-                    remotePort: UInt16(configuration.port),
-                    verbose: configuration.verbose
-                )
-                self.portForwarder = forwarder
-                try await forwarder.start()
-
-                if configuration.verbose {
-                    print("[PocketBaseContainer] PocketBase available at http://localhost:\(configuration.port)")
-                }
-            } else if configuration.verbose {
-                print("[PocketBaseContainer] Container started successfully")
-                print("[PocketBaseContainer] Warning: No network interface found, port forwarding not available")
+            if configuration.verbose {
+                print("[PocketBaseContainer] Port forwarding active")
+                print("[PocketBaseContainer] PocketBase available at http://localhost:\(configuration.port)")
+                print("[PocketBaseContainer] Admin UI: http://localhost:\(configuration.port)/_/")
             }
+
+            // Start streaming container logs to stdout
+            try startLogStreaming()
 
         } catch {
             state = .error(error.localizedDescription)
@@ -286,20 +291,17 @@ public actor PocketBaseContainer {
                 print("[PocketBaseContainer] Stopping container...")
             }
 
-            // Stop the port forwarder first
+            // Stop log streaming
+            stopLogStreaming()
+
+            // Stop port forwarder
             await portForwarder?.stop()
             portForwarder = nil
 
-            if let container = container {
-                try await container.stop()
-            }
+            // Stop and remove the container
+            _ = try runContainerCommand(["stop", Self.containerName], silent: true)
+            _ = try runContainerCommand(["rm", Self.containerName], silent: true)
 
-            if var manager = manager {
-                try manager.delete(Self.containerId)
-            }
-
-            container = nil
-            manager = nil
             containerIP = nil
             state = .stopped
 
@@ -315,11 +317,20 @@ public actor PocketBaseContainer {
 
     /// Wait for the container to exit
     public func wait() async throws -> Int32 {
-        guard let container = container else {
+        guard case .running = state else {
             throw PocketBaseContainerError.notRunning
         }
-        let status = try await container.wait()
-        return status.exitCode
+
+        // Poll container status until it's no longer running
+        while true {
+            let output = try runContainerCommand(["ls"], silent: true)
+            if !output.contains(Self.containerName) || !output.lowercased().contains("running") {
+                break
+            }
+            try await Task.sleep(nanoseconds: 1_000_000_000) // 1 second
+        }
+
+        return 0
     }
 }
 
@@ -327,15 +338,19 @@ public actor PocketBaseContainer {
 @available(macOS 26.0, *)
 public enum PocketBaseContainerError: Error, LocalizedError {
     case notRunning
-    case kernelNotFound
+    case containerCLINotFound
     case containerCreationFailed(String)
 
     public var errorDescription: String? {
         switch self {
         case .notRunning:
             return "Container is not running"
-        case .kernelNotFound:
-            return "Linux kernel not found. Please ensure the Apple container tool is installed and run `container system start` first."
+        case .containerCLINotFound:
+            return """
+                Apple Container CLI not found. Please install it with:
+                  brew tap apple/container
+                  brew install apple/container/container
+                """
         case .containerCreationFailed(let reason):
             return "Failed to create container: \(reason)"
         }

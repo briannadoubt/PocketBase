@@ -37,9 +37,13 @@ struct BuildServerPlugin: CommandPlugin {
         print("Building PocketBaseServer (\(configuration))...")
 
         let buildProcess = Process()
-        buildProcess.executableURL = URL(fileURLWithPath: tool.path.string)
+        buildProcess.executableURL = URL(
+            fileURLWithPath: tool.url.absoluteString
+        )
         buildProcess.arguments = ["build", "--product", "PocketBaseServer", "-c", configuration]
-        buildProcess.currentDirectoryURL = URL(fileURLWithPath: context.package.directory.string)
+        buildProcess.currentDirectoryURL = URL(
+            fileURLWithPath: context.package.directoryURL.absoluteString
+        )
 
         try buildProcess.run()
         buildProcess.waitUntilExit()
@@ -50,24 +54,46 @@ struct BuildServerPlugin: CommandPlugin {
         }
 
         // Find the built binary
-        let buildDir = context.package.directory.appending([".build", configuration])
-        let binaryPath = buildDir.appending(["PocketBaseServer"])
+        let buildDir = context.package.directoryURL.appending(path: ".build").appending(path: configuration)
+        let binaryPath = buildDir.appending(path: "PocketBaseServer")
 
-        // Find the entitlements file
-        let entitlementsPath = context.package.directory.appending([
-            "Sources", "PocketBaseServer", "PocketBaseServer.entitlements"
-        ])
+        // Find the entitlements file - look in the PocketBase package, not the root project
+        // When run from a dependent project, we need to find the actual package location
+        let possiblePaths = [
+            // Direct path (when run from PocketBase package itself)
+            context.package.directoryURL.appending(path: "Sources/PocketBaseServer/PocketBaseServer.entitlements"
+            ),
+            // Checkouts path (when PocketBase is a remote dependency)
+            context.package.directoryURL.appending(path:
+                ".build/checkouts/PocketBase/Sources/PocketBaseServer/PocketBaseServer.entitlements"
+            ),
+            // Local package path (when PocketBase is referenced as ../PocketBase)
+            context.package.directoryURL.appending(path:
+                "../PocketBase/Sources/PocketBaseServer/PocketBaseServer.entitlements"
+            ),
+        ]
+
+        guard let entitlementsPath = possiblePaths.first(where: { FileManager.default.fileExists(atPath: $0.absoluteString) }) else {
+            print("❌ Could not find PocketBaseServer.entitlements")
+            print("Searched paths:")
+            for path in possiblePaths {
+                print("  - \(path.absoluteString)")
+            }
+            return
+        }
 
         // Sign the binary
-        print("Signing with entitlements...")
+        print(
+            "Signing with entitlements at: \(entitlementsPath.absoluteString)"
+        )
 
         let codesignProcess = Process()
         codesignProcess.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
         codesignProcess.arguments = [
             "--force",
             "--sign", "-",
-            "--entitlements", entitlementsPath.string,
-            binaryPath.string
+            "--entitlements", entitlementsPath.absoluteString,
+            binaryPath.absoluteString
         ]
 
         try codesignProcess.run()
@@ -78,16 +104,20 @@ struct BuildServerPlugin: CommandPlugin {
             return
         }
 
-        print("✅ Build complete: \(binaryPath.string)")
+        print("✅ Build complete: \(binaryPath.absoluteString)")
 
         // Run if requested
         if run {
             print("\nStarting PocketBaseServer...")
 
             let runProcess = Process()
-            runProcess.executableURL = URL(fileURLWithPath: binaryPath.string)
+            runProcess.executableURL = URL(
+                fileURLWithPath: binaryPath.absoluteString
+            )
             runProcess.arguments = remainingArgs
-            runProcess.currentDirectoryURL = URL(fileURLWithPath: context.package.directory.string)
+            runProcess.currentDirectoryURL = URL(
+                fileURLWithPath: context.package.directoryURL
+                    .absoluteString)
 
             // Forward stdout/stderr
             runProcess.standardOutput = FileHandle.standardOutput

@@ -14,7 +14,7 @@ public struct Filter: ExpressionMacro {
         of node: some FreestandingMacroExpansionSyntax,
         in context: some MacroExpansionContext
     ) throws -> ExprSyntax {
-        #if os(macOS)
+        #if os(macOS) && swift(<5.5)
         let arguments = node.argumentList
         #else
         let arguments = node.arguments

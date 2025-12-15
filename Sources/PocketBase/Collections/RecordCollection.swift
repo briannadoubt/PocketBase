@@ -42,6 +42,8 @@ public actor RecordCollection<T: Record>: NetworkInterfacing, Sendable {
         let decoder = JSONDecoder()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+        formatter.timeZone = TimeZone(identifier: "UTC")
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         decoder.dateDecodingStrategy = .formatted(formatter)
         decoder.userInfo[RecordFile.baseURLUserInfoKey] = pocketbase.url
         self.decoder = decoder

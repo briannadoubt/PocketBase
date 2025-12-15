@@ -134,6 +134,8 @@ public enum JSONValue: Codable, Sendable, Hashable {
             // Try to parse as date
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+            formatter.timeZone = TimeZone(identifier: "UTC")
+            formatter.locale = Locale(identifier: "en_US_POSIX")
             if let date = formatter.date(from: string) {
                 self = .date(date)
             } else if let url = URL(string: string), url.scheme != nil {

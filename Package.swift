@@ -6,12 +6,12 @@ import CompilerPluginSupport
 let package = Package(
     name: "PocketBase",
     platforms: [
-        .macOS(.v15),
-        .iOS(.v18),
-        .tvOS(.v18),
-        .watchOS(.v11),
-        .macCatalyst(.v18),
-        .visionOS(.v2),
+        .macOS(.v26),
+        .iOS(.v17),
+        .tvOS(.v17),
+        .watchOS(.v10),
+        .macCatalyst(.v17),
+        .visionOS(.v1),
     ],
     products: [
         .library(name: "PocketBase", targets: ["PocketBase"]),
@@ -19,6 +19,8 @@ let package = Package(
         .library(name: "PocketBaseUI", targets: ["PocketBaseUI"]),
         .library(name: "PocketBaseServerLib", targets: ["PocketBaseServerLib"]),
         .executable(name: "PocketBaseServer", targets: ["PocketBaseServer"]),
+        .plugin(name: "ContainerSetupPlugin", targets: ["ContainerSetupPlugin"]),
+        .plugin(name: "RunServerPlugin", targets: ["RunServerPlugin"]),
         // MARK: WIP
 //        .library(name: "DataBase", targets: ["DataBase"]),
     ],
@@ -58,11 +60,11 @@ let package = Package(
             ]
         ),
         .target(
-            name: "PocketBaseAdmin",
+            name: "PocketBaseUI",
             dependencies: ["PocketBase"]
         ),
         .target(
-            name: "PocketBaseUI",
+            name: "PocketBaseAdmin",
             dependencies: ["PocketBase"]
         ),
         .target(
@@ -84,10 +86,6 @@ let package = Package(
             name: "PocketBaseTests",
             dependencies: ["PocketBase", "TestUtilities"]
         ),
-        .testTarget(
-            name: "PocketBaseAdminTests",
-            dependencies: ["PocketBaseAdmin", "PocketBase", "TestUtilities"]
-        ),
         .target(
             name: "PocketBaseServerLib",
             dependencies: [
@@ -101,15 +99,29 @@ let package = Package(
             dependencies: [
                 "PocketBaseServerLib",
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
-            ],
-            exclude: ["PocketBaseServer.entitlements"]
+            ]
         ),
         .plugin(
-            name: "BuildServerPlugin",
+            name: "ContainerSetupPlugin",
             capability: .command(
-                intent: .custom(verb: "build-server", description: "Build and sign PocketBaseServer with entitlements"),
+                intent: .custom(
+                    verb: "container-setup",
+                    description: "Configure and manage the Apple Container system for PocketBaseServer"
+                ),
                 permissions: [
-                    .writeToPackageDirectory(reason: "Sign the built executable")
+                    .writeToPackageDirectory(reason: "May need to create configuration files")
+                ]
+            )
+        ),
+        .plugin(
+            name: "RunServerPlugin",
+            capability: .command(
+                intent: .custom(
+                    verb: "run-server",
+                    description: "Build, sign, and run PocketBaseServer with proper entitlements"
+                ),
+                permissions: [
+                    .writeToPackageDirectory(reason: "Needs to sign the built binary")
                 ]
             )
         ),

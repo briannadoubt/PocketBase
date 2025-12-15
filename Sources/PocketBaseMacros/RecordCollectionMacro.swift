@@ -381,7 +381,9 @@ extension RecordCollectionMacro {
                     }
                 ),
                 effectSpecifiers: FunctionEffectSpecifiersSyntax(
-                    throwsSpecifier: .keyword(.throws)
+                    throwsClause: ThrowsClauseSyntax(
+                        throwsSpecifier: .keyword(.throws)
+                    )
                 )
             )
         ) {
@@ -785,7 +787,7 @@ extension RecordCollectionMacro {
                     }
                 ),
                 effectSpecifiers: FunctionEffectSpecifiersSyntax(
-                    throwsSpecifier: .keyword(.throws)
+                    throwsClause: .init(throwsSpecifier: .keyword(.throws))
                 )
             )
         ) {
