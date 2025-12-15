@@ -214,7 +214,7 @@ public struct Field: Codable, Identifiable, Sendable, Hashable {
 }
 
 /// Field type enumeration covering all PocketBase field types.
-public enum FieldType: String, Codable, Sendable, Hashable {
+public enum FieldType: Codable, Sendable, Hashable {
     case text
     case editor
     case number
@@ -229,7 +229,84 @@ public enum FieldType: String, Codable, Sendable, Hashable {
     case file
     case relation
     case password
-    case customEmail = "custom_email"
+    case customEmail
+    case primaryKey
+    case geoPoint
+    case unknown(String)
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+
+        switch rawValue {
+        case "text": self = .text
+        case "editor": self = .editor
+        case "number": self = .number
+        case "bool": self = .bool
+        case "email": self = .email
+        case "url": self = .url
+        case "date": self = .date
+        case "dateTime": self = .dateTime
+        case "autodate": self = .autodate
+        case "select": self = .select
+        case "json": self = .json
+        case "file": self = .file
+        case "relation": self = .relation
+        case "password": self = .password
+        case "custom_email": self = .customEmail
+        case "primaryKey": self = .primaryKey
+        case "geoPoint": self = .geoPoint
+        default: self = .unknown(rawValue)
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .text: try container.encode("text")
+        case .editor: try container.encode("editor")
+        case .number: try container.encode("number")
+        case .bool: try container.encode("bool")
+        case .email: try container.encode("email")
+        case .url: try container.encode("url")
+        case .date: try container.encode("date")
+        case .dateTime: try container.encode("dateTime")
+        case .autodate: try container.encode("autodate")
+        case .select: try container.encode("select")
+        case .json: try container.encode("json")
+        case .file: try container.encode("file")
+        case .relation: try container.encode("relation")
+        case .password: try container.encode("password")
+        case .customEmail: try container.encode("custom_email")
+        case .primaryKey: try container.encode("primaryKey")
+        case .geoPoint: try container.encode("geoPoint")
+        case .unknown(let value): try container.encode(value)
+        }
+    }
+
+    /// String representation for display purposes
+    public var rawValue: String {
+        switch self {
+        case .text: return "text"
+        case .editor: return "editor"
+        case .number: return "number"
+        case .bool: return "bool"
+        case .email: return "email"
+        case .url: return "url"
+        case .date: return "date"
+        case .dateTime: return "dateTime"
+        case .autodate: return "autodate"
+        case .select: return "select"
+        case .json: return "json"
+        case .file: return "file"
+        case .relation: return "relation"
+        case .password: return "password"
+        case .customEmail: return "custom_email"
+        case .primaryKey: return "primaryKey"
+        case .geoPoint: return "geoPoint"
+        case .unknown(let value): return value
+        }
+    }
 }
 
 /// Options for field configuration.
