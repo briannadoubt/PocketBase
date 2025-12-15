@@ -44,6 +44,12 @@ public struct CollectionUpdateRequest: Codable, Sendable {
     public let deleteRule: String?
     public let indexes: [String]?
 
+    // Auth collection specific options
+    public let verificationTemplate: EmailTemplate?
+    public let resetPasswordTemplate: EmailTemplate?
+    public let confirmEmailChangeTemplate: EmailTemplate?
+    public let authAlert: AuthAlertConfig?
+
     public init(
         name: String? = nil,
         schema: [Field]? = nil,
@@ -52,7 +58,11 @@ public struct CollectionUpdateRequest: Codable, Sendable {
         createRule: String? = nil,
         updateRule: String? = nil,
         deleteRule: String? = nil,
-        indexes: [String]? = nil
+        indexes: [String]? = nil,
+        verificationTemplate: EmailTemplate? = nil,
+        resetPasswordTemplate: EmailTemplate? = nil,
+        confirmEmailChangeTemplate: EmailTemplate? = nil,
+        authAlert: AuthAlertConfig? = nil
     ) {
         self.name = name
         self.schema = schema
@@ -62,5 +72,9 @@ public struct CollectionUpdateRequest: Codable, Sendable {
         self.updateRule = updateRule
         self.deleteRule = deleteRule
         self.indexes = indexes
+        self.verificationTemplate = verificationTemplate
+        self.resetPasswordTemplate = resetPasswordTemplate
+        self.confirmEmailChangeTemplate = confirmEmailChangeTemplate
+        self.authAlert = authAlert
     }
 }

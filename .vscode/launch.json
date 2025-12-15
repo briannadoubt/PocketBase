@@ -1,0 +1,24 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:PocketBase}",
+            "name": "Debug PocketBaseServer",
+            "target": "PocketBaseServer",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug PocketBaseServer"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:PocketBase}",
+            "name": "Release PocketBaseServer",
+            "target": "PocketBaseServer",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release PocketBaseServer"
+        }
+    ]
+}

@@ -48,45 +48,26 @@ extension Testing.Tag {
 
 // MARK: - Shared Container Setup
 
-/// Tracks whether the container started successfully
-/// Integration tests will be skipped if this is false
-nonisolated(unsafe) var containerAvailable = false
-
 /// Suite that manages the shared PocketBase container for all integration tests
 @Suite("PocketBase Integration Tests", .serialized)
 struct PocketBaseIntegrationTests {
-
+    
     /// Start the shared container before any tests run
     init() async throws {
         #if os(macOS)
-        if #available(macOS 26.0, *) {
-            do {
-                try await PocketBaseServerLauncher.shared.start(
-                    port: 8090,
-                    dataPath: "./pb_data_test",
-                    verbose: true,
-                    clear: true  // Start with a clean database
-                )
-                containerAvailable = true
-            } catch {
-                // Container failed to start (likely missing entitlements when running via `swift test`)
-                // Tests will be skipped
-                print("[PocketBaseIntegrationTests] Container failed to start: \(error.localizedDescription)")
-                print("[PocketBaseIntegrationTests] Integration tests will be skipped. Run from Xcode to execute integration tests.")
-                containerAvailable = false
-            }
-        } else {
-            print("[PocketBaseIntegrationTests] macOS 26.0+ required for containerization. Tests will be skipped.")
-            containerAvailable = false
-        }
+        try await PocketBaseServerLauncher.shared.start(
+            port: 8090,
+            dataPath: "./pb_data_test",
+            verbose: true,
+            clear: true  // Start with a clean database
+        )
         #endif
     }
 }
 
 @Test(
     "Happy path through PocketBase",
-    .tags(.integration, .localhostRequired),
-    .enabled(if: containerAvailable, "PocketBase container not available. Run from Xcode to execute integration tests.")
+    .tags(.integration, .localhostRequired)
 )
 @MainActor
 func happyPath() async throws {
