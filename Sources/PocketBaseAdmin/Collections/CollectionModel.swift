@@ -196,6 +196,21 @@ public struct Field: Codable, Identifiable, Sendable, Hashable {
         self.presentable = presentable
         self.options = nil
     }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        type = try container.decode(FieldType.self, forKey: .type)
+        system = try container.decodeIfPresent(Bool.self, forKey: .system) ?? false
+        required = try container.decodeIfPresent(Bool.self, forKey: .required)
+        presentable = try container.decodeIfPresent(Bool.self, forKey: .presentable)
+        options = try container.decodeIfPresent(FieldOptions.self, forKey: .options)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, type, system, required, presentable, options
+    }
 }
 
 /// Field type enumeration covering all PocketBase field types.
