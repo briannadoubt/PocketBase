@@ -203,11 +203,12 @@ public actor PocketBaseContainer {
 
             // Resolve and create the data directory for persistence
             let dataURL: URL
-            if configuration.dataPath.hasPrefix("/") {
-                dataURL = URL(fileURLWithPath: configuration.dataPath)
+            let expandedPath = NSString(string: configuration.dataPath).expandingTildeInPath
+            if expandedPath.hasPrefix("/") {
+                dataURL = URL(fileURLWithPath: expandedPath)
             } else {
                 dataURL = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-                    .appendingPathComponent(configuration.dataPath)
+                    .appendingPathComponent(expandedPath)
             }
 
             // Create data directory if it doesn't exist
