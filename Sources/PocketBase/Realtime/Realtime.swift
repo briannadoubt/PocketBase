@@ -150,15 +150,19 @@ public actor Realtime: HasLogger {
         let body = SubscriptionRequest(clientId: clientId, subscriptions: [topic])
         request.httpBody = try JSONEncoder().encode(body)
 
+        #if DEBUG
         Self.logger.log("Requesting: \(request.cURL)")
+        #endif
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
+        #if DEBUG
         if let responseString = String(data: data, encoding: .utf8) {
             Self.logger.log("Response: \(responseString)")
         } else {
             Self.logger.log("Response: cannot parse")
         }
+        #endif
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200..<300).contains(httpResponse.statusCode) else {
@@ -180,8 +184,11 @@ public actor Realtime: HasLogger {
         let body = SubscriptionRequest(clientId: clientId, subscriptions: [])
         request.httpBody = try JSONEncoder().encode(body)
 
+        #if DEBUG
         Self.logger.log("Requesting: \(request.cURL)")
+        #endif
 
+        #if DEBUG
         if let (data, _) = try? await URLSession.shared.data(for: request) {
             if let responseString = String(data: data, encoding: .utf8) {
                 Self.logger.log("Response: \(responseString)")
@@ -189,6 +196,9 @@ public actor Realtime: HasLogger {
                 Self.logger.log("Response: cannot parse")
             }
         }
+        #else
+        _ = try? await URLSession.shared.data(for: request)
+        #endif
     }
 }
 

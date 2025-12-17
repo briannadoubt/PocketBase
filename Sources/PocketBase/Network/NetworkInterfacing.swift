@@ -64,14 +64,18 @@ extension NetworkInterfacing {
     }
     
     private func debugRequest(request: URLRequest) {
+        #if DEBUG
         Self.logger.log("Requesting: \(request.cURL)")
+        #endif
     }
-    
+
     private func debugResponse(_ data: Data) {
+        #if DEBUG
         if let debugResponse = String(data: data, encoding: .utf8) {
             Self.logger.log("Response: \(debugResponse)")
         } else {
             Self.logger.log("Response: cannot parse")
         }
+        #endif
     }
 }

@@ -56,6 +56,7 @@ extension AdminNetworking {
 
         request.httpBody = body
 
+        #if DEBUG
         Self.logger.log("Requesting: \(request.cURL)")
         Self.logger.log("Body size: \(body?.count ?? 0) bytes")
         if let body {
@@ -68,15 +69,18 @@ extension AdminNetworking {
                 Self.logger.log("Body hex (first 100 bytes): \(hexPreview)")
             }
         }
+        #endif
 
         // Use the same approach as working RecordCollection code
         let (data, response) = try await URLSession.shared.data(for: request)
 
+        #if DEBUG
         if let responseString = String(data: data, encoding: .utf8) {
             Self.logger.log("Response: \(responseString)")
         } else {
             Self.logger.log("Response: cannot parse")
         }
+        #endif
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknownResponse(response)
