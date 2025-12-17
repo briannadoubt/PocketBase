@@ -9,29 +9,29 @@ import Foundation
 
 /// A utility for building multipart/form-data request bodies.
 ///
-/// Used internally for file uploads to PocketBase.
-struct MultipartFormData: Sendable {
+/// Used for file uploads to PocketBase.
+public struct MultipartFormData: Sendable {
     /// The boundary string used to separate parts in the multipart body.
-    let boundary: String
+    public let boundary: String
 
     /// The accumulated data for the multipart body.
     private var data: Data
 
     /// Creates a new MultipartFormData builder with a unique boundary.
-    init() {
+    public init() {
         self.boundary = "PocketBase-\(UUID().uuidString)"
         self.data = Data()
     }
 
     /// Creates a new MultipartFormData builder with a specific boundary.
     /// - Parameter boundary: The boundary string to use.
-    init(boundary: String) {
+    public init(boundary: String) {
         self.boundary = boundary
         self.data = Data()
     }
 
     /// The Content-Type header value for this multipart form data.
-    var contentType: String {
+    public var contentType: String {
         "multipart/form-data; boundary=\(boundary)"
     }
 
@@ -39,7 +39,7 @@ struct MultipartFormData: Sendable {
     /// - Parameters:
     ///   - name: The field name.
     ///   - value: The string value.
-    mutating func append(name: String, value: String) {
+    public mutating func append(name: String, value: String) {
         // Escape quotes and backslashes in field name per RFC 2231
         let escapedName = name
             .replacingOccurrences(of: "\\", with: "\\\\")
@@ -53,7 +53,7 @@ struct MultipartFormData: Sendable {
     /// - Parameters:
     ///   - name: The field name.
     ///   - file: The file to upload.
-    mutating func append(name: String, file: UploadFile) {
+    public mutating func append(name: String, file: UploadFile) {
         // Escape quotes and backslashes per RFC 2231
         let escapedName = name
             .replacingOccurrences(of: "\\", with: "\\\\")
@@ -72,7 +72,7 @@ struct MultipartFormData: Sendable {
     /// - Parameters:
     ///   - name: The field name.
     ///   - files: The files to upload.
-    mutating func append(name: String, files: [UploadFile]) {
+    public mutating func append(name: String, files: [UploadFile]) {
         for file in files {
             append(name: name, file: file)
         }
@@ -81,7 +81,7 @@ struct MultipartFormData: Sendable {
     /// Appends JSON-encoded data as form fields.
     /// - Parameters:
     ///   - data: The JSON data to append.
-    mutating func appendJSON(_ jsonData: Data) throws {
+    public mutating func appendJSON(_ jsonData: Data) throws {
         guard let json = try JSONSerialization.jsonObject(with: jsonData) as? [String: Any] else {
             return
         }
@@ -126,7 +126,7 @@ struct MultipartFormData: Sendable {
 
     /// Finalizes the multipart body and returns the complete data.
     /// - Returns: The complete multipart/form-data body.
-    mutating func finalize() -> Data {
+    public mutating func finalize() -> Data {
         data.append("--\(boundary)--\r\n".data(using: .utf8)!)
         return data
     }

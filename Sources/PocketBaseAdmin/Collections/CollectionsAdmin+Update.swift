@@ -36,6 +36,7 @@ extension CollectionsAdmin {
 /// Request body for updating a collection.
 public struct CollectionUpdateRequest: Codable, Sendable {
     public let name: String?
+    /// The collection fields. Encoded as `fields` for PocketBase 0.23+.
     public let schema: [Field]?
     public let listRule: String?
     public let viewRule: String?
@@ -49,6 +50,14 @@ public struct CollectionUpdateRequest: Codable, Sendable {
     public let resetPasswordTemplate: EmailTemplate?
     public let confirmEmailChangeTemplate: EmailTemplate?
     public let authAlert: AuthAlertConfig?
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case schema = "fields"  // PocketBase 0.23+ uses `fields`
+        case listRule, viewRule, createRule, updateRule, deleteRule
+        case indexes
+        case verificationTemplate, resetPasswordTemplate, confirmEmailChangeTemplate, authAlert
+    }
 
     public init(
         name: String? = nil,

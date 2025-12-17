@@ -153,6 +153,7 @@ public enum CollectionModelType: String, Codable, Sendable, Hashable {
 }
 
 /// Represents a field in a collection schema.
+/// PocketBase 0.23+ uses flat field options instead of nested `options` object.
 public struct Field: Codable, Identifiable, Sendable, Hashable {
     public let id: String
     public let name: String
@@ -197,6 +198,17 @@ public struct Field: Codable, Identifiable, Sendable, Hashable {
         self.options = nil
     }
 
+    enum CodingKeys: String, CodingKey {
+        case id, name, type, system, required, presentable
+        // Legacy nested options (for reading older format)
+        case options
+        // Flat options for PocketBase 0.23+
+        case min, max, maxSelect, maxSize, values, collectionId
+        case cascadeDelete, minSelect, displayFields, mimeTypes, thumbs
+        // Autodate options
+        case onCreate, onUpdate
+    }
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -205,11 +217,68 @@ public struct Field: Codable, Identifiable, Sendable, Hashable {
         system = try container.decodeIfPresent(Bool.self, forKey: .system) ?? false
         required = try container.decodeIfPresent(Bool.self, forKey: .required)
         presentable = try container.decodeIfPresent(Bool.self, forKey: .presentable)
-        options = try container.decodeIfPresent(FieldOptions.self, forKey: .options)
+
+        // Try legacy nested options first, then flat options (PocketBase 0.23+)
+        if let nestedOptions = try container.decodeIfPresent(FieldOptions.self, forKey: .options) {
+            options = nestedOptions
+        } else {
+            // Read flat options (PocketBase 0.23+)
+            let min = try container.decodeIfPresent(Int.self, forKey: .min)
+            let max = try container.decodeIfPresent(Int.self, forKey: .max)
+            let maxSelect = try container.decodeIfPresent(Int.self, forKey: .maxSelect)
+            let maxSize = try container.decodeIfPresent(Int.self, forKey: .maxSize)
+            let values = try container.decodeIfPresent([String].self, forKey: .values)
+            let collectionId = try container.decodeIfPresent(String.self, forKey: .collectionId)
+            let cascadeDelete = try container.decodeIfPresent(Bool.self, forKey: .cascadeDelete)
+            let minSelect = try container.decodeIfPresent(Int.self, forKey: .minSelect)
+            let displayFields = try container.decodeIfPresent([String].self, forKey: .displayFields)
+            let mimeTypes = try container.decodeIfPresent([String].self, forKey: .mimeTypes)
+            let thumbs = try container.decodeIfPresent([String].self, forKey: .thumbs)
+            let onCreate = try container.decodeIfPresent(Bool.self, forKey: .onCreate)
+            let onUpdate = try container.decodeIfPresent(Bool.self, forKey: .onUpdate)
+
+            // Only create options if at least one property is set
+            if min != nil || max != nil || maxSelect != nil || maxSize != nil ||
+               values != nil || collectionId != nil || cascadeDelete != nil ||
+               minSelect != nil || displayFields != nil || mimeTypes != nil || thumbs != nil ||
+               onCreate != nil || onUpdate != nil {
+                options = FieldOptions(
+                    min: min, max: max, maxSelect: maxSelect, maxSize: maxSize,
+                    values: values, collectionId: collectionId, cascadeDelete: cascadeDelete,
+                    minSelect: minSelect, displayFields: displayFields, mimeTypes: mimeTypes, thumbs: thumbs,
+                    onCreate: onCreate, onUpdate: onUpdate
+                )
+            } else {
+                options = nil
+            }
+        }
     }
 
-    enum CodingKeys: String, CodingKey {
-        case id, name, type, system, required, presentable, options
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(type, forKey: .type)
+        try container.encode(system, forKey: .system)
+        try container.encodeIfPresent(required, forKey: .required)
+        try container.encodeIfPresent(presentable, forKey: .presentable)
+
+        // Encode options as flat properties (PocketBase 0.23+)
+        if let options = options {
+            try container.encodeIfPresent(options.min, forKey: .min)
+            try container.encodeIfPresent(options.max, forKey: .max)
+            try container.encodeIfPresent(options.maxSelect, forKey: .maxSelect)
+            try container.encodeIfPresent(options.maxSize, forKey: .maxSize)
+            try container.encodeIfPresent(options.values, forKey: .values)
+            try container.encodeIfPresent(options.collectionId, forKey: .collectionId)
+            try container.encodeIfPresent(options.cascadeDelete, forKey: .cascadeDelete)
+            try container.encodeIfPresent(options.minSelect, forKey: .minSelect)
+            try container.encodeIfPresent(options.displayFields, forKey: .displayFields)
+            try container.encodeIfPresent(options.mimeTypes, forKey: .mimeTypes)
+            try container.encodeIfPresent(options.thumbs, forKey: .thumbs)
+            try container.encodeIfPresent(options.onCreate, forKey: .onCreate)
+            try container.encodeIfPresent(options.onUpdate, forKey: .onUpdate)
+        }
     }
 }
 
@@ -322,6 +391,10 @@ public struct FieldOptions: Codable, Sendable, Hashable {
     public let displayFields: [String]?
     public let mimeTypes: [String]?
     public let thumbs: [String]?
+    /// For autodate fields: set date on record creation
+    public let onCreate: Bool?
+    /// For autodate fields: set date on record update
+    public let onUpdate: Bool?
 
     public init(
         min: Int? = nil,
@@ -334,7 +407,9 @@ public struct FieldOptions: Codable, Sendable, Hashable {
         minSelect: Int? = nil,
         displayFields: [String]? = nil,
         mimeTypes: [String]? = nil,
-        thumbs: [String]? = nil
+        thumbs: [String]? = nil,
+        onCreate: Bool? = nil,
+        onUpdate: Bool? = nil
     ) {
         self.min = min
         self.max = max
@@ -347,6 +422,8 @@ public struct FieldOptions: Codable, Sendable, Hashable {
         self.displayFields = displayFields
         self.mimeTypes = mimeTypes
         self.thumbs = thumbs
+        self.onCreate = onCreate
+        self.onUpdate = onUpdate
     }
 }
 
