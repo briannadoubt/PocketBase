@@ -34,6 +34,7 @@ extension AdminNetworking {
         method: String,
         path: String,
         query: [URLQueryItem] = [],
+        headers customHeaders: [String: String]? = nil,
         body: Data? = nil
     ) async throws -> Data {
         let url: URL = {
@@ -47,15 +48,35 @@ extension AdminNetworking {
         var request = URLRequest(url: url)
         request.httpMethod = method
 
-        for (key, value) in headers {
+        // Use custom headers if provided, otherwise use default headers
+        let headersToUse = customHeaders ?? headers
+        for (key, value) in headersToUse {
             request.setValue(value, forHTTPHeaderField: key)
         }
 
         request.httpBody = body
 
-        Self.logger.debug("Admin API request: \(method) \(url.absoluteString)")
+        Self.logger.log("Requesting: \(request.cURL)")
+        Self.logger.log("Body size: \(body?.count ?? 0) bytes")
+        if let body {
+            // Show first 500 bytes as string if possible
+            if let preview = String(data: body.prefix(500), encoding: .utf8) {
+                Self.logger.log("Body preview:\n\(preview)")
+            } else {
+                // Show as hex if not valid UTF-8
+                let hexPreview = body.prefix(100).map { String(format: "%02x", $0) }.joined(separator: " ")
+                Self.logger.log("Body hex (first 100 bytes): \(hexPreview)")
+            }
+        }
 
+        // Use the same approach as working RecordCollection code
         let (data, response) = try await URLSession.shared.data(for: request)
+
+        if let responseString = String(data: data, encoding: .utf8) {
+            Self.logger.log("Response: \(responseString)")
+        } else {
+            Self.logger.log("Response: cannot parse")
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknownResponse(response)
