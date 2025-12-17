@@ -10,3 +10,4 @@ DerivedData/
 /Developer/pb_data
 /pb_data
 vmlinux
+build/
