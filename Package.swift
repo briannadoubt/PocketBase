@@ -19,8 +19,7 @@ let package = Package(
         .library(name: "PocketBaseUI", targets: ["PocketBaseUI"]),
         .library(name: "PocketBaseServerLib", targets: ["PocketBaseServerLib"]),
         .executable(name: "PocketBaseServer", targets: ["PocketBaseServer"]),
-        .plugin(name: "ContainerSetupPlugin", targets: ["ContainerSetupPlugin"]),
-        .plugin(name: "RunServerPlugin", targets: ["RunServerPlugin"]),
+        .plugin(name: "PocketBasePlugin", targets: ["PocketBasePlugin"]),
         // MARK: WIP
 //        .library(name: "DataBase", targets: ["DataBase"]),
     ],
@@ -102,26 +101,14 @@ let package = Package(
             ]
         ),
         .plugin(
-            name: "ContainerSetupPlugin",
+            name: "PocketBasePlugin",
             capability: .command(
                 intent: .custom(
-                    verb: "container-setup",
-                    description: "Configure and manage the Apple Container system for PocketBaseServer"
+                    verb: "pocketbase",
+                    description: "PocketBase development tools: build, run, container, and db commands"
                 ),
                 permissions: [
-                    .writeToPackageDirectory(reason: "May need to create configuration files")
-                ]
-            )
-        ),
-        .plugin(
-            name: "RunServerPlugin",
-            capability: .command(
-                intent: .custom(
-                    verb: "run-server",
-                    description: "Build, sign, and run PocketBaseServer with proper entitlements"
-                ),
-                permissions: [
-                    .writeToPackageDirectory(reason: "Needs to sign the built binary")
+                    .writeToPackageDirectory(reason: "Needs to sign binaries, manage backups, and create configuration files")
                 ]
             )
         ),
