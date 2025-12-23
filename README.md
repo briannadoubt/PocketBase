@@ -4,21 +4,180 @@
 
 A pure Swift client for interfacing with a PocketBase instance.
 
+## Package Overview
+
+| Module | Description |
+|--------|-------------|
+| `PocketBase` | Core client library with records, auth, realtime, and file operations |
+| `PocketBaseUI` | SwiftUI property wrappers and view modifiers |
+| `PocketBaseAdmin` | Admin API for managing collections, settings, logs, and backups |
+| `PocketBaseServer` | Run PocketBase locally using Apple's Containerization framework |
+| `PocketBasePlugin` | SwiftPM plugin commands for development |
+
+## Installation
+
+Add PocketBase to your Swift package:
+
+```swift
+dependencies: [
+    .package(url: "https://github.com/briannadoubt/PocketBase.git", from: "1.0.0")
+]
+```
+
+Then add the products you need to your target:
+
+```swift
+.target(
+    name: "YourApp",
+    dependencies: [
+        .product(name: "PocketBase", package: "PocketBase"),
+        .product(name: "PocketBaseUI", package: "PocketBase"),     // For SwiftUI apps
+        .product(name: "PocketBaseAdmin", package: "PocketBase"),  // For admin tools
+    ]
+)
+```
+
+## Table of Contents
+
+- [Getting Started](#getting-started)
+  - [Running PocketBase Locally](#running-pocketbase-locally)
+  - [Configuration](#configuration)
+- [Macros](#macros) - `@AuthCollection`, `@BaseCollection`, `@File`, `@Relation`, `#Filter`
+- [Authentication](#authentication)
+- [Querying Data](#querying-data) - `@StaticQuery`, `@RealtimeQuery`
+- [CRUD Operations](#crud-operations)
+- [File Operations](#file-operations)
+- [Admin API](#admin-api) - Collections, Records, Settings, Logs, Backups
+
+---
+
 ## Getting Started
 
-### Development Environment
+### Running PocketBase Locally
 
-There are two ways to run PocketBase locally for development:
+There are several ways to run PocketBase locally for development. Choose the option that best fits your workflow.
 
-#### Option 1: Docker (Recommended for most users)
+---
+
+#### Option 1: Run from Xcode (Recommended for SwiftUI Apps)
+
+The easiest way to run PocketBase alongside your SwiftUI app is to add the `PocketBaseServer` target directly to your Xcode scheme. This uses Apple's native Containerization framework to run PocketBase in a lightweight Linux VM—no Docker required!
+
+**Requirements:**
+- macOS 26 (Tahoe) or later
+- Apple Container CLI (install with `brew install apple/container/container`)
+
+**Setup:**
+
+1. **Install the Apple Container CLI:**
+   ```shell
+   brew tap apple/container
+   brew install apple/container/container
+   ```
+
+2. **Start the container system** (one-time setup):
+   ```shell
+   container system start
+   ```
+
+3. **Add PocketBaseServer to your Xcode scheme:**
+   - Open your project in Xcode
+   - Edit your scheme (Product → Scheme → Edit Scheme...)
+   - Select "Build" in the sidebar
+   - Click "+" and add the `PocketBaseServer` target from the PocketBase package
+   - Optionally, check "Paralellize Build" to build both targets simultaneously
+
+4. **Run your app:**
+   - When you run your app, Xcode will also start PocketBaseServer
+   - PocketBase will be available at `http://localhost:8090`
+   - Admin UI at `http://localhost:8090/_/`
+   - Data is persisted in `./pb_data` in your project directory
+
+**How it works:**
+
+PocketBaseServer uses Apple's Containerization framework to run the [PocketBase Docker image](https://github.com/muchobien/pocketbase-docker) in a lightweight Linux VM. It automatically:
+- Downloads and caches the container image
+- Sets up port forwarding from the VM to your Mac
+- Mounts `./pb_data` for persistent storage
+- Streams container logs to the Xcode console
+
+---
+
+#### Option 2: SwiftPM Plugin Commands
+
+The `PocketBasePlugin` provides convenient commands for building, running, and managing PocketBase from the command line.
+
+**Available Commands:**
 
 ```shell
-git clone https://github.com/briannadoubt/PocketBase.git
-cd PocketBase
+# Build and run the server
+swift package pocketbase run
+
+# Build only (with code signing for containerization)
+swift package pocketbase build
+
+# Build in release mode
+swift package pocketbase build --release
+
+# Run with custom options
+swift package pocketbase run -- --port 8080 --verbose
+```
+
+**Container Management:**
+
+```shell
+# Check container system status
+swift package pocketbase container status
+
+# Start the container system
+swift package pocketbase container start
+
+# Stop the container system
+swift package pocketbase container stop
+
+# Install the Apple Container CLI via Homebrew
+swift package pocketbase container install
+```
+
+**Database Utilities:**
+
+```shell
+# Show database info
+swift package pocketbase db info
+
+# Create a backup
+swift package pocketbase db backup my-backup
+
+# Restore from backup
+swift package pocketbase db restore my-backup
+
+# Clear all data (with confirmation)
+swift package pocketbase db clear
+```
+
+**Server Options:**
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-H, --host` | Host/interface to bind to | `0.0.0.0` |
+| `-p, --port` | Port to expose PocketBase on | `8090` |
+| `-d, --dataPath` | Path to data directory | `./pb_data` |
+| `--cpus` | Number of CPUs to allocate | `2` |
+| `--memory` | Memory in MB to allocate | `512` |
+| `-v, --verbose` | Enable verbose output | `false` |
+| `--clear` | Clear data directory before starting | `false` |
+
+---
+
+#### Option 3: Docker Compose
+
+If you prefer Docker or aren't on macOS 26+, use Docker Compose:
+
+```shell
 docker compose up
 ```
 
-You should then see something like:
+You should see:
 
 ```shell
 Starting pocketbase ... done
@@ -28,23 +187,22 @@ pocketbase    |   - REST API: http://0.0.0.0:8090/api/
 pocketbase    |   - Admin UI: http://0.0.0.0:8090/_/
 ```
 
-#### Option 2: Native Containerization (macOS 26+)
+---
 
-On macOS 26 (Tahoe) and later, you can run PocketBase using Apple's native Containerization framework. This provides a lightweight Linux VM without needing Docker.
+#### Option 4: Download PocketBase Directly
 
-**Prerequisites:**
-1. macOS 26 or later
-2. Run `container system start` once to initialize the container runtime
-3. Download a Linux kernel (`vmlinux`) to the project root
+You can also download and run PocketBase directly from the official website:
 
-**Running:**
-```shell
-make debug
-# or
-swift run PocketBaseServer
-```
+1. Download the latest release from [pocketbase.io/docs](https://pocketbase.io/docs/)
+2. Extract the archive
+3. Run the executable:
+   ```shell
+   ./pocketbase serve
+   ```
 
-The server will start PocketBase in a container with automatic port forwarding to `localhost:8090`.
+See the [PocketBase documentation](https://pocketbase.io/docs/) for more configuration options.
+
+---
 
 ### The Codes
 
@@ -465,6 +623,243 @@ try await collection.deleteFiles(
     from: post,
     files: FileDeletePayload(["attachments": ["old-file.pdf"]])
 )
+```
+
+## Admin API
+
+The `PocketBaseAdmin` module provides a complete interface to PocketBase's administrative endpoints. This is used to build admin dashboards, management tools, or server-side applications.
+
+### Importing the Admin Module
+
+```swift
+import PocketBase
+import PocketBaseAdmin
+```
+
+### Authentication
+
+Admin operations require superuser authentication:
+
+```swift
+let pocketbase = PocketBase(url: URL(string: "http://localhost:8090")!)
+
+// Authenticate as superuser
+let superuser = try await pocketbase.collection(Superuser.self)
+    .authWithPassword("admin@example.com", password: "yourpassword")
+```
+
+### Admin API Overview
+
+Access all admin functionality through `pocketbase.admin`:
+
+```swift
+// Collections management
+let collections = try await pocketbase.admin.collections.list()
+
+// Records (with admin privileges)
+let users = try await pocketbase.admin.records("users").list()
+
+// Server settings
+let settings = try await pocketbase.admin.settings.get()
+
+// Request logs
+let logs = try await pocketbase.admin.logs.list()
+
+// Backups
+let backups = try await pocketbase.admin.backups.list()
+
+// Health check
+let health = try await pocketbase.admin.health.check()
+```
+
+### Collections Management
+
+Create, update, and manage collection schemas programmatically:
+
+```swift
+// List all collections
+let collections = try await pocketbase.admin.collections.list()
+
+// View a specific collection
+let posts = try await pocketbase.admin.collections.view(id: "posts")
+
+// Create a new collection
+let request = CollectionCreateRequest(
+    name: "articles",
+    type: .base,
+    schema: [
+        Field(name: "title", type: .text, required: true),
+        Field(name: "content", type: .editor),
+        Field(name: "published", type: .bool)
+    ],
+    listRule: "@request.auth.id != \"\"",  // Authenticated users only
+    viewRule: "",                           // Public access
+    createRule: "@request.auth.verified = true"
+)
+let created = try await pocketbase.admin.collections.create(request)
+
+// Update a collection
+let updateRequest = CollectionUpdateRequest(
+    name: "articles",
+    listRule: nil  // Admin only
+)
+try await pocketbase.admin.collections.update(id: "articles", updateRequest)
+
+// Delete a collection
+try await pocketbase.admin.collections.delete(id: "articles")
+
+// Import collections from JSON
+try await pocketbase.admin.collections.import(collections, deleteMissing: false)
+```
+
+#### View Collections
+
+View collections use SQL queries to create virtual tables:
+
+```swift
+let viewRequest = CollectionCreateRequest(
+    name: "published_posts",
+    type: .view,
+    viewQuery: "SELECT id, title, created FROM posts WHERE published = true",
+    viewRule: ""  // Public access (View collections only have list/view rules)
+)
+try await pocketbase.admin.collections.create(viewRequest)
+```
+
+### Records Management
+
+Manage records in any collection with admin privileges:
+
+```swift
+let records = pocketbase.admin.records("users")
+
+// List with pagination and filtering
+let result = try await records.list(
+    page: 1,
+    perPage: 50,
+    filter: "verified = true",
+    sort: "-created"
+)
+
+// View a single record
+let user = try await records.view(id: "abc123")
+
+// Create a record
+let newRecord = try await records.create([
+    "email": "user@example.com",
+    "name": "New User"
+])
+
+// Create with file upload
+let recordWithFile = try await records.create(
+    ["name": "Document"],
+    files: [UploadFile(filename: "doc.pdf", data: pdfData, mimeType: "application/pdf")]
+)
+
+// Update a record
+try await records.update(id: "abc123", ["name": "Updated Name"])
+
+// Delete a record
+try await records.delete(id: "abc123")
+```
+
+### Settings Management
+
+Read and update server settings:
+
+```swift
+// Get current settings
+let settings = try await pocketbase.admin.settings.get()
+print(settings.meta?.appName)
+print(settings.smtp?.enabled)
+
+// Update settings
+try await pocketbase.admin.settings.update(SettingsModel(
+    meta: Meta(
+        appName: "My App",
+        appUrl: "https://myapp.com",
+        senderName: "My App",
+        senderAddress: "noreply@myapp.com"
+    ),
+    smtp: SMTPSettings(
+        enabled: true,
+        host: "smtp.example.com",
+        port: 587,
+        username: "user",
+        password: "pass",
+        tls: true
+    ),
+    s3: S3Settings(
+        enabled: true,
+        bucket: "my-bucket",
+        region: "us-east-1",
+        endpoint: "s3.amazonaws.com",
+        accessKey: "...",
+        secret: "..."
+    )
+))
+
+// Test email configuration
+try await pocketbase.admin.settings.testEmail(to: "test@example.com")
+
+// Test S3 configuration
+try await pocketbase.admin.settings.testS3(filesystem: "storage")
+```
+
+### Logs
+
+Access request logs for debugging and monitoring:
+
+```swift
+// List logs with pagination
+let logs = try await pocketbase.admin.logs.list(
+    page: 1,
+    perPage: 100,
+    filter: "level >= 4"  // Warnings and errors only
+)
+
+for log in logs.items {
+    print("\(log.created): [\(log.level)] \(log.message)")
+    print("  URL: \(log.url)")
+    print("  Status: \(log.status)")
+}
+
+// View a specific log entry
+let log = try await pocketbase.admin.logs.view(id: "log_id")
+
+// Get log statistics
+let stats = try await pocketbase.admin.logs.stats()
+```
+
+### Backups
+
+Create and manage database backups:
+
+```swift
+// List existing backups
+let backups = try await pocketbase.admin.backups.list()
+
+// Create a new backup
+try await pocketbase.admin.backups.create(name: "backup_2024")
+
+// Download a backup
+let backupData = try await pocketbase.admin.backups.download(key: "backup_2024.zip")
+
+// Restore from backup
+try await pocketbase.admin.backups.restore(key: "backup_2024.zip")
+
+// Delete a backup
+try await pocketbase.admin.backups.delete(key: "backup_2024.zip")
+```
+
+### Health Checks
+
+Monitor server health:
+
+```swift
+let health = try await pocketbase.admin.health.check()
+print("Server healthy: \(health.code == 200)")
+print("Message: \(health.message)")
 ```
 
 ## Requirements
