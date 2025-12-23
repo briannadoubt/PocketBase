@@ -24,6 +24,10 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
     public let created: Date?
     public let updated: Date?
 
+    // View collection specific options
+    /// The SQL query for view collections. Only applicable when type is .view.
+    public let viewQuery: String?
+
     // Auth collection specific options
     public let verificationTemplate: EmailTemplate?
     public let resetPasswordTemplate: EmailTemplate?
@@ -47,6 +51,7 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         indexes: [String]? = nil,
         created: Date? = nil,
         updated: Date? = nil,
+        viewQuery: String? = nil,
         verificationTemplate: EmailTemplate? = nil,
         resetPasswordTemplate: EmailTemplate? = nil,
         confirmEmailChangeTemplate: EmailTemplate? = nil,
@@ -65,6 +70,7 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         self.indexes = indexes
         self.created = created
         self.updated = updated
+        self.viewQuery = viewQuery
         self.verificationTemplate = verificationTemplate
         self.resetPasswordTemplate = resetPasswordTemplate
         self.confirmEmailChangeTemplate = confirmEmailChangeTemplate
@@ -74,7 +80,7 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id, name, type, system, fields, schema
         case listRule, viewRule, createRule, updateRule, deleteRule
-        case indexes, created, updated
+        case indexes, created, updated, viewQuery
         case verificationTemplate, resetPasswordTemplate, confirmEmailChangeTemplate, authAlert
     }
 
@@ -95,6 +101,7 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         indexes = try container.decodeIfPresent([String].self, forKey: .indexes)
         created = try container.decodeIfPresent(Date.self, forKey: .created)
         updated = try container.decodeIfPresent(Date.self, forKey: .updated)
+        viewQuery = try container.decodeIfPresent(String.self, forKey: .viewQuery)
         verificationTemplate = try container.decodeIfPresent(EmailTemplate.self, forKey: .verificationTemplate)
         resetPasswordTemplate = try container.decodeIfPresent(EmailTemplate.self, forKey: .resetPasswordTemplate)
         confirmEmailChangeTemplate = try container.decodeIfPresent(EmailTemplate.self, forKey: .confirmEmailChangeTemplate)
@@ -116,6 +123,7 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         try container.encodeIfPresent(indexes, forKey: .indexes)
         try container.encodeIfPresent(created, forKey: .created)
         try container.encodeIfPresent(updated, forKey: .updated)
+        try container.encodeIfPresent(viewQuery, forKey: .viewQuery)
         try container.encodeIfPresent(verificationTemplate, forKey: .verificationTemplate)
         try container.encodeIfPresent(resetPasswordTemplate, forKey: .resetPasswordTemplate)
         try container.encodeIfPresent(confirmEmailChangeTemplate, forKey: .confirmEmailChangeTemplate)

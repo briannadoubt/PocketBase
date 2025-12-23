@@ -42,6 +42,10 @@ public struct CollectionCreateRequest: Codable, Sendable {
     public let deleteRule: String?
     public let indexes: [String]?
 
+    // View collection specific options
+    /// The SQL query for view collections. Only applicable when type is .view.
+    public let viewQuery: String?
+
     // Auth collection specific options
     public let verificationTemplate: EmailTemplate?
     public let resetPasswordTemplate: EmailTemplate?
@@ -52,7 +56,7 @@ public struct CollectionCreateRequest: Codable, Sendable {
         case name, type
         case schema = "fields"  // PocketBase 0.23+ uses `fields`
         case listRule, viewRule, createRule, updateRule, deleteRule
-        case indexes
+        case indexes, viewQuery
         case verificationTemplate, resetPasswordTemplate, confirmEmailChangeTemplate, authAlert
     }
 
@@ -66,6 +70,7 @@ public struct CollectionCreateRequest: Codable, Sendable {
         updateRule: String? = nil,
         deleteRule: String? = nil,
         indexes: [String]? = nil,
+        viewQuery: String? = nil,
         verificationTemplate: EmailTemplate? = nil,
         resetPasswordTemplate: EmailTemplate? = nil,
         confirmEmailChangeTemplate: EmailTemplate? = nil,
@@ -80,6 +85,7 @@ public struct CollectionCreateRequest: Codable, Sendable {
         self.updateRule = updateRule
         self.deleteRule = deleteRule
         self.indexes = indexes
+        self.viewQuery = viewQuery
         self.verificationTemplate = verificationTemplate
         self.resetPasswordTemplate = resetPasswordTemplate
         self.confirmEmailChangeTemplate = confirmEmailChangeTemplate
