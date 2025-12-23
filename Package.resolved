@@ -1,5 +1,5 @@
 {
-  "originHash" : "46413fd247ff7e62dce58b64208284b1ff75f773597a269e390e219015639b18",
+  "originHash" : "6d3c582934eff03457f2280d259bcbe8a7917615659bb347f8aac27a4e62b979",
   "pins" : [
     {
       "identity" : "async-http-client",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/containerization.git",
       "state" : {
-        "revision" : "bec1008f4de1e416ea0e112b57b2357875ec7d25",
-        "version" : "0.13.0"
+        "revision" : "dcbc7bf71da8fe993f6d19214adb8179eec7d02a",
+        "version" : "0.18.0"
       }
     },
     {
