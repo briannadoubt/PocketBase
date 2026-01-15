@@ -203,6 +203,10 @@ struct RealtimeTests {
 actor SubscriptionSpySession: NetworkSession {
     private(set) var requests: [URLRequest] = []
 
+    static func == (lhs: SubscriptionSpySession, rhs: SubscriptionSpySession) -> Bool {
+        lhs === rhs
+    }
+
     func clearRequests() {
         requests = []
     }
@@ -243,6 +247,10 @@ actor UnsubscribingSpySessionWrapper: NetworkSession {
     private var realtime: Realtime?
     private let topicToRemove: String
     private var hasRemovedTopic = false
+
+    static func == (lhs: UnsubscribingSpySessionWrapper, rhs: UnsubscribingSpySessionWrapper) -> Bool {
+        lhs === rhs
+    }
 
     init(topicToRemove: String) {
         self.topicToRemove = topicToRemove
