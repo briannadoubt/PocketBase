@@ -277,7 +277,7 @@ extension Realtime: EventHandler {
             set(clientId: newClientId)
 
             // Re-subscribe to existing topics with new clientId
-            if !existingTopics.isEmpty, let clientId = newClientId {
+            if !existingTopics.isEmpty, !newClientId.isEmpty {
                 Self.logger.info("PocketBase: Re-subscribing to \(existingTopics.count) topic(s) after reconnection")
                 for topic in existingTopics {
                     // Check if subscription still exists (may have been removed during reconnect)
@@ -286,7 +286,7 @@ extension Realtime: EventHandler {
                         continue
                     }
                     do {
-                        try await requestSubscription(topic: topic, clientId: clientId)
+                        try await requestSubscription(topic: topic, clientId: newClientId)
                         Self.logger.debug("PocketBase: Re-subscribed to \(topic)")
                     } catch {
                         Self.logger.warning("PocketBase: Failed to re-subscribe to \(topic): \(error)")
