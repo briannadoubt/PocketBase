@@ -255,7 +255,22 @@ extension Realtime: EventHandler {
 
         switch eventType {
         case "PB_CONNECT":
-            set(clientId: messageEvent.lastEventId)
+            let newClientId = messageEvent.lastEventId
+            let existingTopics = Array(subscriptions.keys)
+            set(clientId: newClientId)
+
+            // Re-subscribe to existing topics with new clientId
+            if !existingTopics.isEmpty, let clientId = newClientId {
+                Self.logger.info("PocketBase: Re-subscribing to \(existingTopics.count) topic(s) after reconnection")
+                for topic in existingTopics {
+                    do {
+                        try await requestSubscription(topic: topic, clientId: clientId)
+                        Self.logger.debug("PocketBase: Re-subscribed to \(topic)")
+                    } catch {
+                        Self.logger.warning("PocketBase: Failed to re-subscribe to \(topic): \(error)")
+                    }
+                }
+            }
         default:
             let messageComponents = messageEvent.data.components(separatedBy: "\n")
             guard let subscription = subscriptions[eventType] else {
