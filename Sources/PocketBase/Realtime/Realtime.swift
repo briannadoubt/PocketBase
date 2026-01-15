@@ -82,6 +82,12 @@ public actor Realtime: HasLogger {
     func addSubscription(topic: String) {
         subscriptions[topic] = Subscription()
     }
+
+    /// Test helper to remove a subscription without making a network request.
+    /// - Parameter topic: The topic to remove.
+    func removeSubscription(topic: String) {
+        subscriptions.removeValue(forKey: topic)
+    }
     #endif
 
     /// Connects to the SSE endpoint.
@@ -288,6 +294,11 @@ extension Realtime: EventHandler {
             if !existingTopics.isEmpty, let clientId = newClientId {
                 Self.logger.info("PocketBase: Re-subscribing to \(existingTopics.count) topic(s) after reconnection")
                 for topic in existingTopics {
+                    // Check if subscription still exists (may have been removed during reconnect)
+                    guard subscriptions[topic] != nil else {
+                        Self.logger.debug("PocketBase: Skipping re-subscribe for \(topic) - already unsubscribed")
+                        continue
+                    }
                     do {
                         try await requestSubscription(topic: topic, clientId: clientId)
                         Self.logger.debug("PocketBase: Re-subscribed to \(topic)")
