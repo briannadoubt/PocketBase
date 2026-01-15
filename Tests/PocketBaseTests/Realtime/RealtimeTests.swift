@@ -39,8 +39,8 @@ struct RealtimeTests {
 
             // Simulate reconnection by sending PB_CONNECT event with new clientId
             let reconnectEvent = MessageEvent(
-                lastEventId: "new-client-id-123",
-                data: "{}"
+                data: "{}",
+                lastEventId: "new-client-id-123"
             )
             await realtime.onMessage(eventType: "PB_CONNECT", messageEvent: reconnectEvent)
 
@@ -96,8 +96,8 @@ struct RealtimeTests {
 
             // Simulate reconnection
             let reconnectEvent = MessageEvent(
-                lastEventId: "new-client-id-456",
-                data: "{}"
+                data: "{}",
+                lastEventId: "new-client-id-456"
             )
             await realtime.onMessage(eventType: "PB_CONNECT", messageEvent: reconnectEvent)
 
@@ -128,8 +128,8 @@ struct RealtimeTests {
 
             // Simulate reconnection
             let reconnectEvent = MessageEvent(
-                lastEventId: "reconnected-client-id",
-                data: "{}"
+                data: "{}",
+                lastEventId: "reconnected-client-id"
             )
             await realtime.onMessage(eventType: "PB_CONNECT", messageEvent: reconnectEvent)
 
@@ -167,8 +167,8 @@ struct RealtimeTests {
 
             // Simulate reconnection - the session will remove "toBeRemoved" BEFORE any request
             let reconnectEvent = MessageEvent(
-                lastEventId: "new-client-id",
-                data: "{}"
+                data: "{}",
+                lastEventId: "new-client-id"
             )
             await realtime.onMessage(eventType: "PB_CONNECT", messageEvent: reconnectEvent)
 
