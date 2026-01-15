@@ -26,9 +26,9 @@ struct RealtimeTests {
             )
 
             // Simulate initial connection by setting clientId and adding a subscription
-            await realtime.simulateConnection(clientId: "initial-client-id")
-            await realtime.addSubscription(topic: "posts")
-            await realtime.addSubscription(topic: "comments")
+            await realtime.set(clientId: "initial-client-id")
+            await realtime.subscriptions["posts"] = Subscription()
+            await realtime.subscriptions["comments"] = Subscription()
 
             // Verify we have 2 subscriptions
             let subscriptionCount = await realtime.subscriptions.count
@@ -85,7 +85,7 @@ struct RealtimeTests {
             )
 
             // Simulate initial connection with no subscriptions
-            await realtime.simulateConnection(clientId: "initial-client-id")
+            await realtime.set(clientId: "initial-client-id")
 
             // Verify no subscriptions
             let subscriptionCount = await realtime.subscriptions.count
@@ -120,8 +120,8 @@ struct RealtimeTests {
             )
 
             // Simulate initial connection
-            await realtime.simulateConnection(clientId: "initial-client-id")
-            await realtime.addSubscription(topic: "users")
+            await realtime.set(clientId: "initial-client-id")
+            await realtime.subscriptions["users"] = Subscription()
 
             let initialSubscriptions = await realtime.subscriptions
             #expect(initialSubscriptions.keys.contains("users"))
@@ -154,9 +154,9 @@ struct RealtimeTests {
             await sessionWrapper.setRealtime(realtime)
 
             // Simulate initial connection with multiple subscriptions
-            await realtime.simulateConnection(clientId: "initial-client-id")
-            await realtime.addSubscription(topic: "toBeRemoved")
-            await realtime.addSubscription(topic: "shouldRemain")
+            await realtime.set(clientId: "initial-client-id")
+            await realtime.subscriptions["toBeRemoved"] = Subscription()
+            await realtime.subscriptions["shouldRemain"] = Subscription()
 
             // Verify we start with 2 subscriptions
             let initialCount = await realtime.subscriptions.count
@@ -266,7 +266,7 @@ actor UnsubscribingSpySessionWrapper: NetworkSession {
         // the subscription will already be gone.
         if await !hasRemovedTopic, let realtime = await self.realtime {
             await setHasRemovedTopic()
-            await realtime.removeSubscription(topic: topicToRemove)
+            await realtime.subscriptions.removeValue(forKey: topicToRemove)
         }
 
         await recordRequest(request)

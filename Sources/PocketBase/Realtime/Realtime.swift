@@ -40,11 +40,11 @@ public actor Realtime: HasLogger {
     /// The network session used for subscription requests.
     let session: NetworkSession
 
-    private func set(clientId: String?) {
+    func set(clientId: String?) {
         self.clientId = clientId
     }
 
-    private(set) var subscriptions: [String: Subscription] = [:]
+    var subscriptions: [String: Subscription] = [:]
 
     private var eventSource: EventSource?
 
@@ -67,28 +67,6 @@ public actor Realtime: HasLogger {
     public func setAuthToken(_ token: String?) {
         self.authToken = token
     }
-
-    // MARK: - Test Helpers
-
-    #if DEBUG
-    /// Test helper to simulate a connection by setting the clientId directly.
-    /// - Parameter clientId: The client ID to set.
-    func simulateConnection(clientId: String) {
-        set(clientId: clientId)
-    }
-
-    /// Test helper to add a subscription without making a network request.
-    /// - Parameter topic: The topic to add a subscription for.
-    func addSubscription(topic: String) {
-        subscriptions[topic] = Subscription()
-    }
-
-    /// Test helper to remove a subscription without making a network request.
-    /// - Parameter topic: The topic to remove.
-    func removeSubscription(topic: String) {
-        subscriptions.removeValue(forKey: topic)
-    }
-    #endif
 
     /// Connects to the SSE endpoint.
     public func connect() async {
