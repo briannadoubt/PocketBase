@@ -213,7 +213,7 @@ public actor Realtime: HasLogger {
 
 // MARK: - Request Types
 
-struct SubscriptionRequest: Encodable {
+struct SubscriptionRequest: Codable {
     var clientId: String
     var subscriptions: [String]
 }
