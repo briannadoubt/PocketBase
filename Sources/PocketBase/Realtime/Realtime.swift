@@ -44,7 +44,15 @@ public actor Realtime: HasLogger {
         self.clientId = clientId
     }
 
-    var subscriptions: [String: Subscription] = [:]
+    func setSubscription(_ subscription: Subscription?, forTopic topic: String) {
+        if let subscription {
+            subscriptions[topic] = subscription
+        } else {
+            subscriptions.removeValue(forKey: topic)
+        }
+    }
+
+    private(set) var subscriptions: [String: Subscription] = [:]
 
     private var eventSource: EventSource?
 

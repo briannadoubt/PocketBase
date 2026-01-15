@@ -27,8 +27,8 @@ struct RealtimeTests {
 
             // Simulate initial connection by setting clientId and adding a subscription
             await realtime.set(clientId: "initial-client-id")
-            await realtime.subscriptions["posts"] = Subscription()
-            await realtime.subscriptions["comments"] = Subscription()
+            await realtime.setSubscription(Subscription(), forTopic: "posts")
+            await realtime.setSubscription(Subscription(), forTopic: "comments")
 
             // Verify we have 2 subscriptions
             let subscriptionCount = await realtime.subscriptions.count
@@ -121,7 +121,7 @@ struct RealtimeTests {
 
             // Simulate initial connection
             await realtime.set(clientId: "initial-client-id")
-            await realtime.subscriptions["users"] = Subscription()
+            await realtime.setSubscription(Subscription(), forTopic: "users")
 
             let initialSubscriptions = await realtime.subscriptions
             #expect(initialSubscriptions.keys.contains("users"))
@@ -155,8 +155,8 @@ struct RealtimeTests {
 
             // Simulate initial connection with multiple subscriptions
             await realtime.set(clientId: "initial-client-id")
-            await realtime.subscriptions["toBeRemoved"] = Subscription()
-            await realtime.subscriptions["shouldRemain"] = Subscription()
+            await realtime.setSubscription(Subscription(), forTopic: "toBeRemoved")
+            await realtime.setSubscription(Subscription(), forTopic: "shouldRemain")
 
             // Verify we start with 2 subscriptions
             let initialCount = await realtime.subscriptions.count
@@ -274,7 +274,7 @@ actor UnsubscribingSpySessionWrapper: NetworkSession {
         // the subscription will already be gone.
         if await !hasRemovedTopic, let realtime = await self.realtime {
             await setHasRemovedTopic()
-            await realtime.subscriptions.removeValue(forKey: topicToRemove)
+            await realtime.setSubscription(nil, forTopic: topicToRemove)
         }
 
         await recordRequest(request)
