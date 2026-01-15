@@ -37,6 +37,9 @@ public actor Realtime: HasLogger {
     /// Auth token provider for subscription requests.
     var authToken: String?
 
+    /// The network session used for subscription requests.
+    let session: NetworkSession
+
     private func set(clientId: String?) {
         self.clientId = clientId
     }
@@ -49,15 +52,37 @@ public actor Realtime: HasLogger {
     /// - Parameters:
     ///  - baseUrl: The baseURL for all requests to PocketBase.
     ///  - defaults: UserDefaults for persisting last event ID.
-    public init(baseUrl: URL, defaults: UserDefaults? = UserDefaults.pocketbase) {
+    ///  - session: The network session for subscription requests (defaults to URLSession.shared).
+    public init(
+        baseUrl: URL,
+        defaults: UserDefaults? = UserDefaults.pocketbase,
+        session: NetworkSession = URLSession.shared
+    ) {
         self.baseUrl = baseUrl
         self.defaults = defaults
+        self.session = session
     }
 
     /// Sets the auth token for subscription requests.
     public func setAuthToken(_ token: String?) {
         self.authToken = token
     }
+
+    // MARK: - Test Helpers
+
+    #if DEBUG
+    /// Test helper to simulate a connection by setting the clientId directly.
+    /// - Parameter clientId: The client ID to set.
+    func simulateConnection(clientId: String) {
+        set(clientId: clientId)
+    }
+
+    /// Test helper to add a subscription without making a network request.
+    /// - Parameter topic: The topic to add a subscription for.
+    func addSubscription(topic: String) {
+        subscriptions[topic] = Subscription()
+    }
+    #endif
 
     /// Connects to the SSE endpoint.
     public func connect() async {
@@ -154,7 +179,7 @@ public actor Realtime: HasLogger {
         Self.logger.log("Requesting: \(request.cURL)")
         #endif
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request, delegate: nil)
 
         #if DEBUG
         if let responseString = String(data: data, encoding: .utf8) {
@@ -189,7 +214,7 @@ public actor Realtime: HasLogger {
         #endif
 
         #if DEBUG
-        if let (data, _) = try? await URLSession.shared.data(for: request) {
+        if let (data, _) = try? await session.data(for: request, delegate: nil) {
             if let responseString = String(data: data, encoding: .utf8) {
                 Self.logger.log("Response: \(responseString)")
             } else {
@@ -197,7 +222,7 @@ public actor Realtime: HasLogger {
             }
         }
         #else
-        _ = try? await URLSession.shared.data(for: request)
+        _ = try? await session.data(for: request, delegate: nil)
         #endif
     }
 }
