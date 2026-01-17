@@ -37,8 +37,19 @@ public actor Realtime: HasLogger {
     /// Auth token provider for subscription requests.
     var authToken: String?
 
-    private func set(clientId: String?) {
+    /// The network session used for subscription requests.
+    let session: NetworkSession
+
+    func set(clientId: String?) {
         self.clientId = clientId
+    }
+
+    func setSubscription(_ subscription: Subscription?, forTopic topic: String) {
+        if let subscription {
+            subscriptions[topic] = subscription
+        } else {
+            subscriptions.removeValue(forKey: topic)
+        }
     }
 
     private(set) var subscriptions: [String: Subscription] = [:]
@@ -49,9 +60,15 @@ public actor Realtime: HasLogger {
     /// - Parameters:
     ///  - baseUrl: The baseURL for all requests to PocketBase.
     ///  - defaults: UserDefaults for persisting last event ID.
-    public init(baseUrl: URL, defaults: UserDefaults? = UserDefaults.pocketbase) {
+    ///  - session: The network session for subscription requests (defaults to URLSession.shared).
+    public init(
+        baseUrl: URL,
+        defaults: UserDefaults? = UserDefaults.pocketbase,
+        session: NetworkSession = URLSession.shared
+    ) {
         self.baseUrl = baseUrl
         self.defaults = defaults
+        self.session = session
     }
 
     /// Sets the auth token for subscription requests.
@@ -154,7 +171,7 @@ public actor Realtime: HasLogger {
         Self.logger.log("Requesting: \(request.cURL)")
         #endif
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await session.data(for: request, delegate: nil)
 
         #if DEBUG
         if let responseString = String(data: data, encoding: .utf8) {
@@ -189,7 +206,7 @@ public actor Realtime: HasLogger {
         #endif
 
         #if DEBUG
-        if let (data, _) = try? await URLSession.shared.data(for: request) {
+        if let (data, _) = try? await session.data(for: request, delegate: nil) {
             if let responseString = String(data: data, encoding: .utf8) {
                 Self.logger.log("Response: \(responseString)")
             } else {
@@ -197,14 +214,14 @@ public actor Realtime: HasLogger {
             }
         }
         #else
-        _ = try? await URLSession.shared.data(for: request)
+        _ = try? await session.data(for: request, delegate: nil)
         #endif
     }
 }
 
 // MARK: - Request Types
 
-struct SubscriptionRequest: Encodable {
+struct SubscriptionRequest: Codable {
     var clientId: String
     var subscriptions: [String]
 }
@@ -255,7 +272,27 @@ extension Realtime: EventHandler {
 
         switch eventType {
         case "PB_CONNECT":
-            set(clientId: messageEvent.lastEventId)
+            let newClientId = messageEvent.lastEventId
+            let existingTopics = Array(subscriptions.keys)
+            set(clientId: newClientId)
+
+            // Re-subscribe to existing topics with new clientId
+            if !existingTopics.isEmpty, !newClientId.isEmpty {
+                Self.logger.info("PocketBase: Re-subscribing to \(existingTopics.count) topic(s) after reconnection")
+                for topic in existingTopics {
+                    // Check if subscription still exists (may have been removed during reconnect)
+                    guard subscriptions[topic] != nil else {
+                        Self.logger.debug("PocketBase: Skipping re-subscribe for \(topic) - already unsubscribed")
+                        continue
+                    }
+                    do {
+                        try await requestSubscription(topic: topic, clientId: newClientId)
+                        Self.logger.debug("PocketBase: Re-subscribed to \(topic)")
+                    } catch {
+                        Self.logger.warning("PocketBase: Failed to re-subscribe to \(topic): \(error)")
+                    }
+                }
+            }
         default:
             let messageComponents = messageEvent.data.components(separatedBy: "\n")
             guard let subscription = subscriptions[eventType] else {

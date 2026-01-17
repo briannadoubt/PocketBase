@@ -51,6 +51,7 @@ public struct PocketBase: Sendable, HasLogger {
         let encoder = JSONEncoder()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+        formatter.timeZone = TimeZone(identifier: "UTC")
         encoder.dateEncodingStrategy = .formatted(formatter)
         return encoder
     }()
@@ -64,6 +65,7 @@ public struct PocketBase: Sendable, HasLogger {
         let encoder = JSONDecoder()
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS'Z'"
+        formatter.timeZone = TimeZone(identifier: "UTC")
         encoder.dateDecodingStrategy = .formatted(formatter)
         return encoder
     }()
