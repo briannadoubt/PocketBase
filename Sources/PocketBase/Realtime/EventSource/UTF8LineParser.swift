@@ -55,7 +55,9 @@ final actor UTF8LineParser {
                 seenCr = false
                 if dataIter.position == data.endIndex {
                     // Error at end of block, carry over in case of split code point
-                    remainderPos = data.index(data.endIndex, offsetBy: -len)
+                    // Bounds check: ensure we don't go past the start of data
+                    let safeOffset = min(len, data.count)
+                    remainderPos = data.index(data.endIndex, offsetBy: -safeOffset)
                     // May as well break here as next will be .emptyInput
                     break Decode
                 } else {
