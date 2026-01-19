@@ -13,6 +13,8 @@ public struct AuthStore: Sendable {
         "io.pocketbase.auth"
     }
     
+    // UserDefaults is thread-safe per Apple's documentation, but isn't marked as Sendable.
+    // nonisolated(unsafe) silences the compiler warning while maintaining correct behavior.
     nonisolated(unsafe) let defaults: UserDefaults?
     
     public init(

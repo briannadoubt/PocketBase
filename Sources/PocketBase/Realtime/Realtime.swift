@@ -54,6 +54,9 @@ public actor Realtime: HasLogger {
 
     private(set) var subscriptions: [String: Subscription] = [:]
 
+    /// Tracks in-flight subscription requests so concurrent callers can await the same result.
+    private var pendingSubscriptions: [String: Task<Subscription, Error>] = [:]
+
     private var eventSource: EventSource?
 
     /// An object used to interact with the PocketBase **Realtime API**.
@@ -116,14 +119,55 @@ public actor Realtime: HasLogger {
             return existing.channel.asAsyncStream()
         }
 
-        // Request the subscription from PocketBase
-        try await requestSubscription(topic: topic, clientId: clientId)
+        // If there's already an in-flight request for this topic, wait for it.
+        // This ensures concurrent callers all observe the same success/failure.
+        if let pendingTask = pendingSubscriptions[topic] {
+            let subscription = try await withTaskCancellationHandler {
+                try await pendingTask.value
+            } onCancel: {
+                pendingTask.cancel()
+            }
+            return subscription.channel.asAsyncStream()
+        }
 
-        // Create and store the subscription
-        let subscription = Subscription()
-        subscriptions[topic] = subscription
+        // Create a task to handle the subscription request.
+        // The task checks for cancellation after the request succeeds to avoid
+        // storing subscriptions that no caller will use.
+        let task = Task<Subscription, Error> { [weak self] in
+            guard let self else { throw CancellationError() }
 
-        return subscription.channel.asAsyncStream()
+            let subscription = Subscription()
+
+            // Request the subscription from PocketBase
+            try await self.requestSubscription(topic: topic, clientId: clientId)
+
+            // Check for cancellation after request succeeds - if cancelled,
+            // clean up the server-side subscription to avoid leaks
+            if Task.isCancelled {
+                try? await self.requestUnsubscription(topic: topic, clientId: clientId)
+                throw CancellationError()
+            }
+
+            // Store subscription only if not cancelled (must use actor-isolated method)
+            await self.setSubscription(subscription, forTopic: topic)
+            return subscription
+        }
+
+        // Track the in-flight request
+        pendingSubscriptions[topic] = task
+
+        do {
+            let subscription = try await withTaskCancellationHandler {
+                try await task.value
+            } onCancel: {
+                task.cancel()
+            }
+            pendingSubscriptions.removeValue(forKey: topic)
+            return subscription.channel.asAsyncStream()
+        } catch {
+            pendingSubscriptions.removeValue(forKey: topic)
+            throw error
+        }
     }
 
     /// Unsubscribes from a topic.
@@ -205,17 +249,20 @@ public actor Realtime: HasLogger {
         Self.logger.log("Requesting: \(request.cURL)")
         #endif
 
-        #if DEBUG
-        if let (data, _) = try? await session.data(for: request, delegate: nil) {
+        do {
+            let (data, _) = try await session.data(for: request, delegate: nil)
+            #if DEBUG
             if let responseString = String(data: data, encoding: .utf8) {
                 Self.logger.log("Response: \(responseString)")
             } else {
                 Self.logger.log("Response: cannot parse")
             }
+            #else
+            _ = data
+            #endif
+        } catch {
+            Self.logger.warning("Failed to unsubscribe from topic '\(topic)': \(error)")
         }
-        #else
-        _ = try? await session.data(for: request, delegate: nil)
-        #endif
     }
 }
 
@@ -326,11 +373,15 @@ extension AsyncChannel {
     /// Converts an AsyncChannel to an AsyncStream.
     func asAsyncStream() -> AsyncStream<Element> {
         AsyncStream { continuation in
-            Task {
+            let task = Task {
                 for await element in self {
+                    if Task.isCancelled { break }
                     continuation.yield(element)
                 }
                 continuation.finish()
+            }
+            continuation.onTermination = { @Sendable _ in
+                task.cancel()
             }
         }
     }
