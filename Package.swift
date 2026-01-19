@@ -30,7 +30,7 @@ let package = Package(
         .package(url: "https://github.com/swiftlang/swift-syntax", "509.0.0"..<"603.0.0"),
         .package(url: "https://github.com/apple/swift-async-algorithms.git", .upToNextMajor(from: "1.0.0")),
         .package(url: "https://github.com/apple/swift-collections.git", .upToNextMajor(from: "1.1.2")),
-        .package(url: "https://github.com/apple/containerization.git", exact: "0.13.0"),
+        .package(url: "https://github.com/apple/containerization.git", exact: "0.21.1"),
         .package(url: "https://github.com/apple/swift-argument-parser.git", .upToNextMajor(from: "1.3.0")),
         .package(url: "https://github.com/vapor/multipart-kit.git", .upToNextMajor(from: "4.0.0")),
     ],
