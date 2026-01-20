@@ -91,6 +91,45 @@ struct CollectionModelTests {
         #expect(collection.type == .view)
     }
 
+    @Test("CollectionModel view type with viewQuery")
+    func decodeViewCollectionWithViewQuery() throws {
+        let json = """
+        {
+            "id": "view1",
+            "name": "published_posts",
+            "type": "view",
+            "system": false,
+            "viewQuery": "SELECT id, title, created FROM posts WHERE published = true"
+        }
+        """
+
+        let collection = try JSONDecoder().decode(CollectionModel.self, from: Data(json.utf8))
+
+        #expect(collection.type == .view)
+        #expect(collection.name == "published_posts")
+        #expect(collection.viewQuery == "SELECT id, title, created FROM posts WHERE published = true")
+    }
+
+    @Test("CollectionModel encoding roundtrip with viewQuery")
+    func encodingRoundtripWithViewQuery() throws {
+        let original = CollectionModel(
+            id: "view1",
+            name: "active_users",
+            type: .view,
+            system: false,
+            viewQuery: "SELECT id, username FROM users WHERE verified = true"
+        )
+
+        let encoder = JSONEncoder()
+        let encoded = try encoder.encode(original)
+        let decoded = try JSONDecoder().decode(CollectionModel.self, from: encoded)
+
+        #expect(decoded.id == original.id)
+        #expect(decoded.name == original.name)
+        #expect(decoded.type == original.type)
+        #expect(decoded.viewQuery == original.viewQuery)
+    }
+
     @Test("CollectionsResponse decoding")
     func decodeCollectionsResponse() throws {
         let json = """
@@ -240,5 +279,126 @@ struct FieldTests {
         #expect(decoded.type == original.type)
         #expect(decoded.required == original.required)
         #expect(decoded.options?.min == original.options?.min)
+    }
+}
+
+@Suite("CollectionCreateRequest")
+struct CollectionCreateRequestTests {
+
+    @Test("CollectionCreateRequest encoding for base collection")
+    func encodeBaseCollection() throws {
+        let request = CollectionCreateRequest(
+            name: "posts",
+            type: .base,
+            schema: [
+                Field(id: "title", name: "title", type: .text, required: true)
+            ],
+            listRule: "@request.auth.id != ''"
+        )
+
+        let encoded = try JSONEncoder().encode(request)
+        let json = try JSONDecoder().decode([String: AnyCodable].self, from: encoded)
+
+        #expect(json["name"]?.value as? String == "posts")
+        #expect(json["type"]?.value as? String == "base")
+        #expect(json["listRule"]?.value as? String == "@request.auth.id != ''")
+    }
+
+    @Test("CollectionCreateRequest encoding with viewQuery")
+    func encodeViewCollectionWithViewQuery() throws {
+        let request = CollectionCreateRequest(
+            name: "published_posts",
+            type: .view,
+            viewQuery: "SELECT id, title, created FROM posts WHERE published = true",
+            viewRule: ""
+        )
+
+        let encoded = try JSONEncoder().encode(request)
+        let json = try JSONDecoder().decode([String: AnyCodable].self, from: encoded)
+
+        #expect(json["name"]?.value as? String == "published_posts")
+        #expect(json["type"]?.value as? String == "view")
+        #expect(json["viewQuery"]?.value as? String == "SELECT id, title, created FROM posts WHERE published = true")
+    }
+
+    @Test("CollectionCreateRequest encoding for auth collection")
+    func encodeAuthCollection() throws {
+        let request = CollectionCreateRequest(
+            name: "users",
+            type: .auth,
+            listRule: "@request.auth.id != ''"
+        )
+
+        let encoded = try JSONEncoder().encode(request)
+        let json = try JSONDecoder().decode([String: AnyCodable].self, from: encoded)
+
+        #expect(json["name"]?.value as? String == "users")
+        #expect(json["type"]?.value as? String == "auth")
+    }
+}
+
+@Suite("CollectionUpdateRequest")
+struct CollectionUpdateRequestTests {
+
+    @Test("CollectionUpdateRequest encoding")
+    func encodeUpdateRequest() throws {
+        let request = CollectionUpdateRequest(
+            name: "updated_posts",
+            listRule: "@request.auth.verified = true"
+        )
+
+        let encoded = try JSONEncoder().encode(request)
+        let json = try JSONDecoder().decode([String: AnyCodable].self, from: encoded)
+
+        #expect(json["name"]?.value as? String == "updated_posts")
+        #expect(json["listRule"]?.value as? String == "@request.auth.verified = true")
+    }
+
+    @Test("CollectionUpdateRequest encoding with viewQuery")
+    func encodeUpdateRequestWithViewQuery() throws {
+        let request = CollectionUpdateRequest(
+            viewQuery: "SELECT id, title FROM posts WHERE published = true AND featured = true"
+        )
+
+        let encoded = try JSONEncoder().encode(request)
+        let json = try JSONDecoder().decode([String: AnyCodable].self, from: encoded)
+
+        #expect(json["viewQuery"]?.value as? String == "SELECT id, title FROM posts WHERE published = true AND featured = true")
+    }
+}
+
+/// Helper type for decoding arbitrary JSON values in tests
+private struct AnyCodable: Codable {
+    let value: Any
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let string = try? container.decode(String.self) {
+            value = string
+        } else if let int = try? container.decode(Int.self) {
+            value = int
+        } else if let bool = try? container.decode(Bool.self) {
+            value = bool
+        } else if let array = try? container.decode([AnyCodable].self) {
+            value = array.map { $0.value }
+        } else if let dict = try? container.decode([String: AnyCodable].self) {
+            value = dict.mapValues { $0.value }
+        } else {
+            value = NSNull()
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch value {
+        case let string as String:
+            try container.encode(string)
+        case let int as Int:
+            try container.encode(int)
+        case let bool as Bool:
+            try container.encode(bool)
+        default:
+            try container.encodeNil()
+        }
     }
 }
