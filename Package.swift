@@ -85,6 +85,10 @@ let package = Package(
             name: "PocketBaseTests",
             dependencies: ["PocketBase", "TestUtilities"]
         ),
+        .testTarget(
+            name: "PocketBaseAdminTests",
+            dependencies: ["PocketBase", "PocketBaseAdmin", "TestUtilities"]
+        ),
         .target(
             name: "PocketBaseServerLib",
             dependencies: [
