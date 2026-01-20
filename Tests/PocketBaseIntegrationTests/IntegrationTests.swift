@@ -46,14 +46,36 @@ extension Testing.Tag {
     @Tag static var localhostRequired: Self
 }
 
+// MARK: - Container Availability Check
+
+/// Checks if native containerization is available and skips the test if not.
+/// On macOS < 26 or non-macOS platforms, tests requiring the container will be skipped.
+func requireContainerAvailability() throws {
+    #if os(macOS)
+    guard #available(macOS 26.0, *) else {
+        throw ContainerUnavailableError()
+    }
+    #else
+    throw ContainerUnavailableError()
+    #endif
+}
+
+/// Error thrown when container functionality is not available
+struct ContainerUnavailableError: Error, CustomStringConvertible {
+    var description: String {
+        "Integration tests require macOS 26.0+ for native containerization. Use Docker for integration testing on older macOS versions."
+    }
+}
+
 // MARK: - Shared Container Setup
 
 /// Suite that manages the shared PocketBase container for all integration tests
 @Suite("PocketBase Integration Tests", .serialized)
 struct PocketBaseIntegrationTests {
-    
+
     /// Start the shared container before any tests run
     init() async throws {
+        // Skip container startup on platforms where it's unavailable
         #if os(macOS)
         if #available(macOS 26.0, *) {
             try await PocketBaseServerLauncher.shared.start(
@@ -73,6 +95,9 @@ struct PocketBaseIntegrationTests {
 )
 @MainActor
 func happyPath() async throws {
+    // Skip test if container functionality is not available
+    try requireContainerAvailability()
+
     // Initialize pocketbase
     let pb = PocketBase(
         url: .localhost,
