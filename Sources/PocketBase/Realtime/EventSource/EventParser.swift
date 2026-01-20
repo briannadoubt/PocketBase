@@ -15,7 +15,7 @@ actor EventParser {
         static let retryLabel: Substring = "retry"
     }
 
-    private let handler: EventHandler
+    private let handler: any EventHandler
 
     private var data: String = ""
     private var eventType: String = ""
@@ -23,7 +23,7 @@ actor EventParser {
     private var lastEventId: String
     private var currentRetry: TimeInterval
 
-    init(handler: EventHandler, initialEventId: String, initialRetry: TimeInterval) {
+    init(handler: any EventHandler, initialEventId: String, initialRetry: TimeInterval) {
         self.handler = handler
         self.lastEventId = initialEventId
         self.currentRetry = initialRetry

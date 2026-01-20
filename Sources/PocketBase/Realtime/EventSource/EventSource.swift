@@ -106,7 +106,7 @@ actor EventSource: NSObject, HasLogger {
     /// Struct for configuring the EventSource.
     public struct Config: Sendable {
         /// The `EventHandler` called in response to activity on the stream.
-        public let handler: EventHandler
+        public let handler: any EventHandler
         /// The `URL` of the request used when connecting to the EventSource API.
         public let url: URL
 
@@ -181,7 +181,7 @@ actor EventSource: NSObject, HasLogger {
         }
 
         /// Create a new configuration with an `EventHandler` and a `URL`
-        public init(handler: EventHandler, url: URL, lastEventId: String?) {
+        public init(handler: any EventHandler, url: URL, lastEventId: String?) {
             self.handler = handler
             self.url = url
             self.lastEventId = lastEventId ?? ""
