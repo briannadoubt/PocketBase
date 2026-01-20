@@ -38,7 +38,7 @@ public actor Realtime: HasLogger {
     var authToken: String?
 
     /// The network session used for subscription requests.
-    let session: NetworkSession
+    let session: any NetworkSession
 
     func set(clientId: String?) {
         self.clientId = clientId
@@ -67,7 +67,7 @@ public actor Realtime: HasLogger {
     public init(
         baseUrl: URL,
         defaults: UserDefaults? = UserDefaults.pocketbase,
-        session: NetworkSession = URLSession.shared
+        session: any NetworkSession = URLSession.shared
     ) {
         self.baseUrl = baseUrl
         self.defaults = defaults
