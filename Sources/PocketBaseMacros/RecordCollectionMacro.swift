@@ -25,6 +25,9 @@ extension RecordCollectionMacro {
     ) throws -> [ExtensionDeclSyntax] {
         [
             ExtensionDeclSyntax(
+                modifiers: DeclModifierListSyntax {
+                    DeclModifierSyntax(name: .keyword(.nonisolated))
+                },
                 extendedType: type,
                 inheritanceClause: InheritanceClauseSyntax {
                     for type in protocols {
