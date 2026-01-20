@@ -85,7 +85,7 @@ The easiest way to run PocketBase alongside your SwiftUI app is to add the `Pock
    - Edit your scheme (Product → Scheme → Edit Scheme...)
    - Select "Build" in the sidebar
    - Click "+" and add the `PocketBaseServer` target from the PocketBase package
-   - Optionally, check "Paralellize Build" to build both targets simultaneously
+   - Optionally, check "Parallelize Build" to build both targets simultaneously
 
 4. **Run your app:**
    - When you run your app, Xcode will also start PocketBaseServer
@@ -688,9 +688,9 @@ let request = CollectionCreateRequest(
     name: "articles",
     type: .base,
     schema: [
-        Field(name: "title", type: .text, required: true),
-        Field(name: "content", type: .editor),
-        Field(name: "published", type: .bool)
+        Field(id: "title_field", name: "title", type: .text, required: true),
+        Field(id: "content_field", name: "content", type: .editor),
+        Field(id: "published_field", name: "published", type: .bool)
     ],
     listRule: "@request.auth.id != \"\"",  // Authenticated users only
     viewRule: "",                           // Public access
