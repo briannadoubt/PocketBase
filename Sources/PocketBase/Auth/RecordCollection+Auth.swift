@@ -37,4 +37,5 @@ extension RecordCollection where T: AuthRecord {
 public enum PocketBaseError: Error {
     case alreadyAuthenticated
     case notImplemented
+    case invalidRecordData
 }

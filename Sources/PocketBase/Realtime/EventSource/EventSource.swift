@@ -145,8 +145,7 @@ actor EventSource: NSObject, HasLogger {
          */
         public var urlSessionConfiguration: URLSessionConfiguration {
             get {
-                // swiftlint:disable:next force_cast
-                let sessionConfig = _urlSessionConfiguration.copy() as! URLSessionConfiguration
+                let sessionConfig = (_urlSessionConfiguration.copy() as? URLSessionConfiguration) ?? _urlSessionConfiguration
                 sessionConfig.httpAdditionalHeaders = ["Accept": "text/event-stream", "Cache-Control": "no-cache"]
                 sessionConfig.timeoutIntervalForRequest = idleTimeout
 
@@ -160,8 +159,7 @@ actor EventSource: NSObject, HasLogger {
                 return sessionConfig
             }
             set {
-                // swiftlint:disable:next force_cast
-                _urlSessionConfiguration = newValue.copy() as! URLSessionConfiguration
+                _urlSessionConfiguration = (newValue.copy() as? URLSessionConfiguration) ?? newValue
             }
         }
 
@@ -275,8 +273,11 @@ final class EventSourceDelegate: NSObject, URLSessionDataDelegate, HasLogger {
     ) {
         Self.logger.debug("Initial reply received")
         Task {
-            // swiftlint:disable:next force_cast
-            let httpResponse = response as! HTTPURLResponse
+            guard let httpResponse = response as? HTTPURLResponse else {
+                Self.logger.warning("Received non-HTTP response")
+                completionHandler(.cancel)
+                return
+            }
             let statusCode = httpResponse.statusCode
             if (200..<300).contains(statusCode) && statusCode != 204 {
                 await eventSource.reconnectionTimer.set(connectedTime: Date())

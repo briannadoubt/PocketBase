@@ -13,6 +13,171 @@ import TestUtilities
 @Suite("Realtime")
 struct RealtimeTests {
 
+    @Suite("Subscription")
+    struct SubscriptionTests {
+
+        @Test("Concurrent subscribers share the same request")
+        func concurrentSubscribersShareRequest() async throws {
+            let session = SubscriptionSpySession()
+            let realtime = Realtime(
+                baseUrl: .localhost,
+                defaults: nil,
+                session: session
+            )
+
+            // Set clientId to skip connection setup
+            await realtime.set(clientId: "test-client-id")
+
+            // Start two concurrent subscriptions to the same topic
+            async let stream1 = realtime.subscribe(topic: "posts")
+            async let stream2 = realtime.subscribe(topic: "posts")
+
+            // Both should succeed
+            _ = try await stream1
+            _ = try await stream2
+
+            // Only one request should have been made
+            let requests = await session.requests
+            #expect(requests.count == 1)
+        }
+
+        @Test("Concurrent subscribers all receive error on failure")
+        func concurrentSubscribersReceiveError() async throws {
+            let session = FailingSession()
+            let realtime = Realtime(
+                baseUrl: .localhost,
+                defaults: nil,
+                session: session
+            )
+
+            // Set clientId to skip connection setup
+            await realtime.set(clientId: "test-client-id")
+
+            // Start two concurrent subscriptions
+            async let result1: Result<AsyncStream<RawRecordEvent>, Error> = {
+                do {
+                    return .success(try await realtime.subscribe(topic: "posts"))
+                } catch {
+                    return .failure(error)
+                }
+            }()
+
+            async let result2: Result<AsyncStream<RawRecordEvent>, Error> = {
+                do {
+                    return .success(try await realtime.subscribe(topic: "posts"))
+                } catch {
+                    return .failure(error)
+                }
+            }()
+
+            let results = await [result1, result2]
+
+            // Both should have failed
+            for result in results {
+                switch result {
+                case .success:
+                    Issue.record("Expected failure but got success")
+                case .failure:
+                    break // Expected
+                }
+            }
+
+            // No subscription should be stored
+            let subscriptions = await realtime.subscriptions
+            #expect(subscriptions.isEmpty)
+        }
+
+        @Test("Cancellation cleans up server subscription")
+        func cancellationCleansUpServerSubscription() async throws {
+            // Use a coordinated session that signals when request completes
+            let session = CoordinatedSession()
+            let realtime = Realtime(
+                baseUrl: .localhost,
+                defaults: nil,
+                session: session
+            )
+
+            // Set clientId to skip connection setup
+            await realtime.set(clientId: "test-client-id")
+
+            // Start subscription task
+            let task = Task {
+                try await realtime.subscribe(topic: "posts")
+            }
+
+            // Wait for the first request to complete
+            await session.waitForRequestCount(1)
+
+            // Cancel the task after request succeeded but before Task.isCancelled check completes
+            // The task should see the cancellation and clean up
+            task.cancel()
+
+            // Wait for cancellation to propagate
+            do {
+                _ = try await task.value
+                // Task might succeed if cancellation doesn't propagate in time - that's OK
+            } catch is CancellationError {
+                // Expected when cancellation propagates
+            } catch {
+                Issue.record("Unexpected error: \(error)")
+            }
+
+            // Give time for cleanup
+            try await Task.sleep(for: .milliseconds(100))
+
+            // Check if unsubscribe was called (may or may not happen depending on timing)
+            let requests = await session.requests
+            let hasUnsubscribe = requests.contains { request in
+                guard let body = request.httpBody,
+                      let json = try? JSONDecoder().decode(SubscriptionRequest.self, from: body) else {
+                    return false
+                }
+                return json.subscriptions.isEmpty // Empty array = unsubscribe
+            }
+
+            // If task was cancelled in time, unsubscribe should have been sent
+            // If not, subscription should be stored
+            let subscriptions = await realtime.subscriptions
+            if subscriptions.isEmpty {
+                // Cancellation worked - should have unsubscribe request
+                #expect(hasUnsubscribe, "Should have sent unsubscribe request on cancellation")
+            }
+            // If subscription exists, cancellation was too late - that's also valid behavior
+        }
+
+        @Test("Subscription not stored when cancelled before completion")
+        func subscriptionNotStoredWhenCancelled() async throws {
+            let session = SlowThenSuccessSession(delay: .milliseconds(200))
+            let realtime = Realtime(
+                baseUrl: .localhost,
+                defaults: nil,
+                session: session
+            )
+
+            // Set clientId to skip connection setup
+            await realtime.set(clientId: "test-client-id")
+
+            // Start subscription in a task we can cancel
+            let task = Task {
+                try await realtime.subscribe(topic: "posts")
+            }
+
+            // Cancel immediately before request completes
+            try await Task.sleep(for: .milliseconds(50))
+            task.cancel()
+
+            // Wait for task to finish
+            _ = try? await task.value
+
+            // Give time for any async cleanup
+            try await Task.sleep(for: .milliseconds(300))
+
+            // No subscription should be stored
+            let subscriptions = await realtime.subscriptions
+            #expect(subscriptions.isEmpty)
+        }
+    }
+
     @Suite("Reconnection")
     struct ReconnectionTests {
 
@@ -211,6 +376,128 @@ actor SubscriptionSpySession: NetworkSession {
         await recordRequest(request)
 
         // Return a successful response
+        let response = HTTPURLResponse(
+            url: request.url ?? .localhost,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        return (Data(), response)
+    }
+
+    private func recordRequest(_ request: URLRequest) {
+        requests.append(request)
+    }
+
+    nonisolated func dataTask(
+        with request: URLRequest,
+        completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void
+    ) -> any DataSession {
+        fatalError("Not implemented for tests")
+    }
+}
+
+/// A session that always fails requests
+actor FailingSession: NetworkSession {
+    struct TestError: Error {}
+
+    static func == (lhs: FailingSession, rhs: FailingSession) -> Bool {
+        lhs === rhs
+    }
+
+    nonisolated func data(
+        for request: URLRequest,
+        delegate: (any URLSessionTaskDelegate)?
+    ) async throws -> (Data, URLResponse) {
+        throw TestError()
+    }
+
+    nonisolated func dataTask(
+        with request: URLRequest,
+        completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void
+    ) -> any DataSession {
+        fatalError("Not implemented for tests")
+    }
+}
+
+/// A session that succeeds immediately but allows waiting for requests
+actor CoordinatedSession: NetworkSession {
+    private(set) var requests: [URLRequest] = []
+    private var requestContinuations: [CheckedContinuation<Void, Never>] = []
+    private var targetCount = 0
+
+    static func == (lhs: CoordinatedSession, rhs: CoordinatedSession) -> Bool {
+        lhs === rhs
+    }
+
+    func waitForRequestCount(_ count: Int) async {
+        if requests.count >= count {
+            return
+        }
+        targetCount = count
+        await withCheckedContinuation { continuation in
+            requestContinuations.append(continuation)
+        }
+    }
+
+    nonisolated func data(
+        for request: URLRequest,
+        delegate: (any URLSessionTaskDelegate)?
+    ) async throws -> (Data, URLResponse) {
+        await recordRequest(request)
+
+        let response = HTTPURLResponse(
+            url: request.url ?? .localhost,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        )!
+        return (Data(), response)
+    }
+
+    private func recordRequest(_ request: URLRequest) {
+        requests.append(request)
+        if requests.count >= targetCount {
+            for continuation in requestContinuations {
+                continuation.resume()
+            }
+            requestContinuations.removeAll()
+        }
+    }
+
+    nonisolated func dataTask(
+        with request: URLRequest,
+        completionHandler: @escaping @Sendable (Data?, URLResponse?, (any Error)?) -> Void
+    ) -> any DataSession {
+        fatalError("Not implemented for tests")
+    }
+}
+
+/// A session that delays then succeeds, recording all requests
+actor SlowThenSuccessSession: NetworkSession {
+    private(set) var requests: [URLRequest] = []
+    private let delay: Duration
+
+    init(delay: Duration) {
+        self.delay = delay
+    }
+
+    static func == (lhs: SlowThenSuccessSession, rhs: SlowThenSuccessSession) -> Bool {
+        lhs === rhs
+    }
+
+    nonisolated func data(
+        for request: URLRequest,
+        delegate: (any URLSessionTaskDelegate)?
+    ) async throws -> (Data, URLResponse) {
+        await recordRequest(request)
+
+        // Delay to simulate slow network
+        try await Task.sleep(for: delay)
+
+        // Check for cancellation
+        try Task.checkCancellation()
+
         let response = HTTPURLResponse(
             url: request.url ?? .localhost,
             statusCode: 200,

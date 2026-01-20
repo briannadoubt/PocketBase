@@ -146,7 +146,9 @@ extension AuthRecord {
         encoder: JSONEncoder
     ) throws -> Data {
         let data = try encoder.encode(self, configuration: .remoteBody)
-        var record = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        guard var record = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+            throw PocketBaseError.invalidRecordData
+        }
         record["password"] = password
         record["passwordConfirm"] = passwordConfirm
         let body = try JSONSerialization.data(withJSONObject: record)
