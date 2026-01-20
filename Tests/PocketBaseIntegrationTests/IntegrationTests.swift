@@ -55,12 +55,14 @@ struct PocketBaseIntegrationTests {
     /// Start the shared container before any tests run
     init() async throws {
         #if os(macOS)
-        try await PocketBaseServerLauncher.shared.start(
-            port: 8090,
-            dataPath: "./pb_data_test",
-            verbose: true,
-            clear: true  // Start with a clean database
-        )
+        if #available(macOS 26.0, *) {
+            try await PocketBaseServerLauncher.shared.start(
+                port: 8090,
+                dataPath: "./pb_data_test",
+                verbose: true,
+                clear: true  // Start with a clean database
+            )
+        }
         #endif
     }
 }

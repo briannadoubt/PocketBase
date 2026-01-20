@@ -6,7 +6,7 @@ import CompilerPluginSupport
 let package = Package(
     name: "PocketBase",
     platforms: [
-        .macOS(.v26),
+        .macOS(.v15),
         .iOS(.v17),
         .tvOS(.v17),
         .watchOS(.v10),
