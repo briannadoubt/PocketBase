@@ -302,19 +302,31 @@ public struct Field: Codable, Identifiable, Sendable, Hashable {
         required = try container.decodeIfPresent(Bool.self, forKey: .required)
         presentable = try container.decodeIfPresent(Bool.self, forKey: .presentable)
 
+        // Helper to decode Int from either Int or String
+        func decodeFlexibleInt(forKey key: CodingKeys) throws -> Int? {
+            if let intValue = try? container.decodeIfPresent(Int.self, forKey: key) {
+                return intValue
+            }
+            if let stringValue = try? container.decodeIfPresent(String.self, forKey: key),
+               let intValue = Int(stringValue) {
+                return intValue
+            }
+            return nil
+        }
+
         // Try legacy nested options first, then flat options (PocketBase 0.23+)
         if let nestedOptions = try container.decodeIfPresent(FieldOptions.self, forKey: .options) {
             options = nestedOptions
         } else {
-            // Read flat options (PocketBase 0.23+)
-            let min = try container.decodeIfPresent(Int.self, forKey: .min)
-            let max = try container.decodeIfPresent(Int.self, forKey: .max)
-            let maxSelect = try container.decodeIfPresent(Int.self, forKey: .maxSelect)
-            let maxSize = try container.decodeIfPresent(Int.self, forKey: .maxSize)
+            // Read flat options (PocketBase 0.23+) - handle both Int and String
+            let min = try decodeFlexibleInt(forKey: .min)
+            let max = try decodeFlexibleInt(forKey: .max)
+            let maxSelect = try decodeFlexibleInt(forKey: .maxSelect)
+            let maxSize = try decodeFlexibleInt(forKey: .maxSize)
+            let minSelect = try decodeFlexibleInt(forKey: .minSelect)
             let values = try container.decodeIfPresent([String].self, forKey: .values)
             let collectionId = try container.decodeIfPresent(String.self, forKey: .collectionId)
             let cascadeDelete = try container.decodeIfPresent(Bool.self, forKey: .cascadeDelete)
-            let minSelect = try container.decodeIfPresent(Int.self, forKey: .minSelect)
             let displayFields = try container.decodeIfPresent([String].self, forKey: .displayFields)
             let mimeTypes = try container.decodeIfPresent([String].self, forKey: .mimeTypes)
             let thumbs = try container.decodeIfPresent([String].self, forKey: .thumbs)
