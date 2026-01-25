@@ -12,7 +12,8 @@ public struct LoginButton<T: AuthRecord>: View, HasLogger {
     private let collection: RecordCollection<T>
     @Binding private var authState: AuthState
     private var strategy: RecordCollection<T>.AuthMethod
-    
+    @Environment(\.oauthConfiguration) private var oauthConfig
+
     public init(
         collection: RecordCollection<T>,
         authState: Binding<AuthState>,
@@ -36,11 +37,24 @@ public struct LoginButton<T: AuthRecord>: View, HasLogger {
                         await MainActor.run {
                             authState = .signedIn
                         }
-                    case .oauth:
-                        fatalError("Not implemented")
+                    case .oauth(let provider):
+                        guard let config = oauthConfig else {
+                            Self.logger.error("OAuth configuration not set. Use .oauthConfiguration(redirectScheme:) modifier")
+                            return
+                        }
+                        try await collection.loginWithOAuth(
+                            provider: OAuthProviderName(rawValue: provider.name),
+                            redirectScheme: config.redirectScheme,
+                            preferEphemeralSession: config.preferEphemeralSession
+                        )
+                        await MainActor.run {
+                            authState = .signedIn
+                        }
                     }
+                } catch PocketBaseError.oauthCancelled {
+                    // User cancelled OAuth flow - silent ignore
                 } catch {
-                    print(error)
+                    Self.logger.error("Login failed: \(error)")
                 }
             }
         } label: {

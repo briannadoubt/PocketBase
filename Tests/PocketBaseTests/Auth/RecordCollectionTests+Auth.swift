@@ -49,13 +49,16 @@ extension RecordCollectionTests {
                         password: Self.password
                     )
                 )
-            case .oauth:
-                await #expect(
-                    throws: PocketBaseError.notImplemented,
-                    performing: {
-                        try await collection.login(with: method)
-                    }
-                )
+            case .oauth(let provider):
+                // OAuth requires a flow handler, so we expect it to throw oauthFlowRequired
+                do {
+                    try await collection.login(with: method)
+                    Issue.record("Expected oauthFlowRequired error")
+                } catch PocketBaseError.oauthFlowRequired(let p) {
+                    #expect(p == provider)
+                } catch {
+                    Issue.record("Expected oauthFlowRequired but got: \(error)")
+                }
             }
         }
         
@@ -273,7 +276,7 @@ extension RecordCollectionTests {
             #expect(providers == [expectedProvider])
             
             try environment.assertNetworkRequest(
-                url: baseURL.absoluteString + "/api/collections/testers/records/external-auths",
+                url: baseURL.absoluteString + "/api/collections/testers/records/\(Self.id)/external-auths",
                 method: .get
             )
         }
@@ -288,7 +291,7 @@ extension RecordCollectionTests {
             try await collection.unlinkExternalAuthProvider(id: Self.id, provider: "meow")
             
             try environment.assertNetworkRequest(
-                url: baseURL.absoluteString + "/api/collections/testers/records/external-auths/meow",
+                url: baseURL.absoluteString + "/api/collections/testers/records/\(Self.id)/external-auths/meow",
                 method: .delete
             )
         }

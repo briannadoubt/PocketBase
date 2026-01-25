@@ -34,6 +34,23 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
     public let confirmEmailChangeTemplate: EmailTemplate?
     public let authAlert: AuthAlertConfig?
 
+    // Auth-specific configuration
+    public let oauth2: OAuth2Config?
+    public let passwordAuth: PasswordAuthConfig?
+    public let mfa: MFAConfig?
+    public let otp: OTPConfig?
+
+    // Auth rules
+    public let manageRule: String?
+    public let authRule: String?
+
+    // Token configurations
+    public let authToken: TokenConfig?
+    public let passwordResetToken: TokenConfig?
+    public let emailChangeToken: TokenConfig?
+    public let verificationToken: TokenConfig?
+    public let fileToken: TokenConfig?
+
     /// Backwards compatibility alias for `fields`
     public var schema: [Field]? { fields }
 
@@ -55,7 +72,18 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         verificationTemplate: EmailTemplate? = nil,
         resetPasswordTemplate: EmailTemplate? = nil,
         confirmEmailChangeTemplate: EmailTemplate? = nil,
-        authAlert: AuthAlertConfig? = nil
+        authAlert: AuthAlertConfig? = nil,
+        oauth2: OAuth2Config? = nil,
+        passwordAuth: PasswordAuthConfig? = nil,
+        mfa: MFAConfig? = nil,
+        otp: OTPConfig? = nil,
+        manageRule: String? = nil,
+        authRule: String? = nil,
+        authToken: TokenConfig? = nil,
+        passwordResetToken: TokenConfig? = nil,
+        emailChangeToken: TokenConfig? = nil,
+        verificationToken: TokenConfig? = nil,
+        fileToken: TokenConfig? = nil
     ) {
         self.id = id
         self.name = name
@@ -75,6 +103,17 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         self.resetPasswordTemplate = resetPasswordTemplate
         self.confirmEmailChangeTemplate = confirmEmailChangeTemplate
         self.authAlert = authAlert
+        self.oauth2 = oauth2
+        self.passwordAuth = passwordAuth
+        self.mfa = mfa
+        self.otp = otp
+        self.manageRule = manageRule
+        self.authRule = authRule
+        self.authToken = authToken
+        self.passwordResetToken = passwordResetToken
+        self.emailChangeToken = emailChangeToken
+        self.verificationToken = verificationToken
+        self.fileToken = fileToken
     }
 
     enum CodingKeys: String, CodingKey {
@@ -82,6 +121,9 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         case listRule, viewRule, createRule, updateRule, deleteRule
         case indexes, created, updated, viewQuery
         case verificationTemplate, resetPasswordTemplate, confirmEmailChangeTemplate, authAlert
+        case oauth2, passwordAuth, mfa, otp
+        case manageRule, authRule
+        case authToken, passwordResetToken, emailChangeToken, verificationToken, fileToken
     }
 
     public init(from decoder: Decoder) throws {
@@ -106,6 +148,23 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         resetPasswordTemplate = try container.decodeIfPresent(EmailTemplate.self, forKey: .resetPasswordTemplate)
         confirmEmailChangeTemplate = try container.decodeIfPresent(EmailTemplate.self, forKey: .confirmEmailChangeTemplate)
         authAlert = try container.decodeIfPresent(AuthAlertConfig.self, forKey: .authAlert)
+
+        // Auth configuration
+        oauth2 = try container.decodeIfPresent(OAuth2Config.self, forKey: .oauth2)
+        passwordAuth = try container.decodeIfPresent(PasswordAuthConfig.self, forKey: .passwordAuth)
+        mfa = try container.decodeIfPresent(MFAConfig.self, forKey: .mfa)
+        otp = try container.decodeIfPresent(OTPConfig.self, forKey: .otp)
+
+        // Auth rules
+        manageRule = try container.decodeIfPresent(String.self, forKey: .manageRule)
+        authRule = try container.decodeIfPresent(String.self, forKey: .authRule)
+
+        // Token configs
+        authToken = try container.decodeIfPresent(TokenConfig.self, forKey: .authToken)
+        passwordResetToken = try container.decodeIfPresent(TokenConfig.self, forKey: .passwordResetToken)
+        emailChangeToken = try container.decodeIfPresent(TokenConfig.self, forKey: .emailChangeToken)
+        verificationToken = try container.decodeIfPresent(TokenConfig.self, forKey: .verificationToken)
+        fileToken = try container.decodeIfPresent(TokenConfig.self, forKey: .fileToken)
     }
 
     public func encode(to encoder: Encoder) throws {
@@ -128,6 +187,23 @@ public struct CollectionModel: Codable, Identifiable, Sendable, Hashable {
         try container.encodeIfPresent(resetPasswordTemplate, forKey: .resetPasswordTemplate)
         try container.encodeIfPresent(confirmEmailChangeTemplate, forKey: .confirmEmailChangeTemplate)
         try container.encodeIfPresent(authAlert, forKey: .authAlert)
+
+        // Auth configuration
+        try container.encodeIfPresent(oauth2, forKey: .oauth2)
+        try container.encodeIfPresent(passwordAuth, forKey: .passwordAuth)
+        try container.encodeIfPresent(mfa, forKey: .mfa)
+        try container.encodeIfPresent(otp, forKey: .otp)
+
+        // Auth rules
+        try container.encodeIfPresent(manageRule, forKey: .manageRule)
+        try container.encodeIfPresent(authRule, forKey: .authRule)
+
+        // Token configs
+        try container.encodeIfPresent(authToken, forKey: .authToken)
+        try container.encodeIfPresent(passwordResetToken, forKey: .passwordResetToken)
+        try container.encodeIfPresent(emailChangeToken, forKey: .emailChangeToken)
+        try container.encodeIfPresent(verificationToken, forKey: .verificationToken)
+        try container.encodeIfPresent(fileToken, forKey: .fileToken)
     }
 }
 
@@ -404,6 +480,11 @@ public struct FieldOptions: Codable, Sendable, Hashable {
     /// For autodate fields: set date on record update
     public let onUpdate: Bool?
 
+    enum CodingKeys: String, CodingKey {
+        case min, max, maxSelect, maxSize, values, collectionId, cascadeDelete
+        case minSelect, displayFields, mimeTypes, thumbs, onCreate, onUpdate
+    }
+
     public init(
         min: Int? = nil,
         max: Int? = nil,
@@ -433,6 +514,37 @@ public struct FieldOptions: Codable, Sendable, Hashable {
         self.onCreate = onCreate
         self.onUpdate = onUpdate
     }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        // Helper to decode Int from either Int or String
+        func decodeFlexibleInt(forKey key: CodingKeys) throws -> Int? {
+            if let intValue = try? container.decodeIfPresent(Int.self, forKey: key) {
+                return intValue
+            }
+            if let stringValue = try? container.decodeIfPresent(String.self, forKey: key),
+               let intValue = Int(stringValue) {
+                return intValue
+            }
+            return nil
+        }
+
+        self.min = try decodeFlexibleInt(forKey: .min)
+        self.max = try decodeFlexibleInt(forKey: .max)
+        self.maxSelect = try decodeFlexibleInt(forKey: .maxSelect)
+        self.maxSize = try decodeFlexibleInt(forKey: .maxSize)
+        self.minSelect = try decodeFlexibleInt(forKey: .minSelect)
+
+        self.values = try container.decodeIfPresent([String].self, forKey: .values)
+        self.collectionId = try container.decodeIfPresent(String.self, forKey: .collectionId)
+        self.cascadeDelete = try container.decodeIfPresent(Bool.self, forKey: .cascadeDelete)
+        self.displayFields = try container.decodeIfPresent([String].self, forKey: .displayFields)
+        self.mimeTypes = try container.decodeIfPresent([String].self, forKey: .mimeTypes)
+        self.thumbs = try container.decodeIfPresent([String].self, forKey: .thumbs)
+        self.onCreate = try container.decodeIfPresent(Bool.self, forKey: .onCreate)
+        self.onUpdate = try container.decodeIfPresent(Bool.self, forKey: .onUpdate)
+    }
 }
 
 /// Response wrapper for paginated collections.
@@ -455,5 +567,158 @@ public struct CollectionsResponse: Codable, Sendable {
         self.totalItems = totalItems
         self.totalPages = totalPages
         self.items = items
+    }
+}
+
+// MARK: - OAuth2 Configuration
+
+/// OAuth2 provider configuration
+public struct OAuth2ProviderConfig: Codable, Sendable, Hashable {
+    public var name: String
+    public var clientId: String
+    public var clientSecret: String
+    public var authURL: String?
+    public var tokenURL: String?
+    public var userInfoURL: String?
+    public var displayName: String?
+    public var pkce: Bool?
+    public var extra: [String: String]?
+
+    enum CodingKeys: String, CodingKey {
+        case name, clientId, clientSecret, displayName, pkce, extra
+        case authURL = "authUrl"
+        case tokenURL = "tokenUrl"
+        case userInfoURL = "userInfoUrl"
+    }
+
+    public init(
+        name: String,
+        clientId: String,
+        clientSecret: String,
+        authURL: String? = nil,
+        tokenURL: String? = nil,
+        userInfoURL: String? = nil,
+        displayName: String? = nil,
+        pkce: Bool? = nil,
+        extra: [String: String]? = nil
+    ) {
+        self.name = name
+        self.clientId = clientId
+        self.clientSecret = clientSecret
+        self.authURL = authURL
+        self.tokenURL = tokenURL
+        self.userInfoURL = userInfoURL
+        self.displayName = displayName
+        self.pkce = pkce
+        self.extra = extra
+    }
+}
+
+/// OAuth2 field mapping configuration
+public struct OAuth2MappedFields: Codable, Sendable, Hashable {
+    public var id: String?
+    public var name: String?
+    public var username: String?
+    public var avatarURL: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, username
+        case avatarURL = "avatarUrl"
+    }
+
+    public init(
+        id: String? = nil,
+        name: String? = nil,
+        username: String? = nil,
+        avatarURL: String? = nil
+    ) {
+        self.id = id
+        self.name = name
+        self.username = username
+        self.avatarURL = avatarURL
+    }
+}
+
+/// OAuth2 authentication configuration
+public struct OAuth2Config: Codable, Sendable, Hashable {
+    public var enabled: Bool?
+    public var mappedFields: OAuth2MappedFields?
+    public var providers: [OAuth2ProviderConfig]?
+
+    public init(
+        enabled: Bool? = nil,
+        mappedFields: OAuth2MappedFields? = nil,
+        providers: [OAuth2ProviderConfig]? = nil
+    ) {
+        self.enabled = enabled
+        self.mappedFields = mappedFields
+        self.providers = providers
+    }
+}
+
+// MARK: - Other Auth Options
+
+/// Password authentication configuration
+public struct PasswordAuthConfig: Codable, Sendable, Hashable {
+    public var enabled: Bool?
+    public var identityFields: [String]?
+
+    public init(
+        enabled: Bool? = nil,
+        identityFields: [String]? = nil
+    ) {
+        self.enabled = enabled
+        self.identityFields = identityFields
+    }
+}
+
+/// MFA configuration
+public struct MFAConfig: Codable, Sendable, Hashable {
+    public var enabled: Bool?
+    public var duration: Int?
+    public var rule: String?
+
+    public init(
+        enabled: Bool? = nil,
+        duration: Int? = nil,
+        rule: String? = nil
+    ) {
+        self.enabled = enabled
+        self.duration = duration
+        self.rule = rule
+    }
+}
+
+/// OTP configuration
+public struct OTPConfig: Codable, Sendable, Hashable {
+    public var enabled: Bool?
+    public var duration: Int?
+    public var length: Int?
+    public var emailTemplate: EmailTemplate?
+
+    public init(
+        enabled: Bool? = nil,
+        duration: Int? = nil,
+        length: Int? = nil,
+        emailTemplate: EmailTemplate? = nil
+    ) {
+        self.enabled = enabled
+        self.duration = duration
+        self.length = length
+        self.emailTemplate = emailTemplate
+    }
+}
+
+/// Token configuration with duration and secret
+public struct TokenConfig: Codable, Sendable, Hashable {
+    public var duration: Int?
+    public var secret: String?
+
+    public init(
+        duration: Int? = nil,
+        secret: String? = nil
+    ) {
+        self.duration = duration
+        self.secret = secret
     }
 }

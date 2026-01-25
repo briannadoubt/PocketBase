@@ -55,12 +55,32 @@ public struct CollectionUpdateRequest: Codable, Sendable {
     public let confirmEmailChangeTemplate: EmailTemplate?
     public let authAlert: AuthAlertConfig?
 
+    // Auth-specific configuration
+    public let oauth2: OAuth2Config?
+    public let passwordAuth: PasswordAuthConfig?
+    public let mfa: MFAConfig?
+    public let otp: OTPConfig?
+
+    // Auth rules
+    public let manageRule: String?
+    public let authRule: String?
+
+    // Token configurations
+    public let authToken: TokenConfig?
+    public let passwordResetToken: TokenConfig?
+    public let emailChangeToken: TokenConfig?
+    public let verificationToken: TokenConfig?
+    public let fileToken: TokenConfig?
+
     enum CodingKeys: String, CodingKey {
         case name
         case schema = "fields"  // PocketBase 0.23+ uses `fields`
         case listRule, viewRule, createRule, updateRule, deleteRule
         case indexes, viewQuery
         case verificationTemplate, resetPasswordTemplate, confirmEmailChangeTemplate, authAlert
+        case oauth2, passwordAuth, mfa, otp
+        case manageRule, authRule
+        case authToken, passwordResetToken, emailChangeToken, verificationToken, fileToken
     }
 
     public init(
@@ -76,7 +96,18 @@ public struct CollectionUpdateRequest: Codable, Sendable {
         verificationTemplate: EmailTemplate? = nil,
         resetPasswordTemplate: EmailTemplate? = nil,
         confirmEmailChangeTemplate: EmailTemplate? = nil,
-        authAlert: AuthAlertConfig? = nil
+        authAlert: AuthAlertConfig? = nil,
+        oauth2: OAuth2Config? = nil,
+        passwordAuth: PasswordAuthConfig? = nil,
+        mfa: MFAConfig? = nil,
+        otp: OTPConfig? = nil,
+        manageRule: String? = nil,
+        authRule: String? = nil,
+        authToken: TokenConfig? = nil,
+        passwordResetToken: TokenConfig? = nil,
+        emailChangeToken: TokenConfig? = nil,
+        verificationToken: TokenConfig? = nil,
+        fileToken: TokenConfig? = nil
     ) {
         self.name = name
         self.schema = schema
@@ -91,5 +122,16 @@ public struct CollectionUpdateRequest: Codable, Sendable {
         self.resetPasswordTemplate = resetPasswordTemplate
         self.confirmEmailChangeTemplate = confirmEmailChangeTemplate
         self.authAlert = authAlert
+        self.oauth2 = oauth2
+        self.passwordAuth = passwordAuth
+        self.mfa = mfa
+        self.otp = otp
+        self.manageRule = manageRule
+        self.authRule = authRule
+        self.authToken = authToken
+        self.passwordResetToken = passwordResetToken
+        self.emailChangeToken = emailChangeToken
+        self.verificationToken = verificationToken
+        self.fileToken = fileToken
     }
 }

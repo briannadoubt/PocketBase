@@ -475,6 +475,111 @@ struct LogoutButton: View {
 }
 ```
 
+### OAuth2 Authentication
+
+PocketBase Swift supports full OAuth2 authentication with PKCE for providers like Google, GitHub, Discord, and more.
+
+#### Quick Setup
+
+1. **Configure URL scheme in Info.plist:**
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+    <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+            <string>myapp</string>
+        </array>
+    </dict>
+</array>
+```
+
+2. **Add OAuth configuration to your app:**
+```swift
+@main
+struct MyApp: App {
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .pocketbase(.localhost)
+                .oauthConfiguration(redirectScheme: "myapp")
+        }
+    }
+}
+```
+
+3. **Use the built-in OAuth buttons:**
+```swift
+struct LoginView: View {
+    @Environment(\.pocketbase) var pocketbase
+    @State private var authState: AuthState = .signedOut
+    @State private var providers: [OAuthProvider] = []
+
+    var body: some View {
+        VStack {
+            ForEach(providers) { provider in
+                LoginButton(
+                    collection: pocketbase.collection("users"),
+                    authState: $authState,
+                    strategy: .oauth(provider)
+                )
+            }
+        }
+        .task {
+            let methods = try? await pocketbase.collection("users").listAuthMethods()
+            providers = methods?.oauth2.providers ?? []
+        }
+    }
+}
+```
+
+#### Manual OAuth Flow
+
+For custom UI or advanced use cases:
+
+```swift
+let users = pocketbase.collection("users")
+
+// Login with type-safe provider names
+try await users.loginWithOAuth(
+    provider: .google,
+    redirectScheme: "myapp"
+)
+
+// Or use string literals
+try await users.loginWithOAuth(
+    provider: "github",
+    redirectScheme: "myapp"
+)
+
+// Sign up with custom user data
+let customUser = User(name: "New User", avatar: nil)
+try await users.loginWithOAuth(
+    provider: .discord,
+    redirectScheme: "myapp",
+    createData: customUser
+)
+```
+
+#### Supported Providers
+
+Built-in type-safe constants for common providers:
+- `.google`, `.github`, `.gitlab`, `.discord`
+- `.twitter`, `.facebook`, `.microsoft`, `.apple`
+- `.spotify`, `.kakao`, `.twitch`, `.strava`
+- And more...
+
+Custom providers: `.custom("okta")` or use string literals
+
+#### Platform Support
+
+- ✅ iOS 12+ (full support)
+- ✅ macOS 10.15+ (full support)
+- ✅ visionOS (full support)
+- ❌ tvOS/watchOS (no browser-based OAuth)
+
+For complete setup instructions, troubleshooting, and advanced features, see the [OAuth2 Setup Guide](Documentation/OAuth2Setup.md).
+
 ## Querying Data
 
 ### StaticQuery

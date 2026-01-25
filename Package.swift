@@ -15,7 +15,7 @@ let package = Package(
     ],
     products: [
         .library(name: "PocketBase", targets: ["PocketBase"]),
-        .library(name: "PocketBaseAdmin", targets: ["PocketBaseAdmin"]),
+        .library(name: "PocketBaseAdmin", type: .static, targets: ["PocketBaseAdmin"]),
         .library(name: "PocketBaseUI", targets: ["PocketBaseUI"]),
         .library(name: "PocketBaseServerLib", targets: ["PocketBaseServerLib"]),
         .executable(name: "PocketBaseServer", targets: ["PocketBaseServer"]),
@@ -83,7 +83,11 @@ let package = Package(
         ),
         .testTarget(
             name: "PocketBaseTests",
-            dependencies: ["PocketBase", "TestUtilities"]
+            dependencies: ["PocketBase", "PocketBaseAdmin", "TestUtilities"]
+        ),
+        .testTarget(
+            name: "PocketBaseAdminTests",
+            dependencies: ["PocketBase", "PocketBaseAdmin"]
         ),
         .target(
             name: "PocketBaseServerLib",

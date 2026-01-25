@@ -17,6 +17,7 @@ public struct SignUpButton<T: AuthRecord>: View, HasLogger {
     private let username: String
     private let password: String
     private let oauthProvider: OAuthProvider?
+    @Environment(\.oauthConfiguration) private var oauthConfig
 
     /// Initialize for email/password sign up
     public init(
@@ -56,8 +57,22 @@ public struct SignUpButton<T: AuthRecord>: View, HasLogger {
         Task {
             do {
                 if let provider = oauthProvider {
-                    // OAuth sign up - not implemented yet
-                    Self.logger.fault("OAuth is not implemented yet for provider: \(provider.name)")
+                    // OAuth sign up with custom user data
+                    guard let config = oauthConfig else {
+                        Self.logger.error("OAuth configuration not set. Use .oauthConfiguration(redirectScheme:) modifier")
+                        return
+                    }
+
+                    let record = try await newRecord("", "")
+                    try await collection.loginWithOAuth(
+                        provider: OAuthProviderName(rawValue: provider.name),
+                        redirectScheme: config.redirectScheme,
+                        createData: record,
+                        preferEphemeralSession: config.preferEphemeralSession
+                    )
+                    await MainActor.run {
+                        authState = .signedIn
+                    }
                     return
                 }
 
@@ -76,6 +91,8 @@ public struct SignUpButton<T: AuthRecord>: View, HasLogger {
                 await MainActor.run {
                     authState = .signedIn
                 }
+            } catch PocketBaseError.oauthCancelled {
+                // User cancelled OAuth flow - silent ignore
             } catch {
                 Self.logger.error("Failed to sign up: \(error)")
             }
