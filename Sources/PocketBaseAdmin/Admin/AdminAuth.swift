@@ -9,6 +9,17 @@ import Foundation
 import PocketBase
 
 /// Admin authentication operations.
+///
+/// **DEPRECATED:** PocketBase v0.23.0+ removed the `/api/admins/` endpoints.
+/// Admins are now managed as auth records in the `_superusers` collection.
+///
+/// For PocketBase v0.23.0+, use:
+/// ```swift
+/// let collection = pocketbase.collection(YourSuperuserModel.self)
+/// await collection.authWithPassword(email, password: password)
+/// ```
+///
+/// This API is kept for backward compatibility with PocketBase versions < 0.23.0.
 public actor AdminAuth: AdminNetworking {
     public let pocketbase: PocketBase
 
