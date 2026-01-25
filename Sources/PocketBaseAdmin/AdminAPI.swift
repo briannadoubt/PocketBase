@@ -26,6 +26,11 @@ public struct AdminAPI: Sendable {
 
     // MARK: - Admin Subsystems
 
+    /// Admin authentication operations.
+    public var auth: AdminAuth {
+        AdminAuth(pocketbase: pocketbase)
+    }
+
     /// Access logs management.
     public var logs: LogsAdmin {
         LogsAdmin(pocketbase: pocketbase)
