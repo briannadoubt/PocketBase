@@ -46,7 +46,7 @@ public struct AuthStore: Sendable {
         keychain["token"]
     }
     
-    public func set(token: String) {
+    func set(token: String) {
         keychain["token"] = token
     }
     
