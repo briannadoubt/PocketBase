@@ -47,6 +47,25 @@ public actor AdminAuth: AdminNetworking {
         return response
     }
 
+    /// Validate the current admin token by attempting to refresh it.
+    /// If the token is invalid, it will be cleared from the auth store.
+    ///
+    /// - Returns: True if the token is valid and was refreshed, false if invalid.
+    public func validateToken() async -> Bool {
+        guard pocketbase.authStore.isValid else {
+            return false
+        }
+
+        do {
+            _ = try await refresh()
+            return true
+        } catch {
+            // Token is invalid, clear it
+            pocketbase.authStore.clear()
+            return false
+        }
+    }
+
     /// Refresh the current admin's authentication token.
     ///
     /// - Returns: Refreshed admin authentication response.
