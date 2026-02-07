@@ -33,6 +33,8 @@ jobs:
       run: swift build
     - name: Run Unit Tests
       run: swift test --filter PocketBaseTests
+    - name: Run Admin Tests
+      run: swift test --filter PocketBaseAdminTests
     - name: Run Macro Tests
       run: swift test --filter PocketBaseMacrosTests
 
@@ -53,6 +55,14 @@ jobs:
       run: swift build
     - name: Run Unit Tests
       run: swift test --filter PocketBaseTests
+    - name: Run Admin Tests
+      run: swift test --filter PocketBaseAdminTests
     - name: Run Macro Tests
       run: swift test --filter PocketBaseMacrosTests
-
+    - name: Run Integration Tests
+      run: |
+        if command -v container >/dev/null 2>&1; then
+          swift test --filter PocketBaseIntegrationTests
+        else
+          echo "Skipping integration tests because Apple container CLI is not installed on this runner."
+        fi

@@ -9,6 +9,7 @@ import Foundation
 import Testing
 @testable import PocketBaseAdmin
 @testable import PocketBase
+import TestUtilities
 
 @Suite("AdminAPI")
 struct AdminAPITests {
@@ -172,5 +173,103 @@ struct HealthAdminTests {
     func initialization() async {
         let health = HealthAdmin(pocketbase: pocketbase)
         #expect(await health.pocketbase.url == pocketbase.url)
+    }
+}
+
+@Suite("Admin Networking Contracts")
+struct AdminNetworkingContractTests {
+
+    private let baseURL = URL(string: "http://localhost:8090")!
+
+    private func makePocketBase(
+        data: Data,
+        service: String = UUID().uuidString
+    ) -> (pocketbase: PocketBase, session: MockNetworkSession) {
+        let defaults = UserDefaultsSpy(suiteName: service)
+        let session = MockNetworkSession(data: data)
+        let pocketbase = PocketBase(
+            url: baseURL,
+            defaults: defaults,
+            session: session,
+            authStore: AuthStore(
+                keychain: MockKeychain.self,
+                service: service,
+                defaults: defaults
+            )
+        )
+        return (pocketbase, session)
+    }
+
+    @Test("Collections list sends expected GET path and query")
+    func collectionsListRequestContract() async throws {
+        let response = """
+        {
+            "page": 2,
+            "perPage": 50,
+            "totalItems": 0,
+            "totalPages": 0,
+            "items": []
+        }
+        """
+        let env = makePocketBase(data: Data(response.utf8))
+
+        _ = try await env.pocketbase.admin.collections.list(page: 2, perPage: 50)
+
+        #expect(env.session.lastRequest?.httpMethod == "GET")
+        #expect(env.session.lastRequest?.url?.path == "/api/collections")
+        let query = URLComponents(url: try #require(env.session.lastRequest?.url), resolvingAgainstBaseURL: false)?.queryItems ?? []
+        #expect(query.contains(URLQueryItem(name: "page", value: "2")))
+        #expect(query.contains(URLQueryItem(name: "perPage", value: "50")))
+    }
+
+    @Test("Records list sends expected query parameters")
+    func recordsListRequestContract() async throws {
+        let response = """
+        {
+            "page": 1,
+            "perPage": 30,
+            "totalItems": 0,
+            "totalPages": 0,
+            "items": []
+        }
+        """
+        let env = makePocketBase(data: Data(response.utf8))
+
+        _ = try await env.pocketbase.admin.records("posts").list(
+            page: 3,
+            perPage: 15,
+            sort: "-created",
+            filter: "published=true",
+            expand: "author,tags"
+        )
+
+        #expect(env.session.lastRequest?.httpMethod == "GET")
+        #expect(env.session.lastRequest?.url?.path == "/api/collections/posts/records")
+        let query = URLComponents(url: try #require(env.session.lastRequest?.url), resolvingAgainstBaseURL: false)?.queryItems ?? []
+        #expect(query.contains(URLQueryItem(name: "page", value: "3")))
+        #expect(query.contains(URLQueryItem(name: "perPage", value: "15")))
+        #expect(query.contains(URLQueryItem(name: "sort", value: "-created")))
+        #expect(query.contains(URLQueryItem(name: "filter", value: "published=true")))
+        #expect(query.contains(URLQueryItem(name: "expand", value: "author,tags")))
+    }
+
+    @Test("Admin auth token is forwarded as bearer header")
+    func adminUsesAuthTokenHeader() async throws {
+        let response = """
+        {
+            "code": 200,
+            "message": "OK",
+            "data": {
+                "canBackup": true,
+                "version": "0.25.0"
+            }
+        }
+        """
+        let env = makePocketBase(data: Data(response.utf8))
+        env.pocketbase.authStore.set(token: "token-123")
+
+        _ = try await env.pocketbase.admin.health.check()
+
+        #expect(env.session.lastRequest?.value(forHTTPHeaderField: "Authorization") == "Bearer token-123")
     }
 }

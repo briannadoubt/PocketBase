@@ -17,6 +17,9 @@ public struct PocketBase: Sendable, HasLogger {
     
     let session: any NetworkSession
     
+    /// Exposes the configured network session for advanced integrations.
+    public var networkSession: any NetworkSession { session }
+    
     public init(
         url: URL,
         defaults: UserDefaults? = UserDefaults.pocketbase,

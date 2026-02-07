@@ -28,7 +28,28 @@ public extension RecordCollection where T: AuthRecord {
         redirectScheme: String,
         preferEphemeralSession: Bool = true
     ) async throws -> AuthResponse<T> {
-        #if canImport(AuthenticationServices) && (os(iOS) || os(macOS))
+        #if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
+        return try await loginWithOAuth(
+            provider: provider,
+            redirectScheme: redirectScheme,
+            authenticator: OAuthFlowHandler(),
+            preferEphemeralSession: preferEphemeralSession
+        )
+        #else
+        throw PocketBaseError.notImplemented
+        #endif
+    }
+    
+    #if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
+    @MainActor
+    @Sendable
+    @discardableResult
+    internal func loginWithOAuth(
+        provider: OAuthProviderName,
+        redirectScheme: String,
+        authenticator: any OAuthAuthenticating,
+        preferEphemeralSession: Bool = true
+    ) async throws -> AuthResponse<T> {
         // Get OAuth provider configuration
         let authMethods = try await listAuthMethods()
         guard let oauthProvider = authMethods.oauth2.providers.first(where: { $0.name == provider.rawValue }) else {
@@ -40,10 +61,10 @@ public extension RecordCollection where T: AuthRecord {
         }
 
         // Launch OAuth authorization flow
-        let flowHandler = OAuthFlowHandler()
-        let code = try await flowHandler.authenticate(
+        let code = try await authenticator.authenticate(
             authUrl: oauthProvider.authUrl,
             redirectScheme: redirectScheme,
+            expectedState: oauthProvider.state,
             preferEphemeralSession: preferEphemeralSession
         )
 
@@ -57,10 +78,8 @@ public extension RecordCollection where T: AuthRecord {
             codeVerifier: oauthProvider.codeVerifier,
             redirectUrl: redirectUrl
         )
-        #else
-        throw PocketBaseError.notImplemented
-        #endif
     }
+    #endif
 
     /// Complete OAuth signup flow with custom user data
     ///
@@ -81,7 +100,30 @@ public extension RecordCollection where T: AuthRecord {
         createData: CreateData,
         preferEphemeralSession: Bool = true
     ) async throws -> AuthResponse<T> where CreateData.EncodingConfiguration == PocketBase.EncodingConfiguration {
-        #if canImport(AuthenticationServices) && (os(iOS) || os(macOS))
+        #if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
+        return try await loginWithOAuth(
+            provider: provider,
+            redirectScheme: redirectScheme,
+            createData: createData,
+            authenticator: OAuthFlowHandler(),
+            preferEphemeralSession: preferEphemeralSession
+        )
+        #else
+        throw PocketBaseError.notImplemented
+        #endif
+    }
+    
+    #if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
+    @MainActor
+    @Sendable
+    @discardableResult
+    internal func loginWithOAuth<CreateData: EncodableWithConfiguration & Sendable>(
+        provider: OAuthProviderName,
+        redirectScheme: String,
+        createData: CreateData,
+        authenticator: any OAuthAuthenticating,
+        preferEphemeralSession: Bool = true
+    ) async throws -> AuthResponse<T> where CreateData.EncodingConfiguration == PocketBase.EncodingConfiguration {
         // Get OAuth provider configuration
         let authMethods = try await listAuthMethods()
         guard let oauthProvider = authMethods.oauth2.providers.first(where: { $0.name == provider.rawValue }) else {
@@ -93,10 +135,10 @@ public extension RecordCollection where T: AuthRecord {
         }
 
         // Launch OAuth authorization flow
-        let flowHandler = OAuthFlowHandler()
-        let code = try await flowHandler.authenticate(
+        let code = try await authenticator.authenticate(
             authUrl: oauthProvider.authUrl,
             redirectScheme: redirectScheme,
+            expectedState: oauthProvider.state,
             preferEphemeralSession: preferEphemeralSession
         )
 
@@ -111,8 +153,6 @@ public extension RecordCollection where T: AuthRecord {
             redirectUrl: redirectUrl,
             createData: createData
         )
-        #else
-        throw PocketBaseError.notImplemented
-        #endif
     }
+    #endif
 }

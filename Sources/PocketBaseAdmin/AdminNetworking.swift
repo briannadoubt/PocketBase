@@ -71,8 +71,7 @@ extension AdminNetworking {
         }
         #endif
 
-        // Use the same approach as working RecordCollection code
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await pocketbase.networkSession.data(for: request)
 
         #if DEBUG
         if let responseString = String(data: data, encoding: .utf8) {

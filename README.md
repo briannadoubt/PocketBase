@@ -20,7 +20,7 @@ Add PocketBase to your Swift package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/briannadoubt/PocketBase.git", from: "1.0.0")
+    .package(url: "https://github.com/briannadoubt/PocketBase.git", from: "0.5.0")
 ]
 ```
 
@@ -575,8 +575,9 @@ Custom providers: `.custom("okta")` or use string literals
 
 - ✅ iOS 12+ (full support)
 - ✅ macOS 10.15+ (full support)
+- ✅ tvOS (full support)
+- ✅ watchOS (full support)
 - ✅ visionOS (full support)
-- ❌ tvOS/watchOS (no browser-based OAuth)
 
 For complete setup instructions, troubleshooting, and advanced features, see the [OAuth2 Setup Guide](Documentation/OAuth2Setup.md).
 

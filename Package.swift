@@ -20,8 +20,6 @@ let package = Package(
         .library(name: "PocketBaseServerLib", targets: ["PocketBaseServerLib"]),
         .executable(name: "PocketBaseServer", targets: ["PocketBaseServer"]),
         .plugin(name: "PocketBasePlugin", targets: ["PocketBasePlugin"]),
-        // MARK: WIP
-//        .library(name: "DataBase", targets: ["DataBase"]),
     ],
     dependencies: [
 //        .package(path: "../EventSource" url: "https://github.com/briannadoubt/EventSource.git", .upToNextMinor(from: "0.1.0")),
@@ -35,10 +33,6 @@ let package = Package(
         .package(url: "https://github.com/vapor/multipart-kit.git", .upToNextMajor(from: "4.0.0")),
     ],
     targets: [
-        .target(
-            name: "DataBase",
-            dependencies: ["PocketBase"]
-        ),
         .target(
             name: "PocketBase",
             dependencies: [
@@ -87,7 +81,7 @@ let package = Package(
         ),
         .testTarget(
             name: "PocketBaseAdminTests",
-            dependencies: ["PocketBase", "PocketBaseAdmin"]
+            dependencies: ["PocketBase", "PocketBaseAdmin", "TestUtilities"]
         ),
         .target(
             name: "PocketBaseServerLib",

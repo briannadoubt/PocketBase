@@ -313,14 +313,14 @@ let provider: OAuthProviderName = "github"
 |----------|---------|-------|
 | iOS 12+ | ✅ Full | Uses `ASWebAuthenticationSession` |
 | macOS 10.15+ | ✅ Full | Uses `ASWebAuthenticationSession` |
-| tvOS | ❌ Limited | No browser-based OAuth support |
-| watchOS | ❌ Limited | No browser-based OAuth support |
+| tvOS | ✅ Full | Uses `ASWebAuthenticationSession` |
+| watchOS | ✅ Full | Uses `ASWebAuthenticationSession` |
 | visionOS | ✅ Full | Uses `ASWebAuthenticationSession` |
 
-For tvOS/watchOS, consider alternative auth methods like:
+For non-interactive contexts, consider alternative auth methods like:
 - Password authentication
 - Magic link authentication
-- Token-based authentication from companion iOS app
+- Token-based authentication from companion app
 
 ## Troubleshooting
 
@@ -331,7 +331,7 @@ For tvOS/watchOS, consider alternative auth methods like:
 **Solutions:**
 1. Verify `.oauthConfiguration(redirectScheme:)` is set in SwiftUI hierarchy
 2. Check that the redirect scheme matches your Info.plist
-3. Ensure you're on iOS/macOS (not tvOS/watchOS)
+3. Ensure your app can present `ASWebAuthenticationSession` on the current device state
 
 ### "Invalid Redirect URI" Error
 
