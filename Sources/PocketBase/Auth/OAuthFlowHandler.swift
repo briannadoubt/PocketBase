@@ -7,7 +7,7 @@
 
 import Foundation
 
-#if canImport(AuthenticationServices)
+#if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
 import AuthenticationServices
 
 #if canImport(UIKit)

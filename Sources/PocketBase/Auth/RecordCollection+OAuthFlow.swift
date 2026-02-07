@@ -28,7 +28,7 @@ public extension RecordCollection where T: AuthRecord {
         redirectScheme: String,
         preferEphemeralSession: Bool = true
     ) async throws -> AuthResponse<T> {
-        #if canImport(AuthenticationServices)
+        #if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
         return try await loginWithOAuth(
             provider: provider,
             redirectScheme: redirectScheme,
@@ -40,7 +40,7 @@ public extension RecordCollection where T: AuthRecord {
         #endif
     }
     
-    #if canImport(AuthenticationServices)
+    #if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
     @MainActor
     @Sendable
     @discardableResult
@@ -100,7 +100,7 @@ public extension RecordCollection where T: AuthRecord {
         createData: CreateData,
         preferEphemeralSession: Bool = true
     ) async throws -> AuthResponse<T> where CreateData.EncodingConfiguration == PocketBase.EncodingConfiguration {
-        #if canImport(AuthenticationServices)
+        #if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
         return try await loginWithOAuth(
             provider: provider,
             redirectScheme: redirectScheme,
@@ -113,7 +113,7 @@ public extension RecordCollection where T: AuthRecord {
         #endif
     }
     
-    #if canImport(AuthenticationServices)
+    #if canImport(AuthenticationServices) && !os(watchOS) && !os(tvOS)
     @MainActor
     @Sendable
     @discardableResult
