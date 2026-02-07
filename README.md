@@ -575,8 +575,9 @@ Custom providers: `.custom("okta")` or use string literals
 
 - ✅ iOS 12+ (full support)
 - ✅ macOS 10.15+ (full support)
+- ✅ tvOS (full support)
+- ✅ watchOS (full support)
 - ✅ visionOS (full support)
-- ❌ tvOS/watchOS (no browser-based OAuth)
 
 For complete setup instructions, troubleshooting, and advanced features, see the [OAuth2 Setup Guide](Documentation/OAuth2Setup.md).
 

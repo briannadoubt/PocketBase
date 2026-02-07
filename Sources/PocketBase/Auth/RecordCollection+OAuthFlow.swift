@@ -7,6 +7,13 @@
 
 import Foundation
 
+#if canImport(AuthenticationServices)
+@MainActor
+enum OAuthFlowDependencies {
+    static var authenticatorFactory: () -> any OAuthAuthenticating = { OAuthFlowHandler() }
+}
+#endif
+
 public extension RecordCollection where T: AuthRecord {
     /// Complete OAuth login flow (authorization + token exchange)
     ///
@@ -28,7 +35,7 @@ public extension RecordCollection where T: AuthRecord {
         redirectScheme: String,
         preferEphemeralSession: Bool = true
     ) async throws -> AuthResponse<T> {
-        #if canImport(AuthenticationServices) && (os(iOS) || os(macOS))
+        #if canImport(AuthenticationServices)
         // Get OAuth provider configuration
         let authMethods = try await listAuthMethods()
         guard let oauthProvider = authMethods.oauth2.providers.first(where: { $0.name == provider.rawValue }) else {
@@ -40,10 +47,11 @@ public extension RecordCollection where T: AuthRecord {
         }
 
         // Launch OAuth authorization flow
-        let flowHandler = OAuthFlowHandler()
+        let flowHandler = OAuthFlowDependencies.authenticatorFactory()
         let code = try await flowHandler.authenticate(
             authUrl: oauthProvider.authUrl,
             redirectScheme: redirectScheme,
+            expectedState: oauthProvider.state,
             preferEphemeralSession: preferEphemeralSession
         )
 
@@ -81,7 +89,7 @@ public extension RecordCollection where T: AuthRecord {
         createData: CreateData,
         preferEphemeralSession: Bool = true
     ) async throws -> AuthResponse<T> where CreateData.EncodingConfiguration == PocketBase.EncodingConfiguration {
-        #if canImport(AuthenticationServices) && (os(iOS) || os(macOS))
+        #if canImport(AuthenticationServices)
         // Get OAuth provider configuration
         let authMethods = try await listAuthMethods()
         guard let oauthProvider = authMethods.oauth2.providers.first(where: { $0.name == provider.rawValue }) else {
@@ -93,10 +101,11 @@ public extension RecordCollection where T: AuthRecord {
         }
 
         // Launch OAuth authorization flow
-        let flowHandler = OAuthFlowHandler()
+        let flowHandler = OAuthFlowDependencies.authenticatorFactory()
         let code = try await flowHandler.authenticate(
             authUrl: oauthProvider.authUrl,
             redirectScheme: redirectScheme,
+            expectedState: oauthProvider.state,
             preferEphemeralSession: preferEphemeralSession
         )
 
