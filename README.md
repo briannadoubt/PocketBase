@@ -20,7 +20,7 @@ Add PocketBase to your Swift package:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/briannadoubt/PocketBase.git", from: "1.0.0")
+    .package(url: "https://github.com/briannadoubt/PocketBase.git", from: "0.5.0")
 ]
 ```
 
