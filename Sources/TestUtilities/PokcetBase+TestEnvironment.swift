@@ -31,7 +31,8 @@ extension PocketBase {
                 session: session,
                 authStore: AuthStore(
                     keychain: keychain,
-                    defaults: defaults
+                    defaults: defaults,
+                    recordKey: "record.\(service)"
                 )
             )
             self.init(

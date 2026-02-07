@@ -161,16 +161,12 @@ struct OAuthFlowOrchestrationTests {
         )
         let collection = environment.pocketbase.collection(Tester.self)
         let authenticator = CapturingAuthenticator()
-        let originalFactory = OAuthFlowDependencies.authenticatorFactory
-        OAuthFlowDependencies.authenticatorFactory = { authenticator }
-        defer {
-            OAuthFlowDependencies.authenticatorFactory = originalFactory
-        }
 
         do {
             _ = try await collection.loginWithOAuth(
                 provider: OAuthProviderName.google,
-                redirectScheme: "myapp"
+                redirectScheme: "myapp",
+                authenticator: authenticator
             )
             Issue.record("Expected test sentinel error")
         } catch TestError.stopAfterCapture {

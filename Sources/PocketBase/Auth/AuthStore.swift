@@ -12,6 +12,8 @@ public struct AuthStore: Sendable, HasLogger {
     public static var service: String {
         "io.pocketbase.auth"
     }
+    
+    static let legacyRecordKey = "record"
 
     // UserDefaults is thread-safe per Apple's documentation, but isn't marked as Sendable.
     // nonisolated(unsafe) silences the compiler warning while maintaining correct behavior.
@@ -36,7 +38,7 @@ public struct AuthStore: Sendable, HasLogger {
     init(
         keychain: KeychainProtocol,
         defaults: UserDefaults? = UserDefaults.pocketbase,
-        recordKey: String = "record"
+        recordKey: String = "record.\(AuthStore.service)"
     ) {
         self.keychain = keychain
         self.defaults = defaults
@@ -58,10 +60,21 @@ public struct AuthStore: Sendable, HasLogger {
     }
     
     public func record<T: AuthRecord>() throws -> T? {
-        guard let data = defaults?.value(forKey: recordKey) as? Data else {
+        if let data = defaults?.value(forKey: recordKey) as? Data {
+            let record = try JSONDecoder().decode(AuthResponse<T>.self, from: data).record
+            return record
+        }
+        
+        // Backward-compatibility: fallback to legacy key and migrate on successful decode.
+        guard
+            recordKey != Self.legacyRecordKey,
+            let legacyData = defaults?.value(forKey: Self.legacyRecordKey) as? Data
+        else {
             return nil
         }
-        let record = try JSONDecoder().decode(AuthResponse<T>.self, from: data).record
+        let record = try JSONDecoder().decode(AuthResponse<T>.self, from: legacyData).record
+        defaults?.setValue(legacyData, forKey: recordKey)
+        defaults?.removeObject(forKey: Self.legacyRecordKey)
         return record
     }
     
@@ -84,5 +97,8 @@ public struct AuthStore: Sendable, HasLogger {
         #endif
         keychain["token"] = nil
         defaults?.removeObject(forKey: recordKey)
+        if recordKey != Self.legacyRecordKey {
+            defaults?.removeObject(forKey: Self.legacyRecordKey)
+        }
     }
 }

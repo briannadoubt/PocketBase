@@ -66,4 +66,31 @@ struct AuthStoreTests {
         #expect(store.isValid == false)
         #expect(try store.record() as Tester? == nil)
     }
+
+    @Test("Reads legacy record key and migrates to namespaced key")
+    func migratesLegacyRecordKey() throws {
+        let service = UUID().uuidString
+        let defaults = UserDefaultsSpy(suiteName: service)
+        let record = Tester()
+        let token = "legacy-token"
+        let payload = try JSONEncoder().encode(
+            AuthResponse(
+                token: token,
+                record: record
+            ),
+            configuration: .none
+        )
+        defaults?.setValue(payload, forKey: "record")
+
+        let store = AuthStore(
+            keychain: MockKeychain.self,
+            service: service,
+            defaults: defaults
+        )
+
+        let loaded: Tester? = try store.record()
+        #expect(loaded == record)
+        #expect(defaults?.data(forKey: "record.\(service)") == payload)
+        #expect(defaults?.data(forKey: "record") == nil)
+    }
 }
