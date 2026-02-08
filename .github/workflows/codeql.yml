@@ -3,8 +3,13 @@ name: "CodeQL"
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
   pull_request:
     branches: [ "main" ]
+    types: [opened, synchronize, reopened, labeled]
+    paths-ignore:
+      - "**/*.md"
+      - "Documentation/**"
   schedule:
     - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
 
@@ -16,6 +21,7 @@ jobs:
   analyze:
     name: Analyze Swift
     runs-on: macos-26
+    if: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-codeql') }}
 
     permissions:
       security-events: write
@@ -37,6 +43,17 @@ jobs:
       with:
         languages: swift
         build-mode: manual
+
+    - name: Cache SwiftPM artifacts
+      uses: actions/cache@v4
+      with:
+        path: |
+          .build
+          ~/.swiftpm
+          ~/Library/Caches/org.swift.swiftpm
+        key: ${{ runner.os }}-swiftpm-codeql-${{ hashFiles('Package.resolved') }}
+        restore-keys: |
+          ${{ runner.os }}-swiftpm-codeql-
 
     - name: Build Swift Package
       run: |
